@@ -104,6 +104,8 @@ tasks.register('publishToMavenCentral') {
         println "Uploading bundle to Maven Central Portal..."
         println "Bundle file: ${bundleFile.absolutePath} (${bundleFile.length()} bytes)"
         println "Token length: ${token.length()} characters"
+        println "Token starts with: ${token.take(15)}..."
+        println "Token ends with: ...${token.takeRight(15)}"
         
         // Create a temporary file to capture the response
         def responseFile = File.createTempFile("maven-central-response", ".json")
@@ -112,10 +114,13 @@ tasks.register('publishToMavenCentral') {
         // Build the authorization header separately to avoid interpolation issues
         def authHeader = "Authorization: Bearer ${token}"
         
+        println "Running curl command..."
+        
         def process = [
             'curl', '-X', 'POST',
             '--fail-with-body',
-            '-w', '\n%{http_code}',
+            '-s', // silent mode to suppress progress
+            '-w', '\nHTTP_CODE:%{http_code}',
             '-o', responseFile.absolutePath,
             '-H', authHeader,
             '-F', "bundle=@${bundleFile.absolutePath}",
@@ -127,27 +132,50 @@ tasks.register('publishToMavenCentral') {
         process.waitForProcessOutput(output, error)
         def exitCode = process.exitValue()
         
+        println "Curl exit code: ${exitCode}"
+        println "Curl stdout: ${output.toString()}"
+        println "Curl stderr: ${error.toString()}"
+        
         // Read the response
-        def response = responseFile.text
-        def httpCode = output.toString().trim().split('\n').last()
+        def response = responseFile.exists() ? responseFile.text : ""
+        println "Response file exists: ${responseFile.exists()}"
+        println "Response file size: ${responseFile.exists() ? responseFile.length() : 0} bytes"
+        println "Response content: '${response}'"
         
-        println "HTTP Status: ${httpCode}"
-        println "Response: ${response}"
+        // Extract HTTP code
+        def httpCode = "UNKNOWN"
+        def outputStr = output.toString()
+        if (outputStr.contains('HTTP_CODE:')) {
+            httpCode = outputStr.split('HTTP_CODE:')[1].trim()
+        }
         
-        // Check for errors in response
-        if (exitCode != 0 || response.contains('"error"')) {
-            def errorMsg = "Failed to upload bundle to Maven Central.\n"
+        println "Extracted HTTP Status: ${httpCode}"
+        
+        // Check for errors - be explicit about what we're checking
+        def hasError = response.contains('"error"') || response.contains('error')
+        def isSuccessCode = httpCode == '201' || httpCode == '200'
+        
+        println "Response contains 'error': ${hasError}"
+        println "HTTP code is success (200/201): ${isSuccessCode}"
+        
+        if (exitCode != 0 || hasError || !isSuccessCode) {
+            def errorMsg = "\n" + "="*80 + "\n"
+            errorMsg += "❌ UPLOAD FAILED\n"
+            errorMsg += "="*80 + "\n"
             errorMsg += "Exit code: ${exitCode}\n"
             errorMsg += "HTTP Status: ${httpCode}\n"
             errorMsg += "Response: ${response}\n"
             if (error.length() > 0) {
-                errorMsg += "Error output: ${error.toString()}"
+                errorMsg += "Curl stderr: ${error.toString()}\n"
             }
+            errorMsg += "="*80 + "\n"
             throw new GradleException(errorMsg)
         }
         
-        println "Bundle uploaded successfully!"
-        println "Response: ${response}"
+        println "="*80
+        println "✅ Bundle uploaded successfully!"
+        println "="*80
+        println "Deployment ID: ${response}"
     }
 }
 
@@ -165,7 +193,8 @@ tasks.register('testMavenCentralAuth') {
         
         println "Testing Maven Central Portal authentication..."
         println "Token length: ${token.length()} characters"
-        println "Token starts with: ${token.take(10)}..."
+        println "Token starts with: ${token.take(15)}..."
+        println "Token ends with: ...${token.takeRight(15)}"
         
         // Test with a simple GET request to check authentication
         // Using the deployments list endpoint which is known to work
