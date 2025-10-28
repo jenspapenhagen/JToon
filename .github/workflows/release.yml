@@ -32,10 +32,22 @@ jobs:
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
       
+      - name: Validate Maven Central credentials
+        run: |
+          if [ -z "${{ secrets.MAVEN_CENTRAL_TOKEN }}" ]; then
+            echo "❌ MAVEN_CENTRAL_TOKEN secret is not set"
+            exit 1
+          fi
+          echo "✅ Maven Central token is set (length: ${#MAVEN_CENTRAL_TOKEN})"
+        env:
+          MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
+      
+      - name: Check curl version
+        run: curl --version
+      
       - name: Publish to Maven Central
         run: ./gradlew publishToMavenCentral
         env:
-          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}

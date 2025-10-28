@@ -87,34 +87,136 @@ tasks.register('publishToMavenCentral') {
     dependsOn 'createCentralBundle'
     
     doLast {
-        def username = project.findProperty('mavenCentralUsername') ?: System.getenv('MAVEN_CENTRAL_USERNAME')
-        def token = project.findProperty('mavenCentralToken') ?: System.getenv('MAVEN_CENTRAL_TOKEN')
+        def token = (project.findProperty('mavenCentralToken') ?: System.getenv('MAVEN_CENTRAL_TOKEN'))?.trim()
         
-        if (!username || !token) {
-            throw new GradleException('Maven Central credentials not found. Set MAVEN_CENTRAL_USERNAME and MAVEN_CENTRAL_TOKEN environment variables.')
+        if (!token) {
+            throw new GradleException('Maven Central token not found. Set MAVEN_CENTRAL_TOKEN environment variable or -PmavenCentralToken property.')
         }
     
         def bundleFile = layout.buildDirectory.file('distributions/central-bundle.zip').get().asFile
         
+        if (!bundleFile.exists()) {
+            throw new GradleException("Bundle file not found: ${bundleFile.absolutePath}")
+        }
+        
         def uploadUrl = 'https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC'
         
         println "Uploading bundle to Maven Central Portal..."
+        println "Bundle file: ${bundleFile.absolutePath} (${bundleFile.length()} bytes)"
+        println "Token length: ${token.length()} characters"
+        
+        // Create a temporary file to capture the response
+        def responseFile = File.createTempFile("maven-central-response", ".json")
+        responseFile.deleteOnExit()
+        
+        // Build the authorization header separately to avoid interpolation issues
+        def authHeader = "Authorization: Bearer ${token}"
         
         def process = [
             'curl', '-X', 'POST',
-            '-H', "Authorization: Bearer ${token}",
+            '--fail-with-body',
+            '-w', '\n%{http_code}',
+            '-o', responseFile.absolutePath,
+            '-H', authHeader,
             '-F', "bundle=@${bundleFile.absolutePath}",
             uploadUrl
         ].execute()
         
-        process.waitForProcessOutput(System.out, System.err)
+        def output = new StringBuilder()
+        def error = new StringBuilder()
+        process.waitForProcessOutput(output, error)
         def exitCode = process.exitValue()
         
-        if (exitCode != 0) {
-            throw new GradleException("Failed to upload bundle to Maven Central. Exit code: ${exitCode}")
+        // Read the response
+        def response = responseFile.text
+        def httpCode = output.toString().trim().split('\n').last()
+        
+        println "HTTP Status: ${httpCode}"
+        println "Response: ${response}"
+        
+        // Check for errors in response
+        if (exitCode != 0 || response.contains('"error"')) {
+            def errorMsg = "Failed to upload bundle to Maven Central.\n"
+            errorMsg += "Exit code: ${exitCode}\n"
+            errorMsg += "HTTP Status: ${httpCode}\n"
+            errorMsg += "Response: ${response}\n"
+            if (error.length() > 0) {
+                errorMsg += "Error output: ${error.toString()}"
+            }
+            throw new GradleException(errorMsg)
         }
         
         println "Bundle uploaded successfully!"
+        println "Response: ${response}"
+    }
+}
+
+// Task to test Maven Central authentication without uploading
+tasks.register('testMavenCentralAuth') {
+    group = 'verification'
+    description = 'Test Maven Central Portal authentication'
+    
+    doLast {
+        def token = (project.findProperty('mavenCentralToken') ?: System.getenv('MAVEN_CENTRAL_TOKEN'))?.trim()
+        
+        if (!token) {
+            throw new GradleException('Maven Central token not found. Set MAVEN_CENTRAL_TOKEN environment variable or -PmavenCentralToken property.')
+        }
+        
+        println "Testing Maven Central Portal authentication..."
+        println "Token length: ${token.length()} characters"
+        println "Token starts with: ${token.take(10)}..."
+        
+        // Test with a simple GET request to check authentication
+        // Using the deployments list endpoint which is known to work
+        def testUrl = 'https://central.sonatype.com/api/v1/publisher/deployments'
+        
+        // Create a temporary file to capture the response
+        def responseFile = File.createTempFile("maven-central-test", ".json")
+        responseFile.deleteOnExit()
+        
+        // Build the authorization header
+        def authHeader = "Authorization: Bearer ${token}"
+        
+        println "Testing authentication with GET request..."
+        println "URL: ${testUrl}"
+        
+        def process = [
+            'curl', '-X', 'GET',
+            '-v',
+            '--fail-with-body',
+            '-w', '\n%{http_code}',
+            '-o', responseFile.absolutePath,
+            '-H', authHeader,
+            testUrl
+        ].execute()
+        
+        def output = new StringBuilder()
+        def error = new StringBuilder()
+        process.waitForProcessOutput(output, error)
+        def exitCode = process.exitValue()
+        
+        // Read the response
+        def response = responseFile.text
+        def httpCode = output.toString().trim().split('\n').last()
+        
+        println "\n=== Authentication Test Results ==="
+        println "Exit code: ${exitCode}"
+        println "HTTP Status: ${httpCode}"
+        println "Response: ${response}"
+        println "Curl verbose output:"
+        println error.toString()
+        
+        if (exitCode != 0 || response.contains('"error"')) {
+            def errorMsg = "\n❌ Authentication test FAILED\n"
+            errorMsg += "Exit code: ${exitCode}\n"
+            errorMsg += "HTTP Status: ${httpCode}\n"
+            errorMsg += "Response: ${response}\n"
+            throw new GradleException(errorMsg)
+        }
+        
+        println "\n✅ Authentication test PASSED"
+        println "Your token is valid and working correctly."
     }
 }
 
