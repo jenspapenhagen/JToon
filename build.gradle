@@ -1,10 +1,20 @@
 plugins {
     id 'java'
+    id 'maven-publish'
+    id 'signing'
 }
 
 group = 'com.felipestanzani'
-version = '1.0.0'
+version = '0.1.0'
 description = 'Token-Oriented Object Notation (TOON) - A compact, human-readable format for LLM contexts'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    withSourcesJar()
+    withJavadocJar()
+}
 
 repositories {
     mavenCentral()
@@ -19,4 +29,61 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'jtoon'
+            from components.java
+            
+            pom {
+                name = 'JToon'
+                description = project.description
+                url = 'https://github.com/felipestanzani/JToon'
+                
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://github.com/felipestanzani/JToon/blob/main/LICENSE.md'
+                    }
+                }
+                
+                developers {
+                    developer {
+                        id = 'felipestanzani'
+                        name = 'Felipe Cesar Stanzani Fonseca'
+                        email = 'stanzani@gmail.com'
+                    }
+                }
+                
+                scm {
+                    connection = 'scm:git:git://github.com/felipestanzani/JToon.git'
+                    developerConnection = 'scm:git:ssh://github.com:felipestanzani/JToon.git'
+                    url = 'https://github.com/felipestanzani/JToon'
+                }
+            }
+        }
+    }
+    
+    repositories {
+        maven {
+            name = 'MavenCentral'
+            url = 'https://central.sonatype.com/api/v1/publisher/upload'
+            credentials {
+                username = project.findProperty('mavenCentralUsername') ?: System.getenv('MAVEN_CENTRAL_USERNAME')
+                password = project.findProperty('mavenCentralToken') ?: System.getenv('MAVEN_CENTRAL_TOKEN')
+            }
+        }
+    }
+}
+
+signing {
+    def signingKey = project.findProperty('signingKey') ?: System.getenv('GPG_PRIVATE_KEY')
+    def signingPassword = project.findProperty('signingPassword') ?: System.getenv('GPG_PASSPHRASE')
+    
+    if (signingKey && signingPassword) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+        sign publishing.publications.mavenJava
+    }
 }
