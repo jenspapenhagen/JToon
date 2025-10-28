@@ -1,6 +1,6 @@
 ![TOON logo with step‑by‑step guide](./.github/og.png)
 
-# Token-Oriented Object Notation (TOON)
+# JToon - Token-Oriented Object Notation (TOON)
 
 [![Build](https://github.com/felipestanzani/jtoon/actions/workflows/build.yml/badge.svg)](https://github.com/felipestanzani/jtoon/actions/workflows/build.yml)
 [![Release](https://github.com/felipestanzani/jtoon/actions/workflows/release.yml/badge.svg)](https://github.com/felipestanzani/jtoon/actions/workflows/release.yml)
@@ -973,7 +973,7 @@ Map.of("items", List.of("true", true))  → items[2]: "true",true
 
 ## Implementations in Other Languages
 
-- **TypeScript/JavaScript**: [@byjohann/toon](https://github.com/byjohann/toon) (original)
+- **TypeScript/JavaScript**: [@johannschopplich/toon](https://github.com/johannschopplich/toon) (original)
 - **Elixir**: [toon_ex](https://github.com/kentaro/toon_ex)
 - **PHP**: [toon-php](https://github.com/HelgeSverre/toon-php)
 - **Python**: [pytoon](https://github.com/bpradana/pytoon)
