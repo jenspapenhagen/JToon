@@ -935,45 +935,45 @@ Task: Return only users with role "user" as TOON. Use the same header. Set [N] t
 
 ## Quick Reference
 
-```java
+```
 // Object
-Map.of("id", 1, "name", "Ada")          → id: 1
-                                          name: Ada
+{ id: 1, name: 'Ada' }          → id: 1
+                                  name: Ada
 
 // Nested object
-Map.of("user", Map.of("id", 1))         → user:
-                                            id: 1
+{ user: { id: 1 } }             → user:
+                                    id: 1
 
 // Primitive array (inline)
-Map.of("tags", List.of("foo", "bar"))   → tags[2]: foo,bar
+{ tags: ['foo', 'bar'] }        → tags[2]: foo,bar
 
 // Tabular array (uniform objects)
-Map.of("items", List.of(                → items[2]{id,qty}:
-  Map.of("id", 1, "qty", 5),                1,5
-  Map.of("id", 2, "qty", 3)                 2,3
-))
+{ items: [                      → items[2]{id,qty}:
+  { id: 1, qty: 5 },                1,5
+  { id: 2, qty: 3 }                 2,3
+]}
 
 // Mixed / non-uniform (list)
-Map.of("items",                         → items[3]:
-  List.of(1, Map.of("a", 1), "x"))          - 1
-                                            - a: 1
-                                            - x
+{ items: [1, { a: 1 }, 'x'] }   → items[3]:
+                                    - 1
+                                    - a: 1
+                                    - x
 
 // Array of arrays
-Map.of("pairs",                         → pairs[2]:
-  List.of(List.of(1, 2), List.of(3, 4)))    - [2]: 1,2
-                                            - [2]: 3,4
+{ pairs: [[1, 2], [3, 4]] }     → pairs[2]:
+                                    - [2]: 1,2
+                                    - [2]: 3,4
 
 // Root array
-List.of("x", "y")                       → [2]: x,y
+['x', 'y']                      → [2]: x,y
 
 // Empty containers
-Map.of()                                → (empty output)
-Map.of("items", List.of())              → items[0]:
+{}                              → (empty output)
+{ items: [] }                   → items[0]:
 
 // Special quoting
-Map.of("note", "hello, world")          → note: "hello, world"
-Map.of("items", List.of("true", true))  → items[2]: "true",true
+{ note: 'hello, world' }        → note: "hello, world"
+{ items: ['true', true] }       → items[2]: "true",true
 ```
 
 ## Implementations in Other Languages
