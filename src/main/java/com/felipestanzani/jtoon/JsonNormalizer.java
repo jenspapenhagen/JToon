@@ -81,7 +81,7 @@ public final class JsonNormalizer {
         // Try Jackson's default conversion for POJOs
         try {
             return MAPPER.valueToTree(value);
-        } catch (IllegalArgumentException _) {
+        } catch (IllegalArgumentException e) {
             // Fallback for non-serializable objects
             return NullNode.getInstance();
         }
