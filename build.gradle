@@ -68,13 +68,54 @@ publishing {
     
     repositories {
         maven {
-            name = 'MavenCentral'
-            url = 'https://central.sonatype.com/api/v1/publisher/upload'
-            credentials {
-                username = project.findProperty('mavenCentralUsername') ?: System.getenv('MAVEN_CENTRAL_USERNAME')
-                password = project.findProperty('mavenCentralToken') ?: System.getenv('MAVEN_CENTRAL_TOKEN')
-            }
+            name = 'LocalRepo'
+            url = layout.buildDirectory.dir('maven-repo')
         }
+    }
+}
+
+// Task to create a bundle for Maven Central Portal
+tasks.register('createCentralBundle', Zip) {
+    dependsOn 'publishMavenJavaPublicationToLocalRepoRepository'
+    from layout.buildDirectory.dir('maven-repo')
+    archiveFileName = "central-bundle.zip"
+    destinationDirectory = layout.buildDirectory.dir('distributions')
+}
+
+// Task to upload bundle to Maven Central Portal
+tasks.register('publishToMavenCentral') {
+    dependsOn 'createCentralBundle'
+    
+    doLast {
+        def username = project.findProperty('mavenCentralUsername') ?: System.getenv('MAVEN_CENTRAL_USERNAME')
+        def token = project.findProperty('mavenCentralToken') ?: System.getenv('MAVEN_CENTRAL_TOKEN')
+        
+        if (!username || !token) {
+            throw new GradleException('Maven Central credentials not found. Set MAVEN_CENTRAL_USERNAME and MAVEN_CENTRAL_TOKEN environment variables.')
+        }
+        
+        def credentials = "${username}:${token}".bytes.encodeBase64().toString()
+        def bundleFile = layout.buildDirectory.file('distributions/central-bundle.zip').get().asFile
+        
+        def uploadUrl = 'https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC'
+        
+        println "Uploading bundle to Maven Central Portal..."
+        
+        def process = [
+            'curl', '-X', 'POST',
+            '-H', "Authorization: Bearer ${credentials}",
+            '-F', "bundle=@${bundleFile.absolutePath}",
+            uploadUrl
+        ].execute()
+        
+        process.waitForProcessOutput(System.out, System.err)
+        def exitCode = process.exitValue()
+        
+        if (exitCode != 0) {
+            throw new GradleException("Failed to upload bundle to Maven Central. Exit code: ${exitCode}")
+        }
+        
+        println "Bundle uploaded successfully!"
     }
 }
 
