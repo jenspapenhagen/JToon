@@ -4,6 +4,7 @@
 
 [![Build](https://github.com/felipestanzani/jtoon/actions/workflows/build.yml/badge.svg)](https://github.com/felipestanzani/jtoon/actions/workflows/build.yml)
 [![Release](https://github.com/felipestanzani/jtoon/actions/workflows/release.yml/badge.svg)](https://github.com/felipestanzani/jtoon/actions/workflows/release.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/com.felipestanzani/jtoon.svg)](https://central.sonatype.com/artifact/com.felipestanzani/jtoon)
 
 **Token-Oriented Object Notation** is a compact, human-readable format designed for passing structured data to Large Language Models with significantly reduced token usage.
 
@@ -391,37 +392,41 @@ Answers are validated by an LLM judge (`gpt-5-nano`) using semantic equivalence,
 
 ## Installation
 
-### Download JAR from Releases
+### Maven Central
 
-Download the latest `JToon-{version}.jar` from the [GitHub Releases](https://github.com/felipestanzani/jtoon/releases) page.
+JToon is available on Maven Central. Add it to your project using your preferred build tool:
 
-### Add to Your Project
-
-**Option 1: Add to classpath directly**
-
-Place the JAR in your project's `lib` directory and add it to your build configuration.
-
-**Option 2: Gradle (local file)**
+**Gradle (Groovy DSL):**
 
 ```gradle
 dependencies {
-    implementation files('lib/JToon-1.0.jar')
+    implementation 'com.felipestanzani:jtoon:0.1.0'
 }
 ```
 
-**Option 3: Maven (local file)**
+**Gradle (Kotlin DSL):**
+
+```kotlin
+dependencies {
+    implementation("com.felipestanzani:jtoon:0.1.0")
+}
+```
+
+**Maven:**
 
 ```xml
 <dependency>
     <groupId>com.felipestanzani</groupId>
     <artifactId>jtoon</artifactId>
-    <version>1.0</version>
-    <scope>system</scope>
-    <systemPath>${project.basedir}/lib/JToon-1.0.jar</systemPath>
+    <version>0.1.0</version>
 </dependency>
 ```
 
-> **Note:** This library will be published to Maven Central in the future for easier dependency management.
+> **Note:** See the [latest version](https://central.sonatype.com/artifact/com.felipestanzani/jtoon) on Maven Central (also shown in the badge above).
+
+### Alternative: Manual Installation
+
+You can also download the JAR directly from the [GitHub Releases](https://github.com/felipestanzani/jtoon/releases) page and add it to your project's classpath.
 
 ## Quick Start
 

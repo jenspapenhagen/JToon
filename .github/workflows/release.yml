@@ -32,6 +32,30 @@ jobs:
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
       
+      - name: Publish to Maven Central
+        run: ./gradlew publish
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      
+      - name: Update README version
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          sed -i "s/jtoon:[0-9]\+\.[0-9]\+\.[0-9]\+/jtoon:$VERSION/g" README.md
+          sed -i "s/<version>[0-9]\+\.[0-9]\+\.[0-9]\+<\/version>/<version>$VERSION<\/version>/g" README.md
+      
+      - name: Commit README changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --staged --quiet || git commit -m "docs: update version to ${{ steps.get_version.outputs.VERSION }} in README"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
