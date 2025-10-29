@@ -9,8 +9,12 @@ version = '0.1.0'
 description = 'Token-Oriented Object Notation (TOON) - A compact, human-readable format for LLM contexts'
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+    // Only enforce toolchain in CI to ensure consistent Java 21 builds
+    // Locally, use whatever JDK is installed
+    if (System.getenv('CI') == 'true') {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
     }
     withSourcesJar()
     withJavadocJar()
