@@ -31,6 +31,8 @@ users[2]{id,name,role}:
   2,Bob,user
 ```
 
+*Test the differences on [THIS online playground](https://www.curiouslychase.com/playground/format-tokenization-exploration)*
+
 <details>
 <summary>Another reason</summary>
 
