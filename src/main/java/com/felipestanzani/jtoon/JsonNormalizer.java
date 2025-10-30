@@ -9,6 +9,8 @@ import java.math.BigInteger;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
 /**
@@ -17,6 +19,12 @@ import java.util.stream.Stream;
  */
 public final class JsonNormalizer {
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final List<Function<Object, JsonNode>> NORMALIZERS = List.of(
+            JsonNormalizer::tryNormalizePrimitive,
+            JsonNormalizer::tryNormalizeBigNumber,
+            JsonNormalizer::tryNormalizeTemporal,
+            JsonNormalizer::tryNormalizeCollection,
+            JsonNormalizer::tryNormalizePojo);
 
     private JsonNormalizer() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
@@ -34,60 +42,35 @@ public final class JsonNormalizer {
             case JsonNode jsonNode -> jsonNode;
             case Optional<?> optional -> normalize(optional.orElse(null));
             case Stream<?> stream -> normalize(stream.toList());
-            default -> {
-                // Arrays
-                if (value.getClass().isArray()) {
-                    yield normalizeArray(value);
-                }
-
-                // Try primitive types
-                JsonNode primitiveResult = normalizePrimitive(value);
-                if (primitiveResult != null) {
-                    yield primitiveResult;
-                }
-
-                // Try big numbers
-                JsonNode bigNumberResult = normalizeBigNumber(value);
-                if (bigNumberResult != null) {
-                    yield bigNumberResult;
-                }
-
-                // Try temporal types
-                JsonNode temporalResult = normalizeTemporal(value);
-                if (temporalResult != null) {
-                    yield temporalResult;
-                }
-
-                // Try collections
-                JsonNode collectionResult = normalizeCollection(value);
-                if (collectionResult != null) {
-                    yield collectionResult;
-                }
-
-                // Try Jackson's default conversion for POJOs
-                try {
-                    yield MAPPER.valueToTree(value);
-                } catch (IllegalArgumentException e) {
-                    // Fallback for non-serializable objects
-                    yield NullNode.getInstance();
-                }
-            }
+            default -> value.getClass().isArray()
+                    ? normalizeArray(value)
+                    : normalizeWithStrategy(value);
         };
     }
 
     /**
-     * Normalizes primitive types and their wrappers to JsonNode.
+     * Attempts normalization using chain of responsibility pattern.
      */
-    private static JsonNode normalizePrimitive(Object value) {
+    private static JsonNode normalizeWithStrategy(Object value) {
+        return NORMALIZERS.stream()
+                .map(normalizer -> normalizer.apply(value))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(NullNode.getInstance());
+    }
+
+    /**
+     * Attempts to normalize primitive types and their wrappers.
+     * Returns null if the value is not a primitive type.
+     */
+    private static JsonNode tryNormalizePrimitive(Object value) {
         return switch (value) {
             case String string -> TextNode.valueOf(string);
             case Boolean bool -> BooleanNode.valueOf(bool);
             case Integer integer -> IntNode.valueOf(integer);
             case Long longVal -> LongNode.valueOf(longVal);
             case Double doubleVal -> normalizeDouble(doubleVal);
-            case Float floatVal -> Float.isFinite(floatVal)
-                    ? FloatNode.valueOf(floatVal)
-                    : NullNode.getInstance();
+            case Float floatVal -> normalizeFloat(floatVal);
             case Short shortVal -> ShortNode.valueOf(shortVal);
             case Byte byteVal -> IntNode.valueOf(byteVal);
             case null, default -> null;
@@ -95,203 +78,177 @@ public final class JsonNormalizer {
     }
 
     /**
-     * Normalizes Double values to JsonNode.
-     * Handles special values (NaN, Infinity), zero canonicalization, and whole
-     * number conversion.
+     * Normalizes Double values handling special cases.
      */
-    private static JsonNode normalizeDouble(Double doubleVal) {
-        // Handle special values
-        if (!Double.isFinite(doubleVal)) {
+    private static JsonNode normalizeDouble(Double value) {
+        if (!Double.isFinite(value)) {
             return NullNode.getInstance();
         }
-        // Canonicalize -0 to 0
-        if (doubleVal == 0.0) {
+        if (value == 0.0) {
             return IntNode.valueOf(0);
         }
-        // Convert whole numbers to integers for cleaner output, but only if within safe
-        // range
-        if (doubleVal == Math.floor(doubleVal) && !Double.isInfinite(doubleVal) &&
-                doubleVal <= Long.MAX_VALUE && doubleVal >= Long.MIN_VALUE) {
-            long longVal = doubleVal.longValue();
-            // Verify the conversion is exact (no precision loss)
-            if (longVal == doubleVal) {
-                return LongNode.valueOf(longVal);
-            }
-        }
-        return DoubleNode.valueOf(doubleVal);
+        return tryConvertToLong(value)
+                .orElse(DoubleNode.valueOf(value));
     }
 
     /**
-     * Normalizes BigInteger and BigDecimal to JsonNode.
+     * Normalizes Float values handling special cases.
      */
-    private static JsonNode normalizeBigNumber(Object value) {
-        if (value instanceof BigInteger bigInt) {
-            // Try to convert to long if within safe range
-            if (bigInt.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0 &&
-                    bigInt.compareTo(BigInteger.valueOf(Long.MIN_VALUE)) >= 0) {
-                return LongNode.valueOf(bigInt.longValue());
-            }
-            // Otherwise convert to string
-            return TextNode.valueOf(bigInt.toString());
-        }
-        if (value instanceof BigDecimal bigDec) {
-            return DecimalNode.valueOf(bigDec);
-        }
-        return null;
+    private static JsonNode normalizeFloat(Float value) {
+        return Float.isFinite(value)
+                ? FloatNode.valueOf(value)
+                : NullNode.getInstance();
     }
 
     /**
-     * Normalizes temporal types (date/time) to JsonNode as ISO strings.
+     * Attempts to convert a double to a long if it's a whole number.
      */
-    private static JsonNode normalizeTemporal(Object value) {
+    private static Optional<JsonNode> tryConvertToLong(Double value) {
+        if (value != Math.floor(value)) {
+            return Optional.empty();
+        }
+        if (value > Long.MAX_VALUE || value < Long.MIN_VALUE) {
+            return Optional.empty();
+        }
+        long longVal = value.longValue();
+        return longVal == value
+                ? Optional.of(LongNode.valueOf(longVal))
+                : Optional.empty();
+    }
+
+    /**
+     * Attempts to normalize BigInteger and BigDecimal.
+     * Returns null if the value is not a big number type.
+     */
+    private static JsonNode tryNormalizeBigNumber(Object value) {
         return switch (value) {
-            case LocalDateTime localDateTime ->
-                TextNode.valueOf(localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-            case LocalDate localDate ->
-                TextNode.valueOf(localDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
-            case LocalTime localTime ->
-                TextNode.valueOf(localTime.format(DateTimeFormatter.ISO_LOCAL_TIME));
-            case ZonedDateTime zonedDateTime ->
-                TextNode.valueOf(zonedDateTime.format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
-            case OffsetDateTime offsetDateTime ->
-                TextNode.valueOf(offsetDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-            case Instant instant ->
-                TextNode.valueOf(instant.toString());
-            case java.util.Date date ->
-                TextNode.valueOf(date.toInstant().toString());
-            default -> null;
+            case BigInteger bigInt -> normalizeBigInteger(bigInt);
+            case BigDecimal bigDec -> DecimalNode.valueOf(bigDec);
+            case null, default -> null;
         };
     }
 
     /**
-     * Normalizes collections (Collection and Map) to JsonNode.
+     * Normalizes BigInteger, converting to long if within range.
      */
-    private static JsonNode normalizeCollection(Object value) {
-        if (value instanceof Collection<?> collection) {
-            ArrayNode arrayNode = MAPPER.createArrayNode();
-            for (Object item : collection) {
-                arrayNode.add(normalize(item));
-            }
-            return arrayNode;
-        }
-        if (value instanceof Map<?, ?> map) {
-            ObjectNode objectNode = MAPPER.createObjectNode();
-            for (Map.Entry<?, ?> entry : map.entrySet()) {
-                String key = String.valueOf(entry.getKey());
-                objectNode.set(key, normalize(entry.getValue()));
-            }
-            return objectNode;
-        }
-        return null;
+    private static JsonNode normalizeBigInteger(BigInteger value) {
+        boolean fitsInLong = value.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0
+                && value.compareTo(BigInteger.valueOf(Long.MIN_VALUE)) >= 0;
+        return fitsInLong
+                ? LongNode.valueOf(value.longValue())
+                : TextNode.valueOf(value.toString());
     }
 
-    private static JsonNode normalizeArray(Object array) {
+    /**
+     * Attempts to normalize temporal types (date/time) to ISO strings.
+     * Returns null if the value is not a temporal type.
+     */
+    private static JsonNode tryNormalizeTemporal(Object value) {
+        return switch (value) {
+            case LocalDateTime v -> formatTemporal(v, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            case LocalDate v -> formatTemporal(v, DateTimeFormatter.ISO_LOCAL_DATE);
+            case LocalTime v -> formatTemporal(v, DateTimeFormatter.ISO_LOCAL_TIME);
+            case ZonedDateTime v -> formatTemporal(v, DateTimeFormatter.ISO_ZONED_DATE_TIME);
+            case OffsetDateTime v -> formatTemporal(v, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            case Instant instant -> TextNode.valueOf(instant.toString());
+            case java.util.Date date -> TextNode.valueOf(date.toInstant().toString());
+            case null, default -> null;
+        };
+    }
+
+    /**
+     * Helper method to format temporal values consistently.
+     */
+    private static <T> JsonNode formatTemporal(T temporal, DateTimeFormatter formatter) {
+        return TextNode.valueOf(formatter.format((java.time.temporal.TemporalAccessor) temporal));
+    }
+
+    /**
+     * Attempts to normalize collections (Collection and Map).
+     * Returns null if the value is not a collection type.
+     */
+    private static JsonNode tryNormalizeCollection(Object value) {
+        return switch (value) {
+            case Collection<?> collection -> normalizeCollection(collection);
+            case Map<?, ?> map -> normalizeMap(map);
+            case null, default -> null;
+        };
+    }
+
+    /**
+     * Normalizes a Collection to an ArrayNode.
+     */
+    private static ArrayNode normalizeCollection(Collection<?> collection) {
         ArrayNode arrayNode = MAPPER.createArrayNode();
-
-        switch (array) {
-            case int[] intArray -> addIntArray(arrayNode, intArray);
-            case long[] longArray -> addLongArray(arrayNode, longArray);
-            case double[] doubleArray -> addDoubleArray(arrayNode, doubleArray);
-            case float[] floatArray -> addFloatArray(arrayNode, floatArray);
-            case boolean[] boolArray -> addBooleanArray(arrayNode, boolArray);
-            case byte[] byteArray -> addByteArray(arrayNode, byteArray);
-            case short[] shortArray -> addShortArray(arrayNode, shortArray);
-            case char[] charArray -> addCharArray(arrayNode, charArray);
-            case Object[] objectArray -> addObjectArray(arrayNode, objectArray);
-            default -> { /* No-op for unrecognized array types */ }
-        }
-
+        collection.forEach(item -> arrayNode.add(normalize(item)));
         return arrayNode;
     }
 
     /**
-     * Adds double array elements to an ArrayNode.
-     * Handles special values (NaN, Infinity) by converting them to null.
+     * Normalizes a Map to an ObjectNode.
      */
-    private static void addDoubleArray(ArrayNode arrayNode, double[] array) {
-        for (double val : array) {
-            if (Double.isFinite(val)) {
-                arrayNode.add(val);
-            } else {
-                arrayNode.addNull();
-            }
+    private static ObjectNode normalizeMap(Map<?, ?> map) {
+        ObjectNode objectNode = MAPPER.createObjectNode();
+        map.forEach((key, value) -> objectNode.set(String.valueOf(key), normalize(value)));
+        return objectNode;
+    }
+
+    /**
+     * Attempts to normalize POJOs using Jackson's default conversion.
+     * Returns null for non-serializable objects.
+     */
+    private static JsonNode tryNormalizePojo(Object value) {
+        try {
+            return MAPPER.valueToTree(value);
+        } catch (IllegalArgumentException e) {
+            return NullNode.getInstance();
         }
     }
 
     /**
-     * Adds float array elements to an ArrayNode.
-     * Handles special values (NaN, Infinity) by converting them to null.
+     * Normalizes arrays to ArrayNode.
      */
-    private static void addFloatArray(ArrayNode arrayNode, float[] array) {
-        for (float val : array) {
-            if (Float.isFinite(val)) {
-                arrayNode.add(val);
-            } else {
-                arrayNode.addNull();
-            }
-        }
+    private static JsonNode normalizeArray(Object array) {
+        return switch (array) {
+            case int[] arr -> buildArrayNode(arr.length, i -> IntNode.valueOf(arr[i]));
+            case long[] arr -> buildArrayNode(arr.length, i -> LongNode.valueOf(arr[i]));
+            case double[] arr -> buildArrayNode(arr.length, i -> normalizeDoubleElement(arr[i]));
+            case float[] arr -> buildArrayNode(arr.length, i -> normalizeFloatElement(arr[i]));
+            case boolean[] arr -> buildArrayNode(arr.length, i -> BooleanNode.valueOf(arr[i]));
+            case byte[] arr -> buildArrayNode(arr.length, i -> IntNode.valueOf(arr[i]));
+            case short[] arr -> buildArrayNode(arr.length, i -> ShortNode.valueOf(arr[i]));
+            case char[] arr -> buildArrayNode(arr.length, i -> TextNode.valueOf(String.valueOf(arr[i])));
+            case Object[] arr -> buildArrayNode(arr.length, i -> normalize(arr[i]));
+            case null, default -> MAPPER.createArrayNode();
+        };
     }
 
     /**
-     * Adds int array elements to an ArrayNode.
+     * Builds an ArrayNode using a functional approach.
      */
-    private static void addIntArray(ArrayNode arrayNode, int[] array) {
-        for (int val : array) {
-            arrayNode.add(val);
+    private static ArrayNode buildArrayNode(int length, IntFunction<JsonNode> mapper) {
+        ArrayNode arrayNode = MAPPER.createArrayNode();
+        for (int i = 0; i < length; i++) {
+            arrayNode.add(mapper.apply(i));
         }
+        return arrayNode;
     }
 
     /**
-     * Adds long array elements to an ArrayNode.
+     * Normalizes a single double element from an array.
      */
-    private static void addLongArray(ArrayNode arrayNode, long[] array) {
-        for (long val : array) {
-            arrayNode.add(val);
-        }
+    private static JsonNode normalizeDoubleElement(double value) {
+        return Double.isFinite(value)
+                ? DoubleNode.valueOf(value)
+                : NullNode.getInstance();
     }
 
     /**
-     * Adds boolean array elements to an ArrayNode.
+     * Normalizes a single float element from an array.
      */
-    private static void addBooleanArray(ArrayNode arrayNode, boolean[] array) {
-        for (boolean val : array) {
-            arrayNode.add(val);
-        }
-    }
-
-    /**
-     * Adds byte array elements to an ArrayNode.
-     */
-    private static void addByteArray(ArrayNode arrayNode, byte[] array) {
-        for (byte val : array) {
-            arrayNode.add(val);
-        }
-    }
-
-    /**
-     * Adds short array elements to an ArrayNode.
-     */
-    private static void addShortArray(ArrayNode arrayNode, short[] array) {
-        for (short val : array) {
-            arrayNode.add(val);
-        }
-    }
-
-    /**
-     * Adds char array elements to an ArrayNode.
-     */
-    private static void addCharArray(ArrayNode arrayNode, char[] array) {
-        for (char val : array) {
-            arrayNode.add(String.valueOf(val));
-        }
-    }
-
-    /**
-     * Adds Object array elements to an ArrayNode.
-     */
-    private static void addObjectArray(ArrayNode arrayNode, Object[] array) {
-        for (Object val : array) {
-            arrayNode.add(normalize(val));
-        }
+    private static JsonNode normalizeFloatElement(float value) {
+        return Float.isFinite(value)
+                ? FloatNode.valueOf(value)
+                : NullNode.getInstance();
     }
 }
