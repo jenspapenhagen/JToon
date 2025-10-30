@@ -1,4 +1,4 @@
-package com.felipestanzani.jtoon;
+package com.felipestanzani.jtoon.encoder;
 
 import java.util.ArrayList;
 import java.util.List;

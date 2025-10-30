@@ -1,8 +1,8 @@
-package com.felipestanzani.jtoon;
+package com.felipestanzani.jtoon.encoder;
 
 import java.util.List;
 
-import static com.felipestanzani.jtoon.Constants.*;
+import static com.felipestanzani.jtoon.util.Constants.*;
 
 /**
  * Formats headers for arrays and tables in TOON format.

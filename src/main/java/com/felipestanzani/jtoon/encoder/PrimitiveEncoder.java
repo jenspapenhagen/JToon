@@ -1,10 +1,12 @@
-package com.felipestanzani.jtoon;
+package com.felipestanzani.jtoon.encoder;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.felipestanzani.jtoon.util.StringEscaper;
+import com.felipestanzani.jtoon.util.StringValidator;
 
 import java.util.List;
 
-import static com.felipestanzani.jtoon.Constants.*;
+import static com.felipestanzani.jtoon.util.Constants.*;
 
 /**
  * Encodes primitive values and object keys for TOON format.
@@ -23,7 +25,6 @@ public final class PrimitiveEncoder {
      */
     public static String encodePrimitive(JsonNode value, String delimiter) {
         return switch (value.getNodeType()) {
-            case NULL -> NULL_LITERAL;
             case BOOLEAN -> String.valueOf(value.asBoolean());
             case NUMBER -> value.asText();
             case STRING -> encodeStringLiteral(value.asText(), delimiter);

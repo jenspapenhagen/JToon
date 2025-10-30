@@ -1,4 +1,4 @@
-package com.felipestanzani.jtoon;
+package com.felipestanzani.jtoon.util;
 
 /**
  * Handles string escaping for TOON format.

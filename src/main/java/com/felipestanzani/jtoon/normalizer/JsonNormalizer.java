@@ -1,4 +1,4 @@
-package com.felipestanzani.jtoon;
+package com.felipestanzani.jtoon.normalizer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

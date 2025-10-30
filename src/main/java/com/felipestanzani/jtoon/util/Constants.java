@@ -1,4 +1,4 @@
-package com.felipestanzani.jtoon;
+package com.felipestanzani.jtoon.util;
 
 /**
  * Constants used throughout the JToon encoding process.

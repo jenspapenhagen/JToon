@@ -1,8 +1,8 @@
-package com.felipestanzani.jtoon;
+package com.felipestanzani.jtoon.util;
 
 import java.util.regex.Pattern;
 
-import static com.felipestanzani.jtoon.Constants.*;
+import static com.felipestanzani.jtoon.util.Constants.*;
 
 /**
  * Validates strings for safe unquoted usage in TOON format.
