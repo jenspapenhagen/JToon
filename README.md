@@ -98,14 +98,11 @@ You can also download the JAR directly from the [GitHub Releases](https://github
 import com.felipestanzani.jtoon.JToon;
 import java.util.*;
 
-Map<String, Object> data = new LinkedHashMap<>();
-Map<String, Object> user = new LinkedHashMap<>();
-user.put("id", 123);
-user.put("name", "Ada");
-user.put("tags", List.of("reading", "gaming"));
-user.put("active", true);
-user.put("preferences", List.of());
-data.put("user", user);
+record User(int id, String name, List<String> tags, boolean active, List<?> preferences) {}
+record Data(User user) {}
+
+User user = new User(123, "Ada", List.of("reading", "gaming"), true, List.of());
+Data data = new Data(user);
 
 System.out.println(JToon.encode(data));
 ```
@@ -212,17 +209,13 @@ A TOON-formatted string with no trailing newline or spaces.
 import com.felipestanzani.jtoon.JToon;
 import java.util.*;
 
-Map<String, Object> item1 = new LinkedHashMap<>();
-item1.put("sku", "A1");
-item1.put("qty", 2);
-item1.put("price", 9.99);
+record Item(String sku, int qty, double price) {}
+record Data(List<Item> items) {}
 
-Map<String, Object> item2 = new LinkedHashMap<>();
-item2.put("sku", "B2");
-item2.put("qty", 1);
-item2.put("price", 14.5);
+Item item1 = new Item("A1", 2, 9.99);
+Item item2 = new Item("B2", 1, 14.5);
+Data data = new Data(List.of(item1, item2));
 
-Map<String, Object> data = Map.of("items", List.of(item1, item2));
 System.out.println(JToon.encode(data));
 ```
 
@@ -246,19 +239,13 @@ Using tab delimiters instead of commas can reduce token count further, especiall
 import com.felipestanzani.jtoon.*;
 import java.util.*;
 
-Map<String, Object> item1 = new LinkedHashMap<>();
-item1.put("sku", "A1");
-item1.put("name", "Widget");
-item1.put("qty", 2);
-item1.put("price", 9.99);
+record Item(String sku, String name, int qty, double price) {}
+record Data(List<Item> items) {}
 
-Map<String, Object> item2 = new LinkedHashMap<>();
-item2.put("sku", "B2");
-item2.put("name", "Gadget");
-item2.put("qty", 1);
-item2.put("price", 14.5);
+Item item1 = new Item("A1", "Widget", 2, 9.99);
+Item item2 = new Item("B2", "Gadget", 1, 14.5);
+Data data = new Data(List.of(item1, item2));
 
-Map<String, Object> data = Map.of("items", List.of(item1, item2));
 EncodeOptions options = new EncodeOptions(2, Delimiter.TAB, false);
 System.out.println(JToon.encode(data, options));
 ```
@@ -287,6 +274,7 @@ items[2 ]{sku name qty price}:
 Pipe delimiters offer a middle ground between commas and tabs:
 
 ```java
+// Using the same Item and Data records from above
 EncodeOptions options = new EncodeOptions(2, Delimiter.PIPE, false);
 System.out.println(JToon.encode(data, options));
 ```
@@ -307,19 +295,12 @@ The `lengthMarker` option adds an optional hash (`#`) prefix to array lengths to
 import com.felipestanzani.jtoon.*;
 import java.util.*;
 
-Map<String, Object> item1 = new LinkedHashMap<>();
-item1.put("sku", "A1");
-item1.put("qty", 2);
-item1.put("price", 9.99);
+record Item(String sku, int qty, double price) {}
+record Data(List<String> tags, List<Item> items) {}
 
-Map<String, Object> item2 = new LinkedHashMap<>();
-item2.put("sku", "B2");
-item2.put("qty", 1);
-item2.put("price", 14.5);
-
-Map<String, Object> data = new LinkedHashMap<>();
-data.put("tags", List.of("reading", "gaming", "coding"));
-data.put("items", List.of(item1, item2));
+Item item1 = new Item("A1", 2, 9.99);
+Item item2 = new Item("B2", 1, 14.5);
+Data data = new Data(List.of("reading", "gaming", "coding"), List.of(item1, item2));
 
 System.out.println(JToon.encode(data, new EncodeOptions(2, Delimiter.COMMA, true)));
 // tags[#3]: reading,gaming,coding
