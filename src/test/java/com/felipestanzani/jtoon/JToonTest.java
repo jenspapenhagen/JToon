@@ -2,6 +2,7 @@ package com.felipestanzani.jtoon;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
@@ -10,11 +11,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.felipestanzani.jtoon.TestPojos.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * JUnit 5 test class for JToon encoder, converted from TypeScript vitest tests.
  */
+@Tag("unit")
 public class JToonTest {
 
     // Helper to create a LinkedHashMap for objects, preserving insertion order
@@ -990,6 +993,202 @@ public class JToonTest {
         void defaultIsFalse() {
             Map<String, Object> obj = obj("tags", list("reading", "gaming", "coding"));
             assertEquals("tags[3]: reading,gaming,coding", encode(obj));
+        }
+    }
+
+    @Nested
+    @DisplayName("POJOs (Plain Old Java Objects)")
+    class Pojos {
+
+        @Nested
+        @DisplayName("simple POJOs")
+        class SimplePOJOs {
+
+            @Test
+            @DisplayName("encodes simple POJO with basic fields")
+            void encodesSimplePOJO() {
+                Person person = new Person("Ada", 30, true);
+                assertEquals("name: Ada\nage: 30\nactive: true", encode(person));
+            }
+
+            @Test
+            @DisplayName("encodes POJO with multiple field types")
+            void encodesMultipleFieldTypes() {
+                Product product = new Product(101, "Laptop", 999.99, true);
+                assertEquals("id: 101\nname: Laptop\nprice: 999.99\ninStock: true", encode(product));
+            }
+
+            @Test
+            @DisplayName("encodes POJO with null values")
+            void encodesNullValues() {
+                NullableData data = new NullableData("hello", null, null);
+                assertEquals("text: hello\ncount: null\nflag: null", encode(data));
+            }
+
+            @Test
+            @DisplayName("encodes POJO with all null values")
+            void encodesAllNulls() {
+                NullableData data = new NullableData(null, null, null);
+                assertEquals("text: null\ncount: null\nflag: null", encode(data));
+            }
+
+            @Test
+            @DisplayName("encodes POJO in object context")
+            void encodesPOJOInObject() {
+                Person person = new Person("Bob", 25, false);
+                Map<String, Object> obj = obj("user", person);
+                assertEquals("user:\n  name: Bob\n  age: 25\n  active: false", encode(obj));
+            }
+        }
+
+        @Nested
+        @DisplayName("nested POJOs and collections")
+        class NestedAndCollections {
+
+            @Test
+            @DisplayName("encodes POJO with nested POJO")
+            void encodesNestedPOJO() {
+                Address address = new Address("123 Main St", "Springfield", "12345");
+                Employee employee = new Employee("Alice", 1001, address);
+                assertEquals(
+                        """
+                                name: Alice
+                                id: 1001
+                                address:
+                                  street: 123 Main St
+                                  city: Springfield
+                                  zipCode: "12345\"""",
+                        encode(employee));
+            }
+
+            @Test
+            @DisplayName("encodes deeply nested POJOs")
+            void encodesDeeplyNested() {
+                Address address = new Address("456 Oak Ave", "Metropolis", "54321");
+                Employee manager = new Employee("Carol", 2001, address);
+                Company company = new Company("TechCorp", manager);
+                assertEquals(
+                        """
+                                name: TechCorp
+                                manager:
+                                  name: Carol
+                                  id: 2001
+                                  address:
+                                    street: 456 Oak Ave
+                                    city: Metropolis
+                                    zipCode: "54321\"""",
+                        encode(company));
+            }
+
+            @Test
+            @DisplayName("encodes POJO with list of primitives")
+            void encodesListOfPrimitives() {
+                Skills skills = new Skills("Developer", List.of("Java", "Python", "JavaScript"));
+                assertEquals("owner: Developer\nskillList[3]: Java,Python,JavaScript", encode(skills));
+            }
+
+            @Test
+            @DisplayName("encodes POJO with list of POJOs in tabular format")
+            void encodesListOfPOJOs() {
+                Person person1 = new Person("Alice", 30, true);
+                Person person2 = new Person("Bob", 25, false);
+                Team team = new Team("DevTeam", List.of(person1, person2));
+                assertEquals(
+                        """
+                                name: DevTeam
+                                members[2]{name,age,active}:
+                                  Alice,30,true
+                                  Bob,25,false""",
+                        encode(team));
+            }
+
+            @Test
+            @DisplayName("encodes POJO with Map fields")
+            void encodesMapFields() {
+                Map<String, Object> settings = Map.of("debug", true, "timeout", 30, "mode", "production");
+                Configuration config = new Configuration("AppConfig", settings);
+                String result = encode(config);
+                assertTrue(result.startsWith("name: AppConfig\nsettings:"));
+                assertTrue(result.contains("debug: true"));
+                assertTrue(result.contains("timeout: 30"));
+                assertTrue(result.contains("mode: production"));
+            }
+
+            @Test
+            @DisplayName("encodes POJO with empty collections")
+            void encodesEmptyCollections() {
+                EmptyCollections empty = new EmptyCollections(List.of(), Map.of());
+                assertEquals("emptyList[0]:\nemptyMap:", encode(empty));
+            }
+
+            @Test
+            @DisplayName("encodes POJO with multiple collection fields")
+            void encodesMultipleCollections() {
+                MultiCollection multi = new MultiCollection(
+                        List.of(1, 2, 3),
+                        List.of("a", "b"),
+                        Map.of("x", 10, "y", 20));
+                String result = encode(multi);
+                assertTrue(result.contains("numbers[3]: 1,2,3"));
+                assertTrue(result.contains("tags[2]: a,b"));
+                assertTrue(result.contains("counts:"));
+            }
+        }
+
+        @Nested
+        @DisplayName("POJOs with Jackson annotations")
+        class JacksonAnnotations {
+
+            @Test
+            @DisplayName("encodes POJO with @JsonProperty annotation")
+            void encodesJsonProperty() {
+                AnnotatedProduct product = new AnnotatedProduct(501, "Mouse", 29.99);
+                assertEquals("product_id: 501\nproduct_name: Mouse\nprice: 29.99", encode(product));
+            }
+
+            @Test
+            @DisplayName("encodes POJO with @JsonIgnore annotation")
+            void encodesJsonIgnore() {
+                SecureData data = new SecureData("public info", "secret", 1);
+                assertEquals("publicField: public info\nversion: 1", encode(data));
+            }
+
+            @Test
+            @DisplayName("encodes POJO with multiple annotations")
+            void encodesMultipleAnnotations() {
+                ComplexAnnotated obj = new ComplexAnnotated(123, "Test", "internal data", true);
+                assertEquals("user_id: 123\nname: Test\nis_active: true", encode(obj));
+            }
+
+            @Test
+            @DisplayName("encodes nested POJO with annotations")
+            void encodesNestedWithAnnotations() {
+                Address address = new Address("789 Pine Rd", "Gotham", "99999");
+                AnnotatedEmployee employee = new AnnotatedEmployee(3001, "Diana", address, "123-45-6789");
+                assertEquals(
+                        """
+                                emp_id: 3001
+                                full_name: Diana
+                                address:
+                                  street: 789 Pine Rd
+                                  city: Gotham
+                                  zipCode: "99999\"""",
+                        encode(employee));
+            }
+
+            @Test
+            @DisplayName("encodes list of annotated POJOs in tabular format")
+            void encodesListOfAnnotatedPOJOs() {
+                AnnotatedProduct p1 = new AnnotatedProduct(101, "Keyboard", 79.99);
+                AnnotatedProduct p2 = new AnnotatedProduct(102, "Monitor", 299.99);
+                Map<String, Object> obj = obj("products", List.of(p1, p2));
+                assertEquals(
+                        """
+                                products[2]{product_id,product_name,price}:
+                                  101,Keyboard,79.99
+                                  102,Monitor,299.99""",
+                        encode(obj));
+            }
         }
     }
 }
