@@ -13,7 +13,6 @@ public final class Constants {
     public static final String COMMA = ",";
     public static final String COLON = ":";
     public static final String SPACE = " ";
-    public static final String PIPE = "|";
 
     // Brackets and braces
     public static final String OPEN_BRACKET = "[";
@@ -29,9 +28,6 @@ public final class Constants {
     // Escape characters
     public static final char BACKSLASH = '\\';
     public static final char DOUBLE_QUOTE = '"';
-    public static final char NEWLINE = '\n';
-    public static final char CARRIAGE_RETURN = '\r';
-    public static final char TAB = '\t';
 
     private Constants() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
