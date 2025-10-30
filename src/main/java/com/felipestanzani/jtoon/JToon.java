@@ -1,6 +1,8 @@
 package com.felipestanzani.jtoon;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.felipestanzani.jtoon.encoder.ValueEncoder;
+import com.felipestanzani.jtoon.normalizer.JsonNormalizer;
 
 /**
  * Main API for encoding Java objects and JSON to JToon format.
@@ -61,34 +63,5 @@ public final class JToon {
     public static String encode(Object input, EncodeOptions options) {
         JsonNode normalizedValue = JsonNormalizer.normalize(input);
         return ValueEncoder.encodeValue(normalizedValue, options);
-    }
-
-    /**
-     * Encodes a pre-parsed JsonNode to JToon format using default options.
-     * 
-     * <p>
-     * This method skips the normalization step and directly encodes the JsonNode.
-     * </p>
-     * 
-     * @param input The JsonNode to encode
-     * @return The JToon-formatted string
-     */
-    public static String encode(JsonNode input) {
-        return encode(input, EncodeOptions.DEFAULT);
-    }
-
-    /**
-     * Encodes a pre-parsed JsonNode to JToon format using custom options.
-     * 
-     * <p>
-     * This method skips the normalization step and directly encodes the JsonNode.
-     * </p>
-     * 
-     * @param input   The JsonNode to encode
-     * @param options Encoding options (indent, delimiter, length marker)
-     * @return The JToon-formatted string
-     */
-    public static String encode(JsonNode input, EncodeOptions options) {
-        return ValueEncoder.encodeValue(input, options);
     }
 }

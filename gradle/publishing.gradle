@@ -1,0 +1,161 @@
+// Maven Publishing Configuration
+// This file contains all publishing-related configuration for Maven Central
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'jtoon'
+            from components.java
+            
+            pom {
+                name = 'JToon'
+                description = project.description
+                url = 'https://github.com/felipestanzani/JToon'
+                
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://github.com/felipestanzani/JToon/blob/main/LICENSE.md'
+                    }
+                }
+                
+                developers {
+                    developer {
+                        id = 'felipestanzani'
+                        name = 'Felipe Cesar Stanzani Fonseca'
+                        email = 'stanzani@gmail.com'
+                    }
+                }
+                
+                scm {
+                    connection = 'scm:git:git://github.com/felipestanzani/JToon.git'
+                    developerConnection = 'scm:git:ssh://github.com:felipestanzani/JToon.git'
+                    url = 'https://github.com/felipestanzani/JToon'
+                }
+            }
+        }
+    }
+    
+    repositories {
+        maven {
+            name = 'LocalRepo'
+            url = layout.buildDirectory.dir('maven-repo')
+        }
+    }
+}
+
+signing {
+    def signingKey = project.findProperty('signingKey') ?: System.getenv('GPG_PRIVATE_KEY')
+    def signingPassword = project.findProperty('signingPassword') ?: System.getenv('GPG_PASSPHRASE')
+    
+    if (signingKey && signingPassword) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+        sign publishing.publications.mavenJava
+    }
+}
+
+// Task to create a bundle for Maven Central Portal
+tasks.register('createCentralBundle', Zip) {
+    dependsOn 'publishMavenJavaPublicationToLocalRepoRepository'
+    from layout.buildDirectory.dir('maven-repo')
+    archiveFileName = "central-bundle.zip"
+    destinationDirectory = layout.buildDirectory.dir('distributions')
+}
+
+// Task to upload bundle to Maven Central Portal
+tasks.register('publishToMavenCentral') {
+    dependsOn 'createCentralBundle'
+    
+    doLast {
+        def token = (project.findProperty('mavenCentralToken') ?: System.getenv('MAVEN_CENTRAL_TOKEN'))?.trim()
+        
+        if (!token) {
+            throw new GradleException('Maven Central token not found. Set MAVEN_CENTRAL_TOKEN environment variable or -PmavenCentralToken property.')
+        }
+    
+        def bundleFile = layout.buildDirectory.file('distributions/central-bundle.zip').get().asFile
+        
+        if (!bundleFile.exists()) {
+            throw new GradleException("Bundle file not found: ${bundleFile.absolutePath}")
+        }
+        
+        def uploadUrl = 'https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC'
+        
+        println "Uploading bundle to Maven Central Portal..."
+        println "Bundle file: ${bundleFile.absolutePath} (${bundleFile.length()} bytes)"
+        println "Token length: ${token.length()} characters"
+        println "Token starts with: ${token.take(15)}..."
+        println "Token ends with: ...${token.takeRight(15)}"
+        
+        // Create a temporary file to capture the response
+        def responseFile = File.createTempFile("maven-central-response", ".json")
+        responseFile.deleteOnExit()
+        
+        // Build the authorization header separately to avoid interpolation issues
+        def authHeader = "Authorization: Bearer ${token}"
+        
+        println "Running curl command..."
+        
+        def process = [
+            'curl', '-X', 'POST',
+            '--fail-with-body',
+            '-s', // silent mode to suppress progress
+            '-w', '\nHTTP_CODE:%{http_code}',
+            '-o', responseFile.absolutePath,
+            '-H', authHeader,
+            '-F', "bundle=@${bundleFile.absolutePath}",
+            uploadUrl
+        ].execute()
+        
+        def output = new StringBuilder()
+        def error = new StringBuilder()
+        process.waitForProcessOutput(output, error)
+        def exitCode = process.exitValue()
+        
+        println "Curl exit code: ${exitCode}"
+        println "Curl stdout: ${output.toString()}"
+        println "Curl stderr: ${error.toString()}"
+        
+        // Read the response
+        def response = responseFile.exists() ? responseFile.text : ""
+        println "Response file exists: ${responseFile.exists()}"
+        println "Response file size: ${responseFile.exists() ? responseFile.length() : 0} bytes"
+        println "Response content: '${response}'"
+        
+        // Extract HTTP code
+        def httpCode = "UNKNOWN"
+        def outputStr = output.toString()
+        if (outputStr.contains('HTTP_CODE:')) {
+            httpCode = outputStr.split('HTTP_CODE:')[1].trim()
+        }
+        
+        println "Extracted HTTP Status: ${httpCode}"
+        
+        // Check for errors - be explicit about what we're checking
+        def hasError = response.contains('"error"') || response.contains('error')
+        def isSuccessCode = httpCode == '201' || httpCode == '200'
+        
+        println "Response contains 'error': ${hasError}"
+        println "HTTP code is success (200/201): ${isSuccessCode}"
+        
+        if (exitCode != 0 || hasError || !isSuccessCode) {
+            def errorMsg = "\n" + "="*80 + "\n"
+            errorMsg += "❌ UPLOAD FAILED\n"
+            errorMsg += "="*80 + "\n"
+            errorMsg += "Exit code: ${exitCode}\n"
+            errorMsg += "HTTP Status: ${httpCode}\n"
+            errorMsg += "Response: ${response}\n"
+            if (error.length() > 0) {
+                errorMsg += "Curl stderr: ${error.toString()}\n"
+            }
+            errorMsg += "="*80 + "\n"
+            throw new GradleException(errorMsg)
+        }
+        
+        println "="*80
+        println "✅ Bundle uploaded successfully!"
+        println "="*80
+        println "Deployment ID: ${response}"
+    }
+}
+
