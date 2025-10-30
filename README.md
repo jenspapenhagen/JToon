@@ -189,7 +189,11 @@ Number normalization examples:
 
 ### `JToon.encode(Object value, EncodeOptions options): String`
 
-Converts any Java object to TOON format.
+### `JToon.encodeJson(String json): String`
+
+### `JToon.encodeJson(String json, EncodeOptions options): String`
+
+Converts any Java object or JSON-string to TOON format.
 
 **Parameters:**
 
@@ -198,6 +202,10 @@ Converts any Java object to TOON format.
   - `indent` – Number of spaces per indentation level (default: `2`)
   - `delimiter` – Delimiter enum for array values and tabular rows: `Delimiter.COMMA` (default), `Delimiter.TAB`, or `Delimiter.PIPE`
   - `lengthMarker` – Boolean to prefix array lengths with `#` (default: `false`)
+
+For `encodeJson` overloads:
+
+- `json` – A valid JSON string to be parsed and encoded. Invalid or blank JSON throws `IllegalArgumentException`.
 
 **Returns:**
 
@@ -225,6 +233,30 @@ System.out.println(JToon.encode(data));
 items[2]{sku,qty,price}:
   A1,2,9.99
   B2,1,14.5
+```
+
+#### Encode a plain JSON string
+
+```java
+String json = """
+{
+  "user": {
+    "id": 123,
+    "name": "Ada",
+    "tags": ["reading", "gaming"]
+  }
+}
+""";
+System.out.println(JToon.encodeJson(json));
+```
+
+Output:
+
+```
+user:
+  id: 123
+  name: Ada
+  tags[2]: reading,gaming
 ```
 
 #### Delimiter Options
@@ -319,6 +351,7 @@ System.out.println(JToon.encode(data, new EncodeOptions(2, Delimiter.PIPE, true)
 ## See Also
 
 - **[TOON Format Specification](TOON-SPECIFICATION.md)** – Complete format rules, benchmarks, and examples
+- **[Changelog](CHANGELOG.md)** – Version history and notable changes
 
 ## Implementations in Other Languages
 

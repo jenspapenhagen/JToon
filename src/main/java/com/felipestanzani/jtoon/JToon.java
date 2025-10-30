@@ -25,6 +25,9 @@ import com.felipestanzani.jtoon.normalizer.JsonNormalizer;
  * // Encode pre-parsed JSON
  * JsonNode json = objectMapper.readTree(jsonString);
  * String result = JToon.encode(json);
+ * 
+ * // Encode a plain JSON string directly
+ * String result = JToon.encodeJson("{\"id\":123,\"name\":\"Ada\"}");
  * }</pre>
  */
 public final class JToon {
@@ -63,5 +66,41 @@ public final class JToon {
     public static String encode(Object input, EncodeOptions options) {
         JsonNode normalizedValue = JsonNormalizer.normalize(input);
         return ValueEncoder.encodeValue(normalizedValue, options);
+    }
+
+    /**
+     * Encodes a plain JSON string to TOON format using default options.
+     *
+     * <p>
+     * This is a convenience overload that parses the JSON string and encodes it
+     * without requiring callers to create a {@code JsonNode} or intermediate
+     * objects.
+     * </p>
+     *
+     * @param json The JSON string to encode (must be valid JSON)
+     * @return The TOON-formatted string
+     * @throws IllegalArgumentException if the input is not valid JSON
+     */
+    public static String encodeJson(String json) {
+        return encodeJson(json, EncodeOptions.DEFAULT);
+    }
+
+    /**
+     * Encodes a plain JSON string to TOON format using custom options.
+     *
+     * <p>
+     * Parsing is delegated to
+     * {@link com.felipestanzani.jtoon.normalizer.JsonNormalizer#parse(String)}
+     * to maintain separation of concerns.
+     * </p>
+     *
+     * @param json    The JSON string to encode (must be valid JSON)
+     * @param options Encoding options (indent, delimiter, length marker)
+     * @return The TOON-formatted string
+     * @throws IllegalArgumentException if the input is not valid JSON
+     */
+    public static String encodeJson(String json, EncodeOptions options) {
+        JsonNode parsed = JsonNormalizer.parse(json);
+        return ValueEncoder.encodeValue(parsed, options);
     }
 }

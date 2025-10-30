@@ -31,6 +31,29 @@ public final class JsonNormalizer {
     }
 
     /**
+     * Parses a JSON string into a JsonNode using the shared ObjectMapper.
+     * <p>
+     * This centralizes JSON parsing concerns to keep the public API thin and
+     * maintain separation of responsibilities between parsing, normalization,
+     * and encoding.
+     * </p>
+     *
+     * @param json The JSON string to parse (must be non-blank)
+     * @return Parsed JsonNode
+     * @throws IllegalArgumentException if the input is blank or not valid JSON
+     */
+    public static JsonNode parse(String json) {
+        if (json == null || json.trim().isEmpty()) {
+            throw new IllegalArgumentException("Invalid JSON");
+        }
+        try {
+            return MAPPER.readTree(json);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid JSON", e);
+        }
+    }
+
+    /**
      * Normalizes any Java object to a JsonNode.
      * 
      * @param value The value to normalize
