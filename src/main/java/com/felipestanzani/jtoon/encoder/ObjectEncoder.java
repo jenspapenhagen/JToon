@@ -1,13 +1,15 @@
 package com.felipestanzani.jtoon.encoder;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import com.felipestanzani.jtoon.EncodeOptions;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
-import java.util.Iterator;
+import java.util.Collection;
 
-import static com.felipestanzani.jtoon.util.Constants.*;
+import static com.felipestanzani.jtoon.util.Constants.COLON;
+import static com.felipestanzani.jtoon.util.Constants.SPACE;
 
 /**
  * Handles encoding of JSON objects to TOON format.
@@ -28,12 +30,11 @@ public final class ObjectEncoder {
      * @param options Encoding options
      */
     public static void encodeObject(ObjectNode value, LineWriter writer, int depth, EncodeOptions options) {
-        Iterator<String> fieldNames = value.fieldNames();
+        Collection<String> fieldNames = value.propertyNames();
 
-        while (fieldNames.hasNext()) {
-            String key = fieldNames.next();
-            JsonNode fieldValue = value.get(key);
-            encodeKeyValuePair(key, fieldValue, writer, depth, options);
+        for (String fildName : fieldNames) {
+            JsonNode fieldValue = value.get(fildName);
+            encodeKeyValuePair(fildName, fieldValue, writer, depth, options);
         }
     }
 
@@ -41,7 +42,7 @@ public final class ObjectEncoder {
      * Encodes a key-value pair in an object.
      */
     public static void encodeKeyValuePair(String key, JsonNode value, LineWriter writer, int depth,
-            EncodeOptions options) {
+                                          EncodeOptions options) {
         String encodedKey = PrimitiveEncoder.encodeKey(key);
 
         if (value.isValueNode()) {

@@ -1,8 +1,10 @@
 package com.felipestanzani.jtoon.encoder;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+
 import com.felipestanzani.jtoon.EncodeOptions;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -183,7 +185,7 @@ public final class ArrayEncoder {
                 }
             } else if (item.isObject()) {
                 // Object as list item - delegate to ListItemEncoder
-                ListItemEncoder.encodeObjectAsListItem((com.fasterxml.jackson.databind.node.ObjectNode) item, writer,
+                ListItemEncoder.encodeObjectAsListItem((ObjectNode) item, writer,
                         depth + 1, options);
             }
         }

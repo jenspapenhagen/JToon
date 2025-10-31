@@ -1,9 +1,9 @@
 package com.felipestanzani.jtoon.encoder;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.felipestanzani.jtoon.EncodeOptions;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Core encoding orchestrator for converting JsonNode values to TOON format.
