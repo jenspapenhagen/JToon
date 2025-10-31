@@ -75,6 +75,7 @@ public final class ArrayEncoder {
 
     /**
      * Checks if an array contains only primitive values.
+     * @param array for testing that all items are primitives
      */
     public static boolean isArrayOfPrimitives(JsonNode array) {
         if (!array.isArray()) {
