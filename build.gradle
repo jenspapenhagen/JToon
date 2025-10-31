@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.felipestanzani'
-version = findProperty('version') ?: '0.1.1'
+version = providers.gradleProperty('version').getOrElse('0.1.1')
 description = 'Token-Oriented Object Notation (TOON) - A compact, human-readable format for LLM contexts'
 
 // Apply external Gradle scripts
