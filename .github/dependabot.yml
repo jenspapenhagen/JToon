@@ -9,7 +9,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-      rebase-strategy: "disabled"
     open-pull-requests-limit: 10
     groups:
       tests:
@@ -20,4 +19,3 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-      rebase-strategy: "disabled"
