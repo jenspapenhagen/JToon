@@ -1,12 +1,19 @@
 package com.felipestanzani.jtoon;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.*;
 import com.felipestanzani.jtoon.encoder.PrimitiveEncoder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.DecimalNode;
+import tools.jackson.databind.node.DoubleNode;
+import tools.jackson.databind.node.FloatNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.LongNode;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.StringNode;
 
 import java.util.List;
 
@@ -99,49 +106,49 @@ public class PrimitiveEncoderTest {
         @Test
         @DisplayName("should encode simple string unquoted")
         void testSimpleString() {
-            String result = PrimitiveEncoder.encodePrimitive(TextNode.valueOf("hello"), ",");
+            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("hello"), ",");
             assertEquals("hello", result);
         }
 
         @Test
         @DisplayName("should quote string with comma when using comma delimiter")
         void testStringWithComma() {
-            String result = PrimitiveEncoder.encodePrimitive(TextNode.valueOf("a,b"), ",");
+            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("a,b"), ",");
             assertEquals("\"a,b\"", result);
         }
 
         @Test
         @DisplayName("should not quote string with comma when using pipe delimiter")
         void testStringWithCommaUsingPipe() {
-            String result = PrimitiveEncoder.encodePrimitive(TextNode.valueOf("a,b"), "|");
+            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("a,b"), "|");
             assertEquals("a,b", result);
         }
 
         @Test
         @DisplayName("should quote empty string")
         void testEmptyString() {
-            String result = PrimitiveEncoder.encodePrimitive(TextNode.valueOf(""), ",");
+            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf(""), ",");
             assertEquals("\"\"", result);
         }
 
         @Test
         @DisplayName("should quote string that looks like boolean")
         void testBooleanLikeString() {
-            String result = PrimitiveEncoder.encodePrimitive(TextNode.valueOf("true"), ",");
+            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("true"), ",");
             assertEquals("\"true\"", result);
         }
 
         @Test
         @DisplayName("should quote string that looks like null")
         void testNullLikeString() {
-            String result = PrimitiveEncoder.encodePrimitive(TextNode.valueOf("null"), ",");
+            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("null"), ",");
             assertEquals("\"null\"", result);
         }
 
         @Test
         @DisplayName("should quote string that looks like number")
         void testNumberLikeString() {
-            String result = PrimitiveEncoder.encodePrimitive(TextNode.valueOf("123"), ",");
+            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("123"), ",");
             assertEquals("\"123\"", result);
         }
     }
@@ -282,7 +289,7 @@ public class PrimitiveEncoderTest {
         void testJoinWithComma() {
             List<JsonNode> values = List.of(
                     IntNode.valueOf(1),
-                    TextNode.valueOf("hello"),
+                    StringNode.valueOf("hello"),
                     BooleanNode.TRUE);
             String result = PrimitiveEncoder.joinEncodedValues(values, ",");
             assertEquals("1,hello,true", result);
@@ -293,7 +300,7 @@ public class PrimitiveEncoderTest {
         void testJoinWithPipe() {
             List<JsonNode> values = List.of(
                     IntNode.valueOf(1),
-                    TextNode.valueOf("test"),
+                    StringNode.valueOf("test"),
                     IntNode.valueOf(2));
             String result = PrimitiveEncoder.joinEncodedValues(values, "|");
             assertEquals("1|test|2", result);
@@ -303,9 +310,9 @@ public class PrimitiveEncoderTest {
         @DisplayName("should join values with tab delimiter")
         void testJoinWithTab() {
             List<JsonNode> values = List.of(
-                    TextNode.valueOf("a"),
-                    TextNode.valueOf("b"),
-                    TextNode.valueOf("c"));
+                    StringNode.valueOf("a"),
+                    StringNode.valueOf("b"),
+                    StringNode.valueOf("c"));
             String result = PrimitiveEncoder.joinEncodedValues(values, "\t");
             assertEquals("a\tb\tc", result);
         }
@@ -330,8 +337,8 @@ public class PrimitiveEncoderTest {
         @DisplayName("should quote values containing delimiter")
         void testQuoteDelimiter() {
             List<JsonNode> values = List.of(
-                    TextNode.valueOf("a,b"),
-                    TextNode.valueOf("c,d"));
+                    StringNode.valueOf("a,b"),
+                    StringNode.valueOf("c,d"));
             String result = PrimitiveEncoder.joinEncodedValues(values, ",");
             assertEquals("\"a,b\",\"c,d\"", result);
         }
@@ -397,21 +404,21 @@ public class PrimitiveEncoderTest {
         @Test
         @DisplayName("should handle Unicode in string encoding")
         void testUnicode() {
-            String result = PrimitiveEncoder.encodePrimitive(TextNode.valueOf("Hello 世界"), ",");
+            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("Hello 世界"), ",");
             assertEquals("Hello 世界", result);
         }
 
         @Test
         @DisplayName("should handle emoji in string encoding")
         void testEmoji() {
-            String result = PrimitiveEncoder.encodePrimitive(TextNode.valueOf("Hello 🌍"), ",");
+            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("Hello 🌍"), ",");
             assertEquals("Hello 🌍", result);
         }
 
         @Test
         @DisplayName("should handle complex escaped string")
         void testComplexEscaping() {
-            String result = PrimitiveEncoder.encodePrimitive(TextNode.valueOf("line1\nline2\ttab"), ",");
+            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("line1\nline2\ttab"), ",");
             assertEquals("\"line1\\nline2\\ttab\"", result);
         }
 
@@ -420,7 +427,7 @@ public class PrimitiveEncoderTest {
         void testMixedTypes() {
             List<JsonNode> values = List.of(
                     IntNode.valueOf(123),
-                    TextNode.valueOf("text"),
+                    StringNode.valueOf("text"),
                     BooleanNode.FALSE,
                     NullNode.getInstance(),
                     DoubleNode.valueOf(3.14));

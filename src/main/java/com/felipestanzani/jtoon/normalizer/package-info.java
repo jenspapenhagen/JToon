@@ -98,8 +98,8 @@
  * </p>
  * 
  * @since 0.1.0
- * @see com.fasterxml.jackson.databind.JsonNode
- * @see com.fasterxml.jackson.databind.ObjectMapper
+ * @see tools.jackson.databind.JsonNode
+ * @see tools.jackson.databind.ObjectMapper
  */
 package com.felipestanzani.jtoon.normalizer;
 

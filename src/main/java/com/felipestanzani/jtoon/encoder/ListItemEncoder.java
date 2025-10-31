@@ -1,9 +1,9 @@
 package com.felipestanzani.jtoon.encoder;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.felipestanzani.jtoon.EncodeOptions;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,8 +31,7 @@ public final class ListItemEncoder {
      * @param options Encoding options
      */
     public static void encodeObjectAsListItem(ObjectNode obj, LineWriter writer, int depth, EncodeOptions options) {
-        List<String> keys = new ArrayList<>();
-        obj.fieldNames().forEachRemaining(keys::add);
+        List<String> keys = new ArrayList<>(obj.propertyNames());
 
         if (keys.isEmpty()) {
             writer.push(depth, LIST_ITEM_MARKER);

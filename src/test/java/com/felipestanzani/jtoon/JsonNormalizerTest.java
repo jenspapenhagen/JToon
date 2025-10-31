@@ -1,17 +1,39 @@
 package com.felipestanzani.jtoon;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.*;
 import com.felipestanzani.jtoon.normalizer.JsonNormalizer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.DecimalNode;
+import tools.jackson.databind.node.DoubleNode;
+import tools.jackson.databind.node.FloatNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.LongNode;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.ShortNode;
+import tools.jackson.databind.node.StringNode;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.*;
-import java.util.*;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,7 +59,7 @@ public class JsonNormalizerTest {
         @Test
         @DisplayName("should pass through JsonNode unchanged")
         void testJsonNodePassthrough() {
-            JsonNode textNode = TextNode.valueOf("test");
+            JsonNode textNode = StringNode.valueOf("test");
             JsonNode result = JsonNormalizer.normalize(textNode);
             assertSame(textNode, result);
 
@@ -56,20 +78,20 @@ public class JsonNormalizerTest {
     class PrimitiveTypes {
 
         @Test
-        @DisplayName("should normalize String to TextNode")
+        @DisplayName("should normalize String to StringNode")
         void testString() {
             JsonNode result = JsonNormalizer.normalize("hello");
-            assertTrue(result.isTextual());
-            assertEquals("hello", result.asText());
-            assertInstanceOf(TextNode.class, result);
+            assertTrue(result.isString());
+            assertEquals("hello", result.asString());
+            assertInstanceOf(StringNode.class, result);
         }
 
         @Test
-        @DisplayName("should normalize empty String to TextNode")
+        @DisplayName("should normalize empty String to StringNode")
         void testEmptyString() {
             JsonNode result = JsonNormalizer.normalize("");
-            assertTrue(result.isTextual());
-            assertEquals("", result.asText());
+            assertTrue(result.isString());
+            assertEquals("", result.asString());
         }
 
         @Test
@@ -259,13 +281,13 @@ public class JsonNormalizerTest {
         }
 
         @Test
-        @DisplayName("should convert BigInteger outside Long range to TextNode")
+        @DisplayName("should convert BigInteger outside Long range to StringNode")
         void testBigIntegerOutOfRange() {
             BigInteger bigInt = new BigInteger("99999999999999999999999999999999");
             JsonNode result = JsonNormalizer.normalize(bigInt);
-            assertTrue(result.isTextual());
-            assertEquals("99999999999999999999999999999999", result.asText());
-            assertInstanceOf(TextNode.class, result);
+            assertTrue(result.isString());
+            assertEquals("99999999999999999999999999999999", result.asString());
+            assertInstanceOf(StringNode.class, result);
         }
 
         @Test
@@ -293,66 +315,66 @@ public class JsonNormalizerTest {
     class TemporalTypes {
 
         @Test
-        @DisplayName("should convert LocalDateTime to ISO formatted TextNode")
+        @DisplayName("should convert LocalDateTime to ISO formatted StringNode")
         void testLocalDateTime() {
             LocalDateTime dateTime = LocalDateTime.of(2023, 10, 15, 14, 30, 45);
             JsonNode result = JsonNormalizer.normalize(dateTime);
-            assertTrue(result.isTextual());
-            assertEquals("2023-10-15T14:30:45", result.asText());
+            assertTrue(result.isString());
+            assertEquals("2023-10-15T14:30:45", result.asString());
         }
 
         @Test
-        @DisplayName("should convert LocalDate to ISO formatted TextNode")
+        @DisplayName("should convert LocalDate to ISO formatted StringNode")
         void testLocalDate() {
             LocalDate date = LocalDate.of(2023, 10, 15);
             JsonNode result = JsonNormalizer.normalize(date);
-            assertTrue(result.isTextual());
-            assertEquals("2023-10-15", result.asText());
+            assertTrue(result.isString());
+            assertEquals("2023-10-15", result.asString());
         }
 
         @Test
-        @DisplayName("should convert LocalTime to ISO formatted TextNode")
+        @DisplayName("should convert LocalTime to ISO formatted StringNode")
         void testLocalTime() {
             LocalTime time = LocalTime.of(14, 30, 45);
             JsonNode result = JsonNormalizer.normalize(time);
-            assertTrue(result.isTextual());
-            assertEquals("14:30:45", result.asText());
+            assertTrue(result.isString());
+            assertEquals("14:30:45", result.asString());
         }
 
         @Test
-        @DisplayName("should convert ZonedDateTime to ISO formatted TextNode")
+        @DisplayName("should convert ZonedDateTime to ISO formatted StringNode")
         void testZonedDateTime() {
             ZonedDateTime zonedDateTime = ZonedDateTime.of(2023, 10, 15, 14, 30, 45, 0, ZoneId.of("UTC"));
             JsonNode result = JsonNormalizer.normalize(zonedDateTime);
-            assertTrue(result.isTextual());
-            assertTrue(result.asText().startsWith("2023-10-15T14:30:45"));
+            assertTrue(result.isString());
+            assertTrue(result.asString().startsWith("2023-10-15T14:30:45"));
         }
 
         @Test
-        @DisplayName("should convert OffsetDateTime to ISO formatted TextNode")
+        @DisplayName("should convert OffsetDateTime to ISO formatted StringNode")
         void testOffsetDateTime() {
             OffsetDateTime offsetDateTime = OffsetDateTime.of(2023, 10, 15, 14, 30, 45, 0, ZoneOffset.UTC);
             JsonNode result = JsonNormalizer.normalize(offsetDateTime);
-            assertTrue(result.isTextual());
-            assertEquals("2023-10-15T14:30:45Z", result.asText());
+            assertTrue(result.isString());
+            assertEquals("2023-10-15T14:30:45Z", result.asString());
         }
 
         @Test
-        @DisplayName("should convert Instant to ISO formatted TextNode")
+        @DisplayName("should convert Instant to ISO formatted StringNode")
         void testInstant() {
             Instant instant = Instant.parse("2023-10-15T14:30:45.123Z");
             JsonNode result = JsonNormalizer.normalize(instant);
-            assertTrue(result.isTextual());
-            assertEquals("2023-10-15T14:30:45.123Z", result.asText());
+            assertTrue(result.isString());
+            assertEquals("2023-10-15T14:30:45.123Z", result.asString());
         }
 
         @Test
-        @DisplayName("should convert java.util.Date to ISO formatted TextNode")
+        @DisplayName("should convert java.util.Date to ISO formatted StringNode")
         void testUtilDate() {
             Date date = Date.from(Instant.parse("2023-10-15T14:30:45.123Z"));
             JsonNode result = JsonNormalizer.normalize(date);
-            assertTrue(result.isTextual());
-            assertEquals("2023-10-15T14:30:45.123Z", result.asText());
+            assertTrue(result.isString());
+            assertEquals("2023-10-15T14:30:45.123Z", result.asString());
         }
     }
 
@@ -370,7 +392,7 @@ public class JsonNormalizerTest {
             assertEquals(1, result.get(0).asInt());
             assertEquals(2, result.get(1).asInt());
             assertEquals(3, result.get(2).asInt());
-            assertEquals("four", result.get(3).asText());
+            assertEquals("four", result.get(3).asString());
         }
 
         @Test
@@ -398,11 +420,11 @@ public class JsonNormalizerTest {
             map.put("name", "John");
             map.put("age", 30);
             map.put("active", true);
-            
+
             JsonNode result = JsonNormalizer.normalize(map);
             assertTrue(result.isObject());
             assertEquals(3, result.size());
-            assertEquals("John", result.get("name").asText());
+            assertEquals("John", result.get("name").asString());
             assertEquals(30, result.get("age").asInt());
             assertTrue(result.get("active").asBoolean());
         }
@@ -422,13 +444,13 @@ public class JsonNormalizerTest {
             Map<String, Object> map = new LinkedHashMap<>();
             map.put("numbers", List.of(1, 2, 3));
             map.put("nested", Map.of("key", "value"));
-            
+
             JsonNode result = JsonNormalizer.normalize(map);
             assertTrue(result.isObject());
             assertTrue(result.get("numbers").isArray());
             assertEquals(3, result.get("numbers").size());
             assertTrue(result.get("nested").isObject());
-            assertEquals("value", result.get("nested").get("key").asText());
+            assertEquals("value", result.get("nested").get("key").asString());
         }
 
         @Test
@@ -437,11 +459,11 @@ public class JsonNormalizerTest {
             Map<Integer, String> map = new HashMap<>();
             map.put(1, "one");
             map.put(2, "two");
-            
+
             JsonNode result = JsonNormalizer.normalize(map);
             assertTrue(result.isObject());
-            assertEquals("one", result.get("1").asText());
-            assertEquals("two", result.get("2").asText());
+            assertEquals("one", result.get("1").asString());
+            assertEquals("two", result.get("2").asString());
         }
 
         @Test
@@ -566,9 +588,9 @@ public class JsonNormalizerTest {
             JsonNode result = JsonNormalizer.normalize(array);
             assertTrue(result.isArray());
             assertEquals(3, result.size());
-            assertEquals("a", result.get(0).asText());
-            assertEquals("b", result.get(1).asText());
-            assertEquals("c", result.get(2).asText());
+            assertEquals("a", result.get(0).asString());
+            assertEquals("b", result.get(1).asString());
+            assertEquals("c", result.get(2).asString());
         }
 
         @Test
@@ -579,7 +601,7 @@ public class JsonNormalizerTest {
             assertTrue(result.isArray());
             assertEquals(4, result.size());
             assertEquals(1, result.get(0).asInt());
-            assertEquals("two", result.get(1).asText());
+            assertEquals("two", result.get(1).asString());
             assertTrue(result.get(2).asBoolean());
             assertEquals(3.14, result.get(3).asDouble(), 0.001);
         }
@@ -602,8 +624,8 @@ public class JsonNormalizerTest {
         @DisplayName("should handle nested arrays")
         void testNestedArrays() {
             Object[] array = {
-                new int[]{1, 2},
-                new String[]{"a", "b"}
+                    new int[]{1, 2},
+                    new String[]{"a", "b"}
             };
             JsonNode result = JsonNormalizer.normalize(array);
             assertTrue(result.isArray());
@@ -611,7 +633,7 @@ public class JsonNormalizerTest {
             assertTrue(result.get(0).isArray());
             assertEquals(2, result.get(0).size());
             assertTrue(result.get(1).isArray());
-            assertEquals("a", result.get(1).get(0).asText());
+            assertEquals("a", result.get(1).get(0).asString());
         }
     }
 
@@ -632,8 +654,8 @@ public class JsonNormalizerTest {
         void testOptionalWithValue() {
             Optional<String> optional = Optional.of("hello");
             JsonNode result = JsonNormalizer.normalize(optional);
-            assertTrue(result.isTextual());
-            assertEquals("hello", result.asText());
+            assertTrue(result.isString());
+            assertEquals("hello", result.asString());
 
             Optional<Integer> intOptional = Optional.of(42);
             result = JsonNormalizer.normalize(intOptional);
@@ -646,8 +668,8 @@ public class JsonNormalizerTest {
         void testNestedOptional() {
             Optional<Optional<String>> nested = Optional.of(Optional.of("nested"));
             JsonNode result = JsonNormalizer.normalize(nested);
-            assertTrue(result.isTextual());
-            assertEquals("nested", result.asText());
+            assertTrue(result.isString());
+            assertEquals("nested", result.asString());
         }
 
         @Test
@@ -706,7 +728,7 @@ public class JsonNormalizerTest {
             SimplePojo pojo = new SimplePojo("Alice", 25);
             JsonNode result = JsonNormalizer.normalize(pojo);
             assertTrue(result.isObject());
-            assertEquals("Alice", result.get("name").asText());
+            assertEquals("Alice", result.get("name").asString());
             assertEquals(25, result.get("age").asInt());
         }
 
@@ -716,7 +738,7 @@ public class JsonNormalizerTest {
             PojoWithGetters pojo = new PojoWithGetters("test");
             JsonNode result = JsonNormalizer.normalize(pojo);
             assertTrue(result.isObject());
-            assertEquals("test", result.get("value").asText());
+            assertEquals("test", result.get("value").asString());
         }
 
         @Test
@@ -729,7 +751,7 @@ public class JsonNormalizerTest {
             JsonNode result = JsonNormalizer.normalize(map);
             assertTrue(result.isObject());
             assertTrue(result.get("pojo").isObject());
-            assertEquals("Bob", result.get("pojo").get("name").asText());
+            assertEquals("Bob", result.get("pojo").get("name").asString());
             assertEquals(123, result.get("id").asInt());
         }
 
@@ -737,14 +759,14 @@ public class JsonNormalizerTest {
         @DisplayName("should handle collections of POJOs")
         void testCollectionOfPojos() {
             List<SimplePojo> pojos = List.of(
-                new SimplePojo("Alice", 25),
-                new SimplePojo("Bob", 30)
+                    new SimplePojo("Alice", 25),
+                    new SimplePojo("Bob", 30)
             );
             JsonNode result = JsonNormalizer.normalize(pojos);
             assertTrue(result.isArray());
             assertEquals(2, result.size());
-            assertEquals("Alice", result.get(0).get("name").asText());
-            assertEquals("Bob", result.get(1).get("name").asText());
+            assertEquals("Alice", result.get(0).get("name").asString());
+            assertEquals("Bob", result.get(1).get("name").asString());
         }
 
         @Test
@@ -778,19 +800,19 @@ public class JsonNormalizerTest {
         @DisplayName("should handle mixed types in collections")
         void testMixedTypes() {
             List<Object> mixed = java.util.Arrays.asList(
-                1,
-                "text",
-                true,
-                3.14,
-                List.of(1, 2),
-                Map.of("key", "value"),
-                null
+                    1,
+                    "text",
+                    true,
+                    3.14,
+                    List.of(1, 2),
+                    Map.of("key", "value"),
+                    null
             );
             JsonNode result = JsonNormalizer.normalize(mixed);
             assertTrue(result.isArray());
             assertEquals(7, result.size());
             assertEquals(1, result.get(0).asInt());
-            assertEquals("text", result.get(1).asText());
+            assertEquals("text", result.get(1).asString());
             assertTrue(result.get(2).asBoolean());
             assertEquals(3.14, result.get(3).asDouble(), 0.001);
             assertTrue(result.get(4).isArray());
@@ -824,10 +846,10 @@ public class JsonNormalizerTest {
             Map<String, Object> map = new LinkedHashMap<>();
             map.put("key1", "value");
             map.put("key2", null);
-            
+
             JsonNode result = JsonNormalizer.normalize(map);
             assertTrue(result.isObject());
-            assertEquals("value", result.get("key1").asText());
+            assertEquals("value", result.get("key1").asString());
             assertTrue(result.get("key2").isNull());
         }
     }

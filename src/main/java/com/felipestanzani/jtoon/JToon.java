@@ -1,8 +1,8 @@
 package com.felipestanzani.jtoon;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.felipestanzani.jtoon.encoder.ValueEncoder;
 import com.felipestanzani.jtoon.normalizer.JsonNormalizer;
+import tools.jackson.databind.JsonNode;
 
 /**
  * Main API for encoding Java objects and JSON to JToon format.
