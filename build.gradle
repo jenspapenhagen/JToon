@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.felipestanzani'
-version = findProperty('version') ?: '0.1.1'
+version = providers.gradleProperty('version').getOrElse('0.1.1')
 description = 'Token-Oriented Object Notation (TOON) - A compact, human-readable format for LLM contexts'
 
 // Apply external Gradle scripts
@@ -31,7 +31,7 @@ repositories {
 dependencies {
     implementation 'tools.jackson.core:jackson-databind:3.0.1'
     implementation 'tools.jackson.module:jackson-module-afterburner:3.0.1'
-    testImplementation platform('org.junit:junit-bom:6.0.0')
+    testImplementation platform('org.junit:junit-bom:6.0.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
