@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.felipestanzani'
-version = providers.gradleProperty('version').getOrElse('0.1.1')
+version = providers.gradleProperty('version').getOrElse('0.1.2')
 description = 'Token-Oriented Object Notation (TOON) - A compact, human-readable format for LLM contexts'
 
 // Apply external Gradle scripts
@@ -17,7 +17,7 @@ java {
     // Locally, use whatever JDK is installed
     if (System.getenv('CI') == 'true') {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(21)
+            languageVersion = JavaLanguageVersion.of(17)
         }
     }
     withSourcesJar()
