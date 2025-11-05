@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -60,15 +61,19 @@ public final class JsonNormalizer {
      * @return The normalized JsonNode
      */
     public static JsonNode normalize(Object value) {
-        return switch (value) {
-            case null -> NullNode.getInstance();
-            case JsonNode jsonNode -> jsonNode;
-            case Optional<?> optional -> normalize(optional.orElse(null));
-            case Stream<?> stream -> normalize(stream.toList());
-            default -> value.getClass().isArray()
-                    ? normalizeArray(value)
-                    : normalizeWithStrategy(value);
-        };
+        if (value == null) {
+            return NullNode.getInstance();
+        } else if (value instanceof JsonNode) {
+            return (JsonNode) value;
+        } else if (value instanceof Optional<?>) {
+            return normalize(((Optional<?>) value).orElse(null));
+        } else if (value instanceof Stream<?>) {
+            return normalize(((Stream<?>) value).collect(Collectors.toList()));
+        } else if (value.getClass().isArray()) {
+            return normalizeArray(value);
+        } else {
+            return normalizeWithStrategy(value);
+        }
     }
 
     /**
@@ -87,17 +92,25 @@ public final class JsonNormalizer {
      * Returns null if the value is not a primitive type.
      */
     private static JsonNode tryNormalizePrimitive(Object value) {
-        return switch (value) {
-            case String string -> TextNode.valueOf(string);
-            case Boolean bool -> BooleanNode.valueOf(bool);
-            case Integer integer -> IntNode.valueOf(integer);
-            case Long longVal -> LongNode.valueOf(longVal);
-            case Double doubleVal -> normalizeDouble(doubleVal);
-            case Float floatVal -> normalizeFloat(floatVal);
-            case Short shortVal -> ShortNode.valueOf(shortVal);
-            case Byte byteVal -> IntNode.valueOf(byteVal);
-            case null, default -> null;
-        };
+        if (value instanceof String) {
+            return TextNode.valueOf((String) value);
+        } else if (value instanceof Boolean) {
+            return BooleanNode.valueOf((Boolean) value);
+        } else if (value instanceof Integer) {
+            return IntNode.valueOf((Integer) value);
+        } else if (value instanceof Long) {
+            return LongNode.valueOf((Long) value);
+        } else if (value instanceof Double) {
+            return normalizeDouble((Double) value);
+        } else if (value instanceof Float) {
+            return normalizeFloat((Float) value);
+        } else if (value instanceof Short) {
+            return ShortNode.valueOf((Short) value);
+        } else if (value instanceof Byte) {
+            return IntNode.valueOf((Byte) value);
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -144,11 +157,13 @@ public final class JsonNormalizer {
      * Returns null if the value is not a big number type.
      */
     private static JsonNode tryNormalizeBigNumber(Object value) {
-        return switch (value) {
-            case BigInteger bigInt -> normalizeBigInteger(bigInt);
-            case BigDecimal bigDec -> DecimalNode.valueOf(bigDec);
-            case null, default -> null;
-        };
+        if (value instanceof BigInteger) {
+            return normalizeBigInteger((BigInteger) value);
+        } else if (value instanceof BigDecimal) {
+            return DecimalNode.valueOf((BigDecimal) value);
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -167,16 +182,23 @@ public final class JsonNormalizer {
      * Returns null if the value is not a temporal type.
      */
     private static JsonNode tryNormalizeTemporal(Object value) {
-        return switch (value) {
-            case LocalDateTime v -> formatTemporal(v, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-            case LocalDate v -> formatTemporal(v, DateTimeFormatter.ISO_LOCAL_DATE);
-            case LocalTime v -> formatTemporal(v, DateTimeFormatter.ISO_LOCAL_TIME);
-            case ZonedDateTime v -> formatTemporal(v, DateTimeFormatter.ISO_ZONED_DATE_TIME);
-            case OffsetDateTime v -> formatTemporal(v, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-            case Instant instant -> TextNode.valueOf(instant.toString());
-            case java.util.Date date -> TextNode.valueOf(date.toInstant().toString());
-            case null, default -> null;
-        };
+        if (value instanceof LocalDateTime) {
+            return formatTemporal((LocalDateTime) value, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } else if (value instanceof LocalDate) {
+            return formatTemporal((LocalDate) value, DateTimeFormatter.ISO_LOCAL_DATE);
+        } else if (value instanceof LocalTime) {
+            return formatTemporal((LocalTime) value, DateTimeFormatter.ISO_LOCAL_TIME);
+        } else if (value instanceof ZonedDateTime) {
+            return formatTemporal((ZonedDateTime) value, DateTimeFormatter.ISO_ZONED_DATE_TIME);
+        } else if (value instanceof OffsetDateTime) {
+            return formatTemporal((OffsetDateTime) value, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        } else if (value instanceof Instant) {
+            return TextNode.valueOf(((Instant) value).toString());
+        } else if (value instanceof java.util.Date) {
+            return TextNode.valueOf(((java.util.Date) value).toInstant().toString());
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -191,11 +213,13 @@ public final class JsonNormalizer {
      * Returns null if the value is not a collection type.
      */
     private static JsonNode tryNormalizeCollection(Object value) {
-        return switch (value) {
-            case Collection<?> collection -> normalizeCollection(collection);
-            case Map<?, ?> map -> normalizeMap(map);
-            case null, default -> null;
-        };
+        if (value instanceof Collection<?>) {
+            return normalizeCollection((Collection<?>) value);
+        } else if (value instanceof Map<?, ?>) {
+            return normalizeMap((Map<?, ?>) value);
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -232,18 +256,36 @@ public final class JsonNormalizer {
      * Normalizes arrays to ArrayNode.
      */
     private static JsonNode normalizeArray(Object array) {
-        return switch (array) {
-            case int[] arr -> buildArrayNode(arr.length, i -> IntNode.valueOf(arr[i]));
-            case long[] arr -> buildArrayNode(arr.length, i -> LongNode.valueOf(arr[i]));
-            case double[] arr -> buildArrayNode(arr.length, i -> normalizeDoubleElement(arr[i]));
-            case float[] arr -> buildArrayNode(arr.length, i -> normalizeFloatElement(arr[i]));
-            case boolean[] arr -> buildArrayNode(arr.length, i -> BooleanNode.valueOf(arr[i]));
-            case byte[] arr -> buildArrayNode(arr.length, i -> IntNode.valueOf(arr[i]));
-            case short[] arr -> buildArrayNode(arr.length, i -> ShortNode.valueOf(arr[i]));
-            case char[] arr -> buildArrayNode(arr.length, i -> TextNode.valueOf(String.valueOf(arr[i])));
-            case Object[] arr -> buildArrayNode(arr.length, i -> normalize(arr[i]));
-            case null, default -> MAPPER.createArrayNode();
-        };
+        if (array instanceof int[]) {
+            int[] arr = (int[]) array;
+            return buildArrayNode(arr.length, i -> IntNode.valueOf(arr[i]));
+        } else if (array instanceof long[]) {
+            long[] arr = (long[]) array;
+            return buildArrayNode(arr.length, i -> LongNode.valueOf(arr[i]));
+        } else if (array instanceof double[]) {
+            double[] arr = (double[]) array;
+            return buildArrayNode(arr.length, i -> normalizeDoubleElement(arr[i]));
+        } else if (array instanceof float[]) {
+            float[] arr = (float[]) array;
+            return buildArrayNode(arr.length, i -> normalizeFloatElement(arr[i]));
+        } else if (array instanceof boolean[]) {
+            boolean[] arr = (boolean[]) array;
+            return buildArrayNode(arr.length, i -> BooleanNode.valueOf(arr[i]));
+        } else if (array instanceof byte[]) {
+            byte[] arr = (byte[]) array;
+            return buildArrayNode(arr.length, i -> IntNode.valueOf(arr[i]));
+        } else if (array instanceof short[]) {
+            short[] arr = (short[]) array;
+            return buildArrayNode(arr.length, i -> ShortNode.valueOf(arr[i]));
+        } else if (array instanceof char[]) {
+            char[] arr = (char[]) array;
+            return buildArrayNode(arr.length, i -> TextNode.valueOf(String.valueOf(arr[i])));
+        } else if (array instanceof Object[]) {
+            Object[] arr = (Object[]) array;
+            return buildArrayNode(arr.length, i -> normalize(arr[i]));
+        } else {
+            return MAPPER.createArrayNode();
+        }
     }
 
     /**

@@ -6,7 +6,6 @@ import static com.felipestanzani.jtoon.util.Constants.*;
 
 /**
  * Formats headers for arrays and tables in TOON format.
- * Uses Java 21 Records to reduce parameter count and improve code clarity.
  */
 public final class HeaderFormatter {
 
@@ -16,7 +15,6 @@ public final class HeaderFormatter {
 
     /**
      * Configuration for header formatting.
-     * Using Java 21 Record to group related parameters.
      * 
      * @param length       Array or table length
      * @param key          Optional key prefix
