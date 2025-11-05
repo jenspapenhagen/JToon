@@ -40,7 +40,7 @@ public final class ListItemEncoder {
         }
 
         // First key-value on the same line as "- "
-        String firstKey = keys.getFirst();
+        String firstKey = keys.get(0);
         JsonNode firstValue = obj.get(firstKey);
         encodeFirstKeyValue(firstKey, firstValue, writer, depth, options);
 
