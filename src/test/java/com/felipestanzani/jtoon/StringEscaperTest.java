@@ -114,4 +114,115 @@ public class StringEscaperTest {
             assertEquals(expected, StringEscaper.escape(input));
         }
     }
+
+    @Nested
+    @DisplayName("Basic Unescaping")
+    class BasicUnescaping {
+
+        static Stream<Arguments> basicUnescapingCases() {
+            return Stream.of(
+                    Arguments.of("backslashes", "path\\\\to\\\\file", "path\\to\\file"),
+                    Arguments.of("double quotes", "He said \\\"hello\\\"", "He said \"hello\""),
+                    Arguments.of("newlines", "line1\\nline2", "line1\nline2"),
+                    Arguments.of("carriage returns", "line1\\rline2", "line1\rline2"),
+                    Arguments.of("tabs", "col1\\tcol2", "col1\tcol2"));
+        }
+
+        @ParameterizedTest(name = "should unescape {0}")
+        @MethodSource("basicUnescapingCases")
+        @DisplayName("should unescape basic special characters")
+        void testBasicUnescaping(String description, String input, String expected) {
+            assertEquals(expected, StringEscaper.unescape(input));
+        }
+    }
+
+    @Nested
+    @DisplayName("Quote Removal")
+    class QuoteRemoval {
+
+        @Test
+        @DisplayName("should remove surrounding quotes")
+        void testQuoteRemoval() {
+            assertEquals("hello", StringEscaper.unescape("\"hello\""));
+        }
+
+        @Test
+        @DisplayName("should handle quotes with escaped content")
+        void testQuotedEscapedContent() {
+            assertEquals("hello\nworld", StringEscaper.unescape("\"hello\\nworld\""));
+        }
+
+        @Test
+        @DisplayName("should not remove quotes if not surrounding")
+        void testNonSurroundingQuotes() {
+            assertEquals("hello\"world", StringEscaper.unescape("hello\"world"));
+        }
+
+        @Test
+        @DisplayName("should handle empty quoted string")
+        void testEmptyQuotedString() {
+            assertEquals("", StringEscaper.unescape("\"\""));
+        }
+    }
+
+    @Nested
+    @DisplayName("Round-Trip Escaping")
+    class RoundTripEscaping {
+
+        static Stream<String> roundTripCases() {
+            return Stream.of(
+                    "simple text",
+                    "path\\to\\file",
+                    "He said \"hello\"",
+                    "line1\nline2\nline3",
+                    "col1\tcol2\tcol3",
+                    "C:\\Users\\Documents",
+                    "text\n\r\t\"\\"
+            );
+        }
+
+        @ParameterizedTest
+        @DisplayName("should preserve content through escape/unescape cycle")
+        @MethodSource("roundTripCases")
+        void testRoundTrip(String original) {
+            String escaped = StringEscaper.escape(original);
+            String unescaped = StringEscaper.unescape("\"" + escaped + "\"");
+            assertEquals(original, unescaped);
+        }
+    }
+
+    @Nested
+    @DisplayName("Unescape Edge Cases")
+    class UnescapeEdgeCases {
+
+        @Test
+        @DisplayName("should handle null input")
+        void testNullInput() {
+            assertNull(StringEscaper.unescape(null));
+        }
+
+        @Test
+        @DisplayName("should handle empty string")
+        void testEmptyString() {
+            assertEquals("", StringEscaper.unescape(""));
+        }
+
+        @Test
+        @DisplayName("should handle single character")
+        void testSingleCharacter() {
+            assertEquals("a", StringEscaper.unescape("a"));
+        }
+
+        @Test
+        @DisplayName("should handle strings without escape sequences")
+        void testNoEscapeSequences() {
+            assertEquals("hello world", StringEscaper.unescape("hello world"));
+        }
+
+        @Test
+        @DisplayName("should handle unknown escape sequences as literals")
+        void testUnknownEscapeSequences() {
+            assertEquals("ax", StringEscaper.unescape("\\ax"));
+        }
+    }
 }
