@@ -1,9 +1,9 @@
 package com.felipestanzani.jtoon.encoder;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.felipestanzani.jtoon.EncodeOptions;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,8 +36,7 @@ public final class TabularArrayEncoder {
         }
 
         ObjectNode firstObj = (ObjectNode) firstRow;
-        List<String> firstKeys = new ArrayList<>();
-        firstObj.fieldNames().forEachRemaining(firstKeys::add);
+        List<String> firstKeys = new ArrayList<>(firstObj.propertyNames());
 
         if (firstKeys.isEmpty()) {
             return new ArrayList<>();
@@ -60,8 +59,7 @@ public final class TabularArrayEncoder {
             }
 
             ObjectNode obj = (ObjectNode) row;
-            List<String> keys = new ArrayList<>();
-            obj.fieldNames().forEachRemaining(keys::add);
+            List<String> keys = new ArrayList<>(obj.propertyNames());
 
             // All objects must have the same keys (but order can differ)
             if (keys.size() != header.size()) {
@@ -93,7 +91,7 @@ public final class TabularArrayEncoder {
      * @param options Encoding options
      */
     public static void encodeArrayOfObjectsAsTabular(String prefix, ArrayNode rows, List<String> header,
-            LineWriter writer, int depth, EncodeOptions options) {
+                                                     LineWriter writer, int depth, EncodeOptions options) {
         String headerStr = PrimitiveEncoder.formatHeader(rows.size(), prefix, header, options.delimiter().getValue(),
                 options.lengthMarker());
         writer.push(depth, headerStr);
@@ -112,7 +110,7 @@ public final class TabularArrayEncoder {
      * @param options Encoding options
      */
     public static void writeTabularRows(ArrayNode rows, List<String> header, LineWriter writer, int depth,
-            EncodeOptions options) {
+                                        EncodeOptions options) {
         for (JsonNode row : rows) {
             ObjectNode obj = (ObjectNode) row;
             List<JsonNode> values = new ArrayList<>();

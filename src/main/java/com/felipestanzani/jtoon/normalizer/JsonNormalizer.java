@@ -1,14 +1,37 @@
 package com.felipestanzani.jtoon.normalizer;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.*;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.DecimalNode;
+import tools.jackson.databind.node.DoubleNode;
+import tools.jackson.databind.node.FloatNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.LongNode;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ShortNode;
+import tools.jackson.databind.node.StringNode;
+import tools.jackson.module.afterburner.AfterburnerModule;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.*;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
@@ -19,7 +42,18 @@ import java.util.stream.Stream;
  * Handles Java-specific types like LocalDateTime, Optional, Stream, etc.
  */
 public final class JsonNormalizer {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    public final static ObjectMapper MAPPER;
+
+    static {
+        MAPPER = JsonMapper.builder()
+                .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.ALWAYS))
+                .addModule(new AfterburnerModule().setUseValueClassLoader(true)) // Speeds up Jackson by 20–40% in most real-world cases
+                // .disable(MapperFeature.DEFAULT_VIEW_INCLUSION) in Jackson 3 this is default disabled
+                // .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES) in Jackson 3 this is default disabled
+                .defaultTimeZone(TimeZone.getTimeZone("UTC")) // set a default timezone for dates
+                .build();
+    }
+
     private static final List<Function<Object, JsonNode>> NORMALIZERS = List.of(
             JsonNormalizer::tryNormalizePrimitive,
             JsonNormalizer::tryNormalizeBigNumber,
@@ -56,7 +90,7 @@ public final class JsonNormalizer {
 
     /**
      * Normalizes any Java object to a JsonNode.
-     * 
+     *
      * @param value The value to normalize
      * @return The normalized JsonNode
      */
@@ -93,7 +127,7 @@ public final class JsonNormalizer {
      */
     private static JsonNode tryNormalizePrimitive(Object value) {
         if (value instanceof String) {
-            return TextNode.valueOf((String) value);
+            return StringNode.valueOf((String) value);
         } else if (value instanceof Boolean) {
             return BooleanNode.valueOf((Boolean) value);
         } else if (value instanceof Integer) {
@@ -174,7 +208,7 @@ public final class JsonNormalizer {
                 && value.compareTo(BigInteger.valueOf(Long.MIN_VALUE)) >= 0;
         return fitsInLong
                 ? LongNode.valueOf(value.longValue())
-                : TextNode.valueOf(value.toString());
+                : StringNode.valueOf(value.toString());
     }
 
     /**
@@ -193,9 +227,9 @@ public final class JsonNormalizer {
         } else if (value instanceof OffsetDateTime) {
             return formatTemporal((OffsetDateTime) value, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         } else if (value instanceof Instant) {
-            return TextNode.valueOf(((Instant) value).toString());
+            return StringNode.valueOf(((Instant) value).toString());
         } else if (value instanceof java.util.Date) {
-            return TextNode.valueOf(((java.util.Date) value).toInstant().toString());
+            return StringNode.valueOf(((java.util.Date) value).toInstant().toString());
         } else {
             return null;
         }
@@ -205,7 +239,7 @@ public final class JsonNormalizer {
      * Helper method to format temporal values consistently.
      */
     private static <T> JsonNode formatTemporal(T temporal, DateTimeFormatter formatter) {
-        return TextNode.valueOf(formatter.format((java.time.temporal.TemporalAccessor) temporal));
+        return StringNode.valueOf(formatter.format((java.time.temporal.TemporalAccessor) temporal));
     }
 
     /**
@@ -279,7 +313,7 @@ public final class JsonNormalizer {
             return buildArrayNode(arr.length, i -> ShortNode.valueOf(arr[i]));
         } else if (array instanceof char[]) {
             char[] arr = (char[]) array;
-            return buildArrayNode(arr.length, i -> TextNode.valueOf(String.valueOf(arr[i])));
+            return buildArrayNode(arr.length, i -> StringNode.valueOf(String.valueOf(arr[i])));
         } else if (array instanceof Object[]) {
             Object[] arr = (Object[]) array;
             return buildArrayNode(arr.length, i -> normalize(arr[i]));
