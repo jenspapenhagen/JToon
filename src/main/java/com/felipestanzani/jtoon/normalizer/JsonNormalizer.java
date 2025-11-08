@@ -127,7 +127,7 @@ public final class JsonNormalizer {
      */
     private static JsonNode tryNormalizePrimitive(Object value) {
         if (value instanceof String) {
-            return TextNode.valueOf((String) value);
+            return StringNode.valueOf((String) value);
         } else if (value instanceof Boolean) {
             return BooleanNode.valueOf((Boolean) value);
         } else if (value instanceof Integer) {
@@ -227,9 +227,9 @@ public final class JsonNormalizer {
         } else if (value instanceof OffsetDateTime) {
             return formatTemporal((OffsetDateTime) value, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         } else if (value instanceof Instant) {
-            return TextNode.valueOf(((Instant) value).toString());
+            return StringNode.valueOf(((Instant) value).toString());
         } else if (value instanceof java.util.Date) {
-            return TextNode.valueOf(((java.util.Date) value).toInstant().toString());
+            return StringNode.valueOf(((java.util.Date) value).toInstant().toString());
         } else {
             return null;
         }
@@ -313,7 +313,7 @@ public final class JsonNormalizer {
             return buildArrayNode(arr.length, i -> ShortNode.valueOf(arr[i]));
         } else if (array instanceof char[]) {
             char[] arr = (char[]) array;
-            return buildArrayNode(arr.length, i -> TextNode.valueOf(String.valueOf(arr[i])));
+            return buildArrayNode(arr.length, i -> StringNode.valueOf(String.valueOf(arr[i])));
         } else if (array instanceof Object[]) {
             Object[] arr = (Object[]) array;
             return buildArrayNode(arr.length, i -> normalize(arr[i]));
