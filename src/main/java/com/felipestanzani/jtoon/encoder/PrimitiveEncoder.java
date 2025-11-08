@@ -12,7 +12,6 @@ import static com.felipestanzani.jtoon.util.Constants.*;
  * Encodes primitive values and object keys for TOON format.
  * Delegates validation to StringValidator, escaping to StringEscaper,
  * and header formatting to HeaderFormatter.
- * Refactored to use Java 21 features and follow SOLID principles.
  */
 public final class PrimitiveEncoder {
 
@@ -21,7 +20,7 @@ public final class PrimitiveEncoder {
     }
 
     /**
-     * Encodes a primitive JsonNode value using Java 21 switch expressions.
+     * Encodes a primitive JsonNode value.
      */
     public static String encodePrimitive(JsonNode value, String delimiter) {
         return switch (value.getNodeType()) {
