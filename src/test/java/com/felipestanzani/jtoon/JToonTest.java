@@ -115,8 +115,9 @@ public class JToonTest {
         void handlesSpecialNumericValues() {
             assertEquals("0", encode(-0.0));
             assertEquals("1000000", encode(1e6));
-            assertEquals("1.0E-6", encode(1e-6));
-            assertEquals("1.0E20", encode(1e20));
+            assertEquals("0.000001", encode(1e-6));
+            assertEquals("100000000000000000000", encode(1e20));
+            assertEquals("0.000001", encode(0.000001));
             assertEquals("9007199254740991", encode(9007199254740991L));
         }
 
