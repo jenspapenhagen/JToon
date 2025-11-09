@@ -1,8 +1,8 @@
 package com.felipestanzani.jtoon.encoder;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.felipestanzani.jtoon.util.StringEscaper;
 import com.felipestanzani.jtoon.util.StringValidator;
+import tools.jackson.databind.JsonNode;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -27,7 +27,7 @@ public final class PrimitiveEncoder {
         return switch (value.getNodeType()) {
             case BOOLEAN -> String.valueOf(value.asBoolean());
             case NUMBER -> encodeNumber(value);
-            case STRING -> encodeStringLiteral(value.asText(), delimiter);
+            case STRING -> encodeStringLiteral(value.asString(), delimiter);
             default -> NULL_LITERAL;
         };
     }
