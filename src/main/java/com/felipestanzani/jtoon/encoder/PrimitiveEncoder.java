@@ -4,6 +4,7 @@ import com.felipestanzani.jtoon.util.StringEscaper;
 import com.felipestanzani.jtoon.util.StringValidator;
 import tools.jackson.databind.JsonNode;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static com.felipestanzani.jtoon.util.Constants.*;
@@ -25,10 +26,46 @@ public final class PrimitiveEncoder {
     public static String encodePrimitive(JsonNode value, String delimiter) {
         return switch (value.getNodeType()) {
             case BOOLEAN -> String.valueOf(value.asBoolean());
-            case NUMBER -> value.asString();
+            case NUMBER -> encodeNumber(value);
             case STRING -> encodeStringLiteral(value.asString(), delimiter);
             default -> NULL_LITERAL;
         };
+    }
+
+    /**
+     * Encodes a number JsonNode to plain decimal format (no scientific notation).
+     * Ensures LLM-safe output by converting all numbers to plain decimal
+     * representation.
+     */
+    private static String encodeNumber(JsonNode value) {
+        if (value.isIntegralNumber()) {
+            return value.asText();
+        }
+
+        double doubleValue = value.asDouble();
+        BigDecimal decimal = BigDecimal.valueOf(doubleValue);
+        String plainString = decimal.toPlainString();
+
+        return stripTrailingZeros(plainString);
+    }
+
+    /**
+     * Strips trailing zeros from decimal numbers while preserving single zero after
+     * decimal point.
+     * Examples: "1.500" -> "1.5", "1.0" -> "1", "0.000001" -> "0.000001"
+     */
+    private static String stripTrailingZeros(String value) {
+        if (!value.contains(".")) {
+            return value;
+        }
+
+        String stripped = value.replaceAll("0+$", "");
+
+        if (stripped.endsWith(".")) {
+            stripped = stripped.substring(0, stripped.length() - 1);
+        }
+
+        return stripped;
     }
 
     /**
