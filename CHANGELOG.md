@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to Semantic Versioning and follows a Keep a Changelog-like format.
 
+## [0.2.0] - 2025-11-07
+
+### Added
+
+- Decoding support via `JToon.decode()` and `JToon.decodeToJson()` methods.
+- `DecodeOptions` record with `strict` validation mode.
+- `decoder` package with full TOON parser supporting all formats (primitives, objects, arrays, delimiters).
+- String unescaping in `StringEscaper.unescape()` method.
+- Comprehensive test suite with round-trip encode/decode verification.
+
+### Changed
+
+- Updated README with decode API documentation and examples.
+
 ## [0.1.2] - 2025-11-05
 
 ### Changed
