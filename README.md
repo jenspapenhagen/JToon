@@ -350,6 +350,85 @@ System.out.println(JToon.encode(data, new EncodeOptions(2, Delimiter.PIPE, true)
 //   B2|1|14.5
 ```
 
+### `JToon.decode(String toon): Object`
+
+### `JToon.decode(String toon, DecodeOptions options): Object`
+
+### `JToon.decodeToJson(String toon): String`
+
+### `JToon.decodeToJson(String toon, DecodeOptions options): String`
+
+Converts TOON-formatted strings back to Java objects or JSON.
+
+**Parameters:**
+
+- `toon` – TOON-formatted input string
+- `options` – Optional decoding options (`DecodeOptions` record):
+  - `indent` – Number of spaces per indentation level (default: `2`)
+  - `delimiter` – Expected delimiter: `Delimiter.COMMA` (default), `Delimiter.TAB`, or `Delimiter.PIPE`
+  - `strict` – Boolean for validation mode. When `true` (default), throws `IllegalArgumentException` on invalid input. When `false`, returns `null` on errors.
+
+**Returns:**
+
+For `decode`: A Java object (`Map` for objects, `List` for arrays, primitives for scalars, or `null`)
+
+For `decodeToJson`: A JSON string representation
+
+**Example:**
+
+```java
+import com.felipestanzani.jtoon.JToon;
+
+String toon = """
+    users[2]{id,name,role}:
+      1,Alice,admin
+      2,Bob,user
+    """;
+
+// Decode to Java objects
+Object result = JToon.decode(toon);
+
+// Decode directly to JSON string
+String json = JToon.decodeToJson(toon);
+```
+
+#### Round-Trip Conversion
+
+```java
+import com.felipestanzani.jtoon.*;
+import java.util.*;
+
+// Original data
+Map<String, Object> data = new LinkedHashMap<>();
+data.put("id", 123);
+data.put("name", "Ada");
+data.put("tags", Arrays.asList("dev", "admin"));
+
+// Encode to TOON
+String toon = JToon.encode(data);
+
+// Decode back to objects
+Object decoded = JToon.decode(toon);
+
+// Values are preserved (note: integers decode as Long)
+```
+
+#### Custom Decode Options
+
+```java
+import com.felipestanzani.jtoon.*;
+
+String toon = "tags[3|]: a|b|c";
+
+// Decode with pipe delimiter
+DecodeOptions options = new DecodeOptions(2, Delimiter.PIPE, true);
+Object result = JToon.decode(toon, options);
+
+// Lenient mode (returns null on errors instead of throwing)
+DecodeOptions lenient = DecodeOptions.withStrict(false);
+Object result2 = JToon.decode(invalidToon, lenient);
+```
+
 ## See Also
 
 - **[TOON Format Specification](TOON-SPECIFICATION.md)** – Complete format rules, benchmarks, and examples
