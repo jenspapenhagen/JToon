@@ -9,5 +9,5 @@ public record JsonTestCase(String name,
                            String expected,
                            @JsonProperty("specSection") String spec,
                            @JsonIgnore String note,
-                           @JsonIgnore String options) {
+                           JsonTestOptions options) {
 }
