@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -372,8 +373,8 @@ public class RoundTripTest {
             String toon = JToon.encode(data);
             Object decoded = JToon.decode(toon);
 
-            // Empty object encodes to empty string, which decodes to null
-            assertNull(decoded);
+            // Empty object encodes to empty string, which decodes to empty object
+            assertEquals(Collections.emptyMap(), decoded);
         }
 
         @Test

@@ -548,7 +548,7 @@ public final class ValueDecoder {
                 }
 
                 int lineDepth = getDepth(line);
-                if (shouldTerminateListArray(lineDepth, depth)) {
+                if (shouldTerminateListArray(lineDepth, depth, line)) {
                     break;
                 }
 
@@ -590,8 +590,16 @@ public final class ValueDecoder {
          * Determines if list array parsing should terminate based on line depth.
          * Returns true if array should terminate, false otherwise.
          */
-        private boolean shouldTerminateListArray(int lineDepth, int depth) {
-            return lineDepth < depth + 1; // Line depth is less than expected - terminate
+        private boolean shouldTerminateListArray(int lineDepth, int depth, String line) {
+            if (lineDepth < depth + 1) {
+                return true; // Line depth is less than expected - terminate
+            }
+            // Also terminate if line is at expected depth but doesn't start with "-"
+            if (lineDepth == depth + 1) {
+                String content = line.substring((depth + 1) * options.indent());
+                return !content.startsWith("-"); // Not an array item - terminate
+            }
+            return false;
         }
 
         /**
@@ -680,12 +688,63 @@ public final class ValueDecoder {
             String value = itemContent.substring(colonIdx + 1).trim();
 
             Map<String, Object> item = new LinkedHashMap<>();
-            item.put(key, PrimitiveDecoder.parse(value));
-
-            currentLine++;
+            Object parsedValue = parseObjectItemValue(value, depth);
+            item.put(key, parsedValue);
             parseListItemFields(item, depth);
 
             return item;
+        }
+
+        /**
+         * Parses the value portion of an object item in a list, handling nested
+         * objects,
+         * empty values, and primitives.
+         * 
+         * @param value the value string to parse
+         * @param depth the depth of the list item
+         * @return the parsed value (Map, List, or primitive)
+         */
+        private Object parseObjectItemValue(String value, int depth) {
+            currentLine++;
+            boolean isEmpty = value.trim().isEmpty();
+
+            // If no next line exists, handle simple case
+            if (currentLine >= lines.length) {
+                return isEmpty ? new LinkedHashMap<>() : PrimitiveDecoder.parse(value);
+            }
+
+            // Find next non-blank line and its depth
+            Integer nextDepth = findNextNonBlankLineDepth();
+            if (nextDepth == null) {
+                // No non-blank line found - create empty object
+                return new LinkedHashMap<>();
+            }
+
+            // Handle empty value with nested content
+            if (isEmpty && nextDepth > depth + 1) {
+                return parseNestedObject(depth + 1);
+            }
+
+            // Handle empty value without nested content or non-empty value
+            return isEmpty ? new LinkedHashMap<>() : PrimitiveDecoder.parse(value);
+        }
+
+        /**
+         * Finds the depth of the next non-blank line, skipping blank lines.
+         * 
+         * @return the depth of the next non-blank line, or null if none exists
+         */
+        private Integer findNextNonBlankLineDepth() {
+            int nextLineIdx = currentLine;
+            while (nextLineIdx < lines.length && isBlankLine(lines[nextLineIdx])) {
+                nextLineIdx++;
+            }
+
+            if (nextLineIdx >= lines.length) {
+                return null;
+            }
+
+            return getDepth(lines[nextLineIdx]);
         }
 
         /**
@@ -1035,6 +1094,13 @@ public final class ValueDecoder {
 
             while (currentLine < lines.length) {
                 String line = lines[currentLine];
+
+                // Skip blank lines
+                if (isBlankLine(line)) {
+                    currentLine++;
+                    continue;
+                }
+
                 int depth = getDepth(line);
 
                 if (depth <= parentDepth) {
@@ -1060,6 +1126,7 @@ public final class ValueDecoder {
             // Skip blank lines
             if (isBlankLine(line)) {
                 currentLine++;
+                return;
             }
 
             String content = line.substring((parentDepth + 1) * options.indent());
