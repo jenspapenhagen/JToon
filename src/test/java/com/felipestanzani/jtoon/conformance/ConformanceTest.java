@@ -13,6 +13,8 @@ import org.junit.jupiter.api.TestFactory;
 import tools.jackson.databind.ObjectMapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.util.Arrays;
@@ -24,6 +26,8 @@ public class ConformanceTest {
     @Nested
     @DisplayName("Encoding conformance tests")
     class encodeJsonTest {
+        private final ObjectMapper mapper = new ObjectMapper();
+
         @TestFactory
         Stream<DynamicTest> testJSONFile() {
             File directory = new File("src/test/resources/conformance/encode");
@@ -32,13 +36,12 @@ public class ConformanceTest {
         }
 
         private Stream<EncodeTestFile> loadTestFixtures(File directory) {
-            ObjectMapper mapper = new ObjectMapper();
             File[] files = Objects.requireNonNull(directory.listFiles());
             return Arrays.stream(files)
-                    .map(file -> parseFixture(mapper, file));
+                    .map(this::parseFixture);
         }
 
-        private EncodeTestFile parseFixture(ObjectMapper mapper, File file) {
+        private EncodeTestFile parseFixture(File file) {
             try {
                 EncodeTestFixture fixture = mapper.readValue(file, EncodeTestFixture.class);
                 return new EncodeTestFile(file, fixture);
@@ -61,7 +64,8 @@ public class ConformanceTest {
 
         private void executeTestCase(JsonEncodeTestCase testCase) {
             EncodeOptions options = parseOptions(testCase.options());
-            String actual = JToon.encodeJson(testCase.input().toString(), options);
+            String jsonInput = mapper.writeValueAsString(testCase.input());
+            String actual = JToon.encodeJson(jsonInput, options);
             assertEquals(testCase.expected(), actual);
         }
 
@@ -95,6 +99,8 @@ public class ConformanceTest {
     @Nested
     @DisplayName("Decoding conformance tests")
     class decodeJsonTest {
+        private final ObjectMapper mapper = new ObjectMapper();
+
         @TestFactory
         Stream<DynamicTest> testJSONFile() {
             File directory = new File("src/test/resources/conformance/decode");
@@ -103,13 +109,12 @@ public class ConformanceTest {
         }
 
         private Stream<DecodeTestFile> loadTestFixtures(File directory) {
-            ObjectMapper mapper = new ObjectMapper();
             File[] files = Objects.requireNonNull(directory.listFiles());
             return Arrays.stream(files)
-                    .map(file -> parseFixture(mapper, file));
+                    .map(this::parseFixture);
         }
 
-        private DecodeTestFile parseFixture(ObjectMapper mapper, File file) {
+        private DecodeTestFile parseFixture(File file) {
             try {
                 var fixture = mapper.readValue(file, DecodeTestFixture.class);
                 return new DecodeTestFile(file, fixture);
@@ -132,8 +137,27 @@ public class ConformanceTest {
 
         private void executeTestCase(JsonDecodeTestCase testCase) {
             var options = parseOptions(testCase.options());
-            var actual = JToon.decode(testCase.input().toString(), options);
-            assertEquals(testCase.expected(), actual);
+            String toonInput = testCase.input().asString();
+
+            if (Boolean.TRUE.equals(testCase.shouldError())) {
+                Object actual;
+                try {
+                    actual = JToon.decode(toonInput, options);
+                } catch (IllegalArgumentException e) {
+                    return;
+                }
+                String actualJson = mapper.writeValueAsString(actual);
+                fail("Expected IllegalArgumentException but got result: " + actualJson);
+            } else {
+                Object actual = JToon.decode(toonInput, options);
+                if (testCase.expected() == null || testCase.expected().isNull()) {
+                    assertNull(actual, "Expected null but got: " + actual);
+                } else {
+                    String actualJson = mapper.writeValueAsString(actual);
+                    String expectedJson = mapper.writeValueAsString(testCase.expected());
+                    assertEquals(expectedJson, actualJson);
+                }
+            }
         }
 
         private DecodeOptions parseOptions(JsonDecodeTestOptions options) {
@@ -154,9 +178,9 @@ public class ConformanceTest {
                 };
             }
 
-            boolean lengthMarker = options.lengthMarker() != null && "#".equals(options.lengthMarker());
+            boolean strict = options.strict() != null ? options.strict() : true;
 
-            return new DecodeOptions(indent, delimiter, lengthMarker);
+            return new DecodeOptions(indent, delimiter, strict);
         }
 
         private record DecodeTestFile(File file, DecodeTestFixture fixture) {

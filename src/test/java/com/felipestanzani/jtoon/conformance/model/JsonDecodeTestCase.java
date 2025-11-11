@@ -1,12 +1,14 @@
 package com.felipestanzani.jtoon.conformance.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import tools.jackson.databind.JsonNode;
 
 public record JsonDecodeTestCase(String name,
                                  JsonNode input,
-                                 ExpectedDecodeResult expected,
+                                 JsonNode expected,
                                  String specSection,
                                  @JsonIgnore String note,
-                                 JsonDecodeTestOptions options) {
+                                 JsonDecodeTestOptions options,
+                                 @JsonProperty("shouldError") Boolean shouldError) {
 }
