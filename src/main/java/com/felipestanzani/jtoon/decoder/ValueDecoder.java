@@ -695,7 +695,8 @@ public final class ValueDecoder {
             String value = itemContent.substring(colonIdx + 1).trim();
 
             Map<String, Object> item = new LinkedHashMap<>();
-            Object parsedValue = parseObjectItemValue(value, depth);
+            // List item is at depth + 1, so pass depth + 1 to parseObjectItemValue
+            Object parsedValue = parseObjectItemValue(value, depth + 1);
             item.put(key, parsedValue);
             parseListItemFields(item, depth);
 
@@ -728,10 +729,10 @@ public final class ValueDecoder {
             }
 
             // Handle empty value with nested content
-            // The field is at depth + 1 (the list item is at depth, the field is indented
-            // one more level)
-            // So nested content should be at depth + 2 or greater
-            if (isEmpty && nextDepth > depth + 1) {
+            // The list item is at depth, and the field itself is conceptually at depth + 1
+            // So nested content should be parsed with parentDepth = depth + 1
+            // This allows nested fields at depth + 2 or deeper to be processed correctly
+            if (isEmpty && nextDepth > depth) {
                 return parseNestedObject(depth + 1);
             }
 
