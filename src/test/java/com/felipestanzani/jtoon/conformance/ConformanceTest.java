@@ -7,6 +7,8 @@ import com.felipestanzani.jtoon.JToon;
 import com.felipestanzani.jtoon.PathExpansion;
 import com.felipestanzani.jtoon.conformance.model.*;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.DynamicContainer;
+import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
@@ -30,10 +32,10 @@ public class ConformanceTest {
         private final ObjectMapper mapper = new ObjectMapper();
 
         @TestFactory
-        Stream<DynamicTest> testJSONFile() {
+        Stream<DynamicNode> testJSONFile() {
             File directory = new File("src/test/resources/conformance/encode");
             return loadTestFixtures(directory)
-                    .flatMap(this::createTestsFromFixture);
+                    .map(this::createTestContainer);
         }
 
         private Stream<EncodeTestFile> loadTestFixtures(File directory) {
@@ -51,16 +53,23 @@ public class ConformanceTest {
             }
         }
 
-        private Stream<DynamicTest> createTestsFromFixture(EncodeTestFile fixtureWithFile) {
-            File file = fixtureWithFile.file();
-            EncodeTestFixture fixture = fixtureWithFile.fixture();
-            return fixture.tests().stream()
-                    .map(testCase -> createDynamicTest(file, testCase));
+        private DynamicContainer createTestContainer(EncodeTestFile encodeFile) {
+            File file = encodeFile.file();
+            Stream<DynamicTest> tests = createTestsFromFixture(encodeFile);
+
+            return DynamicContainer.dynamicContainer(
+                    file.getName(),
+                    tests);
         }
 
-        private DynamicTest createDynamicTest(File file, JsonEncodeTestCase testCase) {
-            String displayName = file.getName() + " - " + testCase.name();
-            return DynamicTest.dynamicTest(displayName, () -> executeTestCase(testCase));
+        private Stream<DynamicTest> createTestsFromFixture(EncodeTestFile encodeFile) {
+            EncodeTestFixture fixture = encodeFile.fixture();
+            return fixture.tests().stream()
+                    .map(this::createDynamicTest);
+        }
+
+        private DynamicTest createDynamicTest(JsonEncodeTestCase testCase) {
+            return DynamicTest.dynamicTest(testCase.name(), () -> executeTestCase(testCase));
         }
 
         private void executeTestCase(JsonEncodeTestCase testCase) {
@@ -103,10 +112,10 @@ public class ConformanceTest {
         private final ObjectMapper mapper = new ObjectMapper();
 
         @TestFactory
-        Stream<DynamicTest> testJSONFile() {
+        Stream<DynamicNode> testJSONFile() {
             File directory = new File("src/test/resources/conformance/decode");
             return loadTestFixtures(directory)
-                    .flatMap(this::createTestsFromFixture);
+                    .map(this::createTestContainer);
         }
 
         private Stream<DecodeTestFile> loadTestFixtures(File directory) {
@@ -124,16 +133,23 @@ public class ConformanceTest {
             }
         }
 
-        private Stream<DynamicTest> createTestsFromFixture(DecodeTestFile decodeFile) {
+        private DynamicContainer createTestContainer(DecodeTestFile decodeFile) {
             File file = decodeFile.file();
-            var fixture = decodeFile.fixture();
-            return fixture.tests().stream()
-                    .map(testCase -> createDynamicTest(file, testCase));
+            Stream<DynamicTest> tests = createTestsFromFixture(decodeFile);
+
+            return DynamicContainer.dynamicContainer(
+                    file.getName(),
+                    tests);
         }
 
-        private DynamicTest createDynamicTest(File file, JsonDecodeTestCase testCase) {
-            String displayName = file.getName() + " - " + testCase.name();
-            return DynamicTest.dynamicTest(displayName, () -> executeTestCase(testCase));
+        private Stream<DynamicTest> createTestsFromFixture(DecodeTestFile decodeFile) {
+            var fixture = decodeFile.fixture();
+            return fixture.tests().stream()
+                    .map(this::createDynamicTest);
+        }
+
+        private DynamicTest createDynamicTest(JsonDecodeTestCase testCase) {
+            return DynamicTest.dynamicTest(testCase.name(), () -> executeTestCase(testCase));
         }
 
         private void executeTestCase(JsonDecodeTestCase testCase) {
