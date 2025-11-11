@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -489,8 +490,8 @@ public class JToonDecodeTest {
         void testLenientMode() {
             String toon = "[invalid]";  // Invalid array header format
             DecodeOptions options = DecodeOptions.withStrict(false);
-            Object result = JToon.decode(toon, options);
-            assertNull(result);
+            var result = JToon.decode(toon, options);
+            assertEquals(Collections.emptyList(), result);
         }
     }
 

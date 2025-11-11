@@ -4,39 +4,8 @@ import com.felipestanzani.jtoon.decoder.ValueDecoder;
 import com.felipestanzani.jtoon.encoder.ValueEncoder;
 import com.felipestanzani.jtoon.normalizer.JsonNormalizer;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 
-/**
- * Main API for encoding and decoding JToon format.
- *
- * <p>
- * JToon is a structured text format that represents JSON-like data in a more
- * human-readable way, with support for tabular arrays and inline formatting.
- * </p>
- *
- * <h2>Usage Examples:</h2>
- *
- * <pre>{@code
- * // Encode a Java object with default options
- * String toon = JToon.encode(myObject);
- *
- * // Encode with custom options
- * EncodeOptions options = new EncodeOptions(4, Delimiter.PIPE, true);
- * String toon = JToon.encode(myObject, options);
- *
- * // Encode a plain JSON string directly
- * String toon = JToon.encodeJson("{\"id\":123,\"name\":\"Ada\"}");
- *
- * // Decode TOON back to Java objects
- * Object result = JToon.decode(toon);
- *
- * // Decode TOON directly to JSON string
- * String json = JToon.decodeToJson(toon);
- * }</pre>
- */
 public final class JToon {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private JToon() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
@@ -179,11 +148,6 @@ public final class JToon {
      *                                  invalid
      */
     public static String decodeToJson(String toon, DecodeOptions options) {
-        try {
-            Object decoded = ValueDecoder.decode(toon, options);
-            return OBJECT_MAPPER.writeValueAsString(decoded);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Failed to convert decoded value to JSON: " + e.getMessage(), e);
-        }
+        return ValueDecoder.decodeToJson(toon, options);
     }
 }

@@ -2,8 +2,10 @@ package com.felipestanzani.jtoon.decoder;
 
 import com.felipestanzani.jtoon.DecodeOptions;
 import com.felipestanzani.jtoon.util.StringEscaper;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,16 +22,18 @@ import java.util.regex.Pattern;
  *
  * <h2>Parsing Strategy:</h2>
  * <ul>
- *   <li>Split input into lines</li>
- *   <li>Track current line position and indentation depth</li>
- *   <li>Use regex patterns to detect structure (arrays, objects, primitives)</li>
- *   <li>Recursively process nested structures</li>
+ * <li>Split input into lines</li>
+ * <li>Track current line position and indentation depth</li>
+ * <li>Use regex patterns to detect structure (arrays, objects, primitives)</li>
+ * <li>Recursively process nested structures</li>
  * </ul>
  *
  * @see DecodeOptions
  * @see PrimitiveDecoder
  */
 public final class ValueDecoder {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /**
      * Matches standalone array headers: [3], [#2], [3\t], [2|]
@@ -57,7 +61,8 @@ public final class ValueDecoder {
      * @param toon    TOON-formatted input string
      * @param options parsing options (delimiter, indentation, strict mode)
      * @return parsed object (Map, List, primitive, or null)
-     * @throws IllegalArgumentException if strict mode is enabled and input is invalid
+     * @throws IllegalArgumentException if strict mode is enabled and input is
+     *                                  invalid
      */
     public static Object decode(String toon, DecodeOptions options) {
         if (toon == null || toon.trim().isEmpty()) {
@@ -67,6 +72,30 @@ public final class ValueDecoder {
         String trimmed = toon.trim();
         Parser parser = new Parser(trimmed, options);
         return parser.parseValue();
+    }
+
+    /**
+     * Decodes a TOON-formatted string directly to a JSON string using custom
+     * options.
+     *
+     * <p>
+     * This is a convenience method that decodes TOON to Java objects and then
+     * serializes them to JSON.
+     * </p>
+     *
+     * @param toon    The TOON-formatted string to decode
+     * @param options Decoding options (indent, delimiter, strict mode)
+     * @return JSON string representation
+     * @throws IllegalArgumentException if strict mode is enabled and input is
+     *                                  invalid
+     */
+    public static String decodeToJson(String toon, DecodeOptions options) {
+        try {
+            Object decoded = ValueDecoder.decode(toon, options);
+            return OBJECT_MAPPER.writeValueAsString(decoded);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to convert decoded value to JSON: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -117,8 +146,7 @@ public final class ValueDecoder {
                 String key = StringEscaper.unescape(keyedArray.group(1).trim());
                 String arrayHeader = content.substring(keyedArray.group(1).length());
 
-                @SuppressWarnings("unchecked")
-                List<Object> arrayValue = (List<Object>) parseArray(arrayHeader, depth);
+                var arrayValue = parseArray(arrayHeader, depth);
                 Map<String, Object> obj = new LinkedHashMap<>();
                 obj.put(key, arrayValue);
                 return obj;
@@ -141,16 +169,14 @@ public final class ValueDecoder {
          * Parses array from header string and following lines.
          * Detects array type (tabular, list, or primitive) and routes accordingly.
          */
-        private Object parseArray(String header, int depth) {
+        private List<Object> parseArray(String header, int depth) {
             Matcher tabularMatcher = TABULAR_HEADER_PATTERN.matcher(header);
             Matcher arrayMatcher = ARRAY_HEADER_PATTERN.matcher(header);
 
-            // Tabular array: [2]{id,name}:
             if (tabularMatcher.find()) {
                 return parseTabularArray(header, depth);
             }
 
-            // Other arrays: [2]:
             if (arrayMatcher.find()) {
                 int headerEndIdx = arrayMatcher.end();
                 String afterHeader = header.substring(headerEndIdx).trim();
@@ -158,7 +184,6 @@ public final class ValueDecoder {
                 if (afterHeader.startsWith(":")) {
                     String inlineContent = afterHeader.substring(1).trim();
 
-                    // Inline primitive array: [3]: a,b,c
                     if (!inlineContent.isEmpty()) {
                         List<Object> result = parseArrayValues(inlineContent);
                         currentLine++;
@@ -166,19 +191,16 @@ public final class ValueDecoder {
                     }
                 }
 
-                // Multiline array
                 currentLine++;
                 if (currentLine < lines.length) {
                     String nextLine = lines[currentLine];
                     int nextDepth = getDepth(nextLine);
                     String nextContent = nextLine.substring(nextDepth * options.indent());
 
-                    // List array: starts with "- "
                     if (nextContent.startsWith("- ")) {
                         currentLine--;
                         return parseListArray(depth);
                     } else {
-                        // Multiline primitive array
                         currentLine++;
                         return parseArrayValues(nextContent);
                     }
@@ -189,12 +211,13 @@ public final class ValueDecoder {
             if (options.strict()) {
                 throw new IllegalArgumentException("Invalid array header: " + header);
             }
-            return null;
+            return Collections.emptyList();
         }
 
         /**
-         * Parses tabular array format where each row contains delimiter-separated values.
-         * Example: items[2]{id,name}:\n  1,Ada\n  2,Bob
+         * Parses tabular array format where each row contains delimiter-separated
+         * values.
+         * Example: items[2]{id,name}:\n 1,Ada\n 2,Bob
          */
         private List<Object> parseTabularArray(String header, int depth) {
             Matcher matcher = TABULAR_HEADER_PATTERN.matcher(header);
@@ -229,7 +252,7 @@ public final class ValueDecoder {
 
         /**
          * Parses list array format where items are prefixed with "- ".
-         * Example: items[2]:\n  - item1\n  - item2
+         * Example: items[2]:\n - item1\n - item2
          */
         private List<Object> parseListArray(int depth) {
             List<Object> result = new ArrayList<>();
@@ -245,12 +268,15 @@ public final class ValueDecoder {
 
                 if (lineDepth == depth + 1) {
                     String content = line.substring((depth + 1) * options.indent());
+
                     if (content.startsWith("- ")) {
                         result.add(parseListItem(content, depth));
-                        continue;
+                    } else {
+                        currentLine++;
                     }
+                } else {
+                    currentLine++;
                 }
-                currentLine++;
             }
 
             return result;
@@ -362,28 +388,18 @@ public final class ValueDecoder {
                 if (escaped) {
                     current.append(c);
                     escaped = false;
-                    continue;
-                }
-
-                if (c == '\\') {
+                } else if (c == '\\') {
                     current.append(c);
                     escaped = true;
-                    continue;
-                }
-
-                if (c == '"') {
+                } else if (c == '"') {
                     current.append(c);
                     inQuotes = !inQuotes;
-                    continue;
-                }
-
-                if (c == delimiter.charAt(0) && !inQuotes) {
+                } else if (c == delimiter.charAt(0) && !inQuotes) {
                     result.add(current.toString().trim());
                     current = new StringBuilder();
-                    continue;
+                } else {
+                    current.append(c);
                 }
-
-                current.append(c);
             }
 
             if (!current.isEmpty() || input.endsWith(String.valueOf(delimiter))) {
@@ -396,53 +412,54 @@ public final class ValueDecoder {
         /**
          * Parses additional key-value pairs at root level.
          */
-        @SuppressWarnings("unchecked")
         private void parseRootObjectFields(Map<String, Object> obj, int depth) {
             while (currentLine < lines.length) {
                 String line = lines[currentLine];
                 int lineDepth = getDepth(line);
 
                 if (lineDepth != depth) {
-                    break;
+                    return;
                 }
 
                 String content = line.substring(depth * options.indent());
 
-                // Check for keyed array
                 Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(content);
                 if (keyedArray.matches()) {
                     String key = StringEscaper.unescape(keyedArray.group(1).trim());
                     String arrayHeader = content.substring(keyedArray.group(1).length());
-                    List<Object> arrayValue = (List<Object>) parseArray(arrayHeader, depth);
+
+                    var arrayValue = parseArray(arrayHeader, depth);
+
                     obj.put(key, arrayValue);
-                    continue;
-                }
+                } else {
+                    int colonIdx = findUnquotedColon(content);
+                    if (colonIdx > 0) {
+                        String key = content.substring(0, colonIdx).trim();
+                        String value = content.substring(colonIdx + 1).trim();
 
-                int colonIdx = findUnquotedColon(content);
-                if (colonIdx <= 0) {
-                    break;
-                }
+                        parseKeyValuePairIntoMap(obj, key, value, depth);
 
-                String key = content.substring(0, colonIdx).trim();
-                String value = content.substring(colonIdx + 1).trim();
-                parseKeyValuePairIntoMap(obj, key, value, depth);
-                currentLine++;
+                        currentLine++;
+                    } else {
+                        return;
+                    }
+                }
             }
         }
 
         /**
          * Parses nested object starting at currentLine.
          */
-        @SuppressWarnings("unchecked")
-        private Object parseNestedObject(int parentDepth) {
-            Map<String, Object> obj = new LinkedHashMap<>();
+        private Map<String, Object> parseNestedObject(int parentDepth) {
+            Map<String, Object> result = new LinkedHashMap<>();
 
             while (currentLine < lines.length) {
                 String line = lines[currentLine];
+
                 int depth = getDepth(line);
 
                 if (depth <= parentDepth) {
-                    break;
+                    return result;
                 }
 
                 if (depth == parentDepth + 1) {
@@ -450,25 +467,30 @@ public final class ValueDecoder {
 
                     // Check for keyed array
                     Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(content);
+
                     if (keyedArray.matches()) {
                         String key = StringEscaper.unescape(keyedArray.group(1).trim());
                         String arrayHeader = content.substring(keyedArray.group(1).length());
-                        List<Object> arrayValue = (List<Object>) parseArray(arrayHeader, parentDepth + 1);
-                        obj.put(key, arrayValue);
-                        continue;
-                    }
+                        List<Object> arrayValue = parseArray(arrayHeader, parentDepth + 1);
+                        result.put(key, arrayValue);
+                    } else {
+                        int colonIdx = findUnquotedColon(content);
 
-                    int colonIdx = findUnquotedColon(content);
-                    if (colonIdx > 0) {
-                        String key = content.substring(0, colonIdx).trim();
-                        String value = content.substring(colonIdx + 1).trim();
-                        parseKeyValuePairIntoMap(obj, key, value, depth);
+                        if (colonIdx > 0) {
+                            String key = content.substring(0, colonIdx).trim();
+                            String value = content.substring(colonIdx + 1).trim();
+
+                            parseKeyValuePairIntoMap(result, key, value, depth);
+                        }
+                        currentLine++;
                     }
+                } else {
+                    // Depth is greater than parentDepth + 1, skip this line
+                    currentLine++;
                 }
-                currentLine++;
             }
 
-            return obj;
+            return result;
         }
 
         /**
@@ -536,20 +558,11 @@ public final class ValueDecoder {
 
                 if (escaped) {
                     escaped = false;
-                    continue;
-                }
-
-                if (c == '\\') {
+                } else if (c == '\\') {
                     escaped = true;
-                    continue;
-                }
-
-                if (c == '"') {
+                } else if (c == '"') {
                     inQuotes = !inQuotes;
-                    continue;
-                }
-
-                if (c == ':' && !inQuotes) {
+                } else if (c == ':' && !inQuotes) {
                     return i;
                 }
             }
@@ -567,7 +580,7 @@ public final class ValueDecoder {
 
             for (int i = 0; i < line.length(); i += indentSize) {
                 if (i + indentSize <= line.length()
-                    && line.substring(i, i + indentSize).equals(" ".repeat(indentSize))) {
+                        && line.substring(i, i + indentSize).equals(" ".repeat(indentSize))) {
                     depth++;
                 } else {
                     break;

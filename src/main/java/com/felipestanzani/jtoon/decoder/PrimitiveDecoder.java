@@ -46,16 +46,19 @@ final class PrimitiveDecoder {
         }
 
         // Check for null literal
-        if ("null".equals(value)) {
-            return null;
-        }
-
-        // Check for boolean literals
-        if ("true".equals(value)) {
-            return true;
-        }
-        if ("false".equals(value)) {
-            return false;
+        switch (value) {
+            case "null" -> {
+                return null;
+            }
+            case "true" -> {
+                return true;
+            }
+            case "false" -> {
+                return false;
+            }
+            default -> {
+                // Do nothing, continue to next check
+            }
         }
 
         // Check for quoted strings
