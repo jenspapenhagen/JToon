@@ -4,6 +4,7 @@ public record JsonDecodeTestOptions(
         Integer indent,
         String delimiter,
         String lengthMarker,
-        Boolean strict) {
+        Boolean strict,
+        String expandPaths) {
 }
 

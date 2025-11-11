@@ -62,14 +62,30 @@ final class PrimitiveDecoder {
         }
 
         // Check for quoted strings
-        if (value.startsWith("\"") && value.endsWith("\"")) {
+        if (value.startsWith("\"")) {
+            // Validate string before unescaping
+            StringEscaper.validateString(value);
             return StringEscaper.unescape(value);
         }
 
+        // Check for leading zeros (treat as string, except for "0", "-0", "0.0", etc.)
+        String trimmed = value.trim();
+        if (trimmed.length() > 1 && trimmed.matches("^-?0+[\\d].*")
+                && !trimmed.matches("^-?0+(\\.0+)?([eE][+-]?\\d+)?$")) {
+                return value;
+            }
+
+
         // Try parsing as number
         try {
+            // Check if it contains exponent notation or decimal point
             if (value.contains(".") || value.contains("e") || value.contains("E")) {
-                return Double.parseDouble(value);
+                double parsed = Double.parseDouble(value);
+                // Handle negative zero - Java doesn't distinguish, but spec says it should be 0
+                if (parsed == 0.0) {
+                    return 0L;
+                }
+                return parsed;
             } else {
                 return Long.parseLong(value);
             }

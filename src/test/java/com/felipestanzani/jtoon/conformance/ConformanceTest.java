@@ -4,6 +4,7 @@ import com.felipestanzani.jtoon.DecodeOptions;
 import com.felipestanzani.jtoon.Delimiter;
 import com.felipestanzani.jtoon.EncodeOptions;
 import com.felipestanzani.jtoon.JToon;
+import com.felipestanzani.jtoon.PathExpansion;
 import com.felipestanzani.jtoon.conformance.model.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicTest;
@@ -180,7 +181,16 @@ public class ConformanceTest {
 
             boolean strict = options.strict() != null ? options.strict() : true;
 
-            return new DecodeOptions(indent, delimiter, strict);
+            PathExpansion expandPaths = PathExpansion.OFF;
+            if (options.expandPaths() != null) {
+                expandPaths = switch (options.expandPaths().toLowerCase()) {
+                    case "safe" -> PathExpansion.SAFE;
+                    case "off" -> PathExpansion.OFF;
+                    default -> PathExpansion.OFF;
+                };
+            }
+
+            return new DecodeOptions(indent, delimiter, strict, expandPaths);
         }
 
         private record DecodeTestFile(File file, DecodeTestFixture fixture) {
