@@ -85,6 +85,12 @@ final class PrimitiveDecoder {
                 if (parsed == 0.0) {
                     return 0L;
                 }
+                // Check if the result is a whole number - if so, return as Long
+                if (parsed == Math.floor(parsed)
+                        && !Double.isInfinite(parsed)
+                        && parsed >= Long.MIN_VALUE
+                        && parsed <= Long.MAX_VALUE) return (long) parsed;
+
                 return parsed;
             } else {
                 return Long.parseLong(value);
