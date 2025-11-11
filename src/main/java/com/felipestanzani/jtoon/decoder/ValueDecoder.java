@@ -74,13 +74,20 @@ public final class ValueDecoder {
             return new LinkedHashMap<>();
         }
 
-        String trimmed = toon.trim();
         // Special case: if input is exactly "null", return null
+        String trimmed = toon.trim();
         if ("null".equals(trimmed)) {
             return null;
         }
 
-        Parser parser = new Parser(trimmed, options);
+        // Don't trim leading whitespace - we need it for indentation validation
+        // Only trim trailing whitespace to avoid issues with empty lines at the end
+        String processed = toon;
+        while (!processed.isEmpty() && Character.isWhitespace(processed.charAt(processed.length() - 1))) {
+            processed = processed.substring(0, processed.length() - 1);
+        }
+
+        Parser parser = new Parser(processed, options);
         Object result = parser.parseValue();
         // If result is null (no content), return empty object
         if (result == null) {
@@ -721,6 +728,9 @@ public final class ValueDecoder {
             }
 
             // Handle empty value with nested content
+            // The field is at depth + 1 (the list item is at depth, the field is indented
+            // one more level)
+            // So nested content should be at depth + 2 or greater
             if (isEmpty && nextDepth > depth + 1) {
                 return parseNestedObject(depth + 1);
             }
@@ -1427,6 +1437,12 @@ public final class ValueDecoder {
             }
 
             // Validate indentation (including tabs) in strict mode
+            // Check for tabs first before any other processing
+            if (options.strict() && !line.isEmpty() && line.charAt(0) == '\t') {
+                throw new IllegalArgumentException(
+                        String.format("Tab character used in indentation at line %d", currentLine + 1));
+            }
+
             if (options.strict()) {
                 validateIndentation(line);
             }
