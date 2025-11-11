@@ -44,13 +44,15 @@ public final class ValueDecoder {
 
     /**
      * Matches tabular array headers with field names: [2]{id,name,role}:
-     * Group 1: optional # marker, Group 2: digits, Group 3: optional delimiter, Group 4: field spec
+     * Group 1: optional # marker, Group 2: digits, Group 3: optional delimiter,
+     * Group 4: field spec
      */
     private static final Pattern TABULAR_HEADER_PATTERN = Pattern.compile("^\\[(#?)(\\d+)([\\t|])?]\\{(.+)}:");
 
     /**
      * Matches keyed array headers: items[2]{id,name}: or tags[3]: or data[4]{id}:
-     * Captures: group(1)=key, group(2)=#marker, group(3)=delimiter, group(4)=optional field spec
+     * Captures: group(1)=key, group(2)=#marker, group(3)=delimiter,
+     * group(4)=optional field spec
      */
     private static final Pattern KEYED_ARRAY_PATTERN = Pattern.compile("^(.+?)\\[(#?)\\d+([\\t|])?](\\{[^}]+})?:.*$");
 
@@ -77,7 +79,7 @@ public final class ValueDecoder {
         if ("null".equals(trimmed)) {
             return null;
         }
-        
+
         Parser parser = new Parser(trimmed, options);
         Object result = parser.parseValue();
         // If result is null (no content), return empty object
@@ -140,10 +142,7 @@ public final class ValueDecoder {
             int depth = getDepth(line);
 
             if (depth > 0) {
-                if (options.strict()) {
-                    throw new IllegalArgumentException("Unexpected indentation at line " + currentLine);
-                }
-                return null;
+                return handleUnexpectedIndentation();
             }
 
             String content = line.substring(depth * options.indent());
@@ -156,26 +155,7 @@ public final class ValueDecoder {
             // Handle keyed arrays: items[2]{id,name}:
             Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(content);
             if (keyedArray.matches()) {
-                String originalKey = keyedArray.group(1).trim();
-                String key = StringEscaper.unescape(originalKey);
-                String arrayHeader = content.substring(keyedArray.group(1).length());
-
-                var arrayValue = parseArray(arrayHeader, depth);
-                Map<String, Object> obj = new LinkedHashMap<>();
-
-                // Handle path expansion for array keys
-                if (shouldExpandKey(originalKey)) {
-                    expandPathIntoMap(obj, key, arrayValue);
-                } else {
-                    obj.put(key, arrayValue);
-                }
-                
-                // Continue parsing root-level fields if at depth 0
-                if (depth == 0) {
-                    parseRootObjectFields(obj, depth);
-                }
-                
-                return obj;
+                return parseKeyedArrayValue(keyedArray, content, depth);
             }
 
             // Handle key-value pairs: name: Ada
@@ -187,27 +167,80 @@ public final class ValueDecoder {
             }
 
             // Bare scalar value
+            return parseBareScalarValue(content, depth);
+        }
+
+        /**
+         * Handles unexpected indentation at root level.
+         */
+        private Object handleUnexpectedIndentation() {
+            if (options.strict()) {
+                throw new IllegalArgumentException("Unexpected indentation at line " + currentLine);
+            }
+            return null;
+        }
+
+        /**
+         * Parses a keyed array value (e.g., "items[2]{id,name}:").
+         */
+        private Object parseKeyedArrayValue(Matcher keyedArray, String content, int depth) {
+            String originalKey = keyedArray.group(1).trim();
+            String key = StringEscaper.unescape(originalKey);
+            String arrayHeader = content.substring(keyedArray.group(1).length());
+
+            var arrayValue = parseArray(arrayHeader, depth);
+            Map<String, Object> obj = new LinkedHashMap<>();
+
+            // Handle path expansion for array keys
+            if (shouldExpandKey(originalKey)) {
+                expandPathIntoMap(obj, key, arrayValue);
+            } else {
+                // Check for conflicts with existing expanded paths
+                checkPathExpansionConflict(obj, key, arrayValue);
+                obj.put(key, arrayValue);
+            }
+
+            // Continue parsing root-level fields if at depth 0
+            if (depth == 0) {
+                parseRootObjectFields(obj, depth);
+            }
+
+            return obj;
+        }
+
+        /**
+         * Parses a bare scalar value and validates in strict mode.
+         */
+        private Object parseBareScalarValue(String content, int depth) {
             Object result = PrimitiveDecoder.parse(content);
             currentLine++;
-            
+
             // In strict mode, check if there are more primitives at root level
             if (options.strict() && depth == 0) {
-                // Skip blank lines and check for more content at root level
-                while (currentLine < lines.length) {
-                    String nextLine = lines[currentLine];
-                    if (isBlankLine(nextLine)) {
-                        currentLine++;
-                        continue;
-                    }
-                    int nextDepth = getDepth(nextLine);
-                    if (nextDepth == 0) {
-                        throw new IllegalArgumentException("Multiple primitives at root depth in strict mode at line " + (currentLine + 1));
-                    }
-                    break;
-                }
+                validateNoMultiplePrimitivesAtRoot();
             }
-            
+
             return result;
+        }
+
+        /**
+         * Validates that there are no multiple primitives at root level in strict mode.
+         */
+        private void validateNoMultiplePrimitivesAtRoot() {
+            // Skip blank lines and check for more content at root level
+            while (currentLine < lines.length) {
+                String nextLine = lines[currentLine];
+                if (isBlankLine(nextLine)) {
+                    currentLine++;
+                    continue;
+                }
+                int nextDepth = getDepth(nextLine);
+                if (nextDepth == 0) {
+                    throw new IllegalArgumentException(
+                            "Multiple primitives at root depth in strict mode at line " + (currentLine + 1));
+                }
+                break;
+            }
         }
 
         /**
@@ -253,12 +286,13 @@ public final class ValueDecoder {
             Integer declaredLength = extractLengthFromHeader(header);
             if (declaredLength != null && declaredLength != actualLength) {
                 throw new IllegalArgumentException(
-                    String.format("Array length mismatch: declared %d, found %d", declaredLength, actualLength));
+                        String.format("Array length mismatch: declared %d, found %d", declaredLength, actualLength));
             }
         }
 
         /**
-         * Parses array from header string and following lines with a specific delimiter.
+         * Parses array from header string and following lines with a specific
+         * delimiter.
          * Detects array type (tabular, list, or primitive) and routes accordingly.
          */
         private List<Object> parseArrayWithDelimiter(String header, int depth, String arrayDelimiter) {
@@ -292,7 +326,7 @@ public final class ValueDecoder {
 
                     if (nextContent.startsWith("- ")) {
                         currentLine--;
-                        return parseListArray(depth, arrayDelimiter, header);
+                        return parseListArray(depth, header);
                     } else {
                         currentLine++;
                         List<Object> result = parseArrayValues(nextContent, arrayDelimiter);
@@ -347,7 +381,7 @@ public final class ValueDecoder {
 
                     if (nextContent.startsWith("- ")) {
                         currentLine--;
-                        return parseListArray(depth, arrayDelimiter, header);
+                        return parseListArray(depth, header);
                     } else {
                         currentLine++;
                         List<Object> result = parseArrayValues(nextContent, arrayDelimiter);
@@ -392,40 +426,22 @@ public final class ValueDecoder {
 
             while (currentLine < lines.length) {
                 String line = lines[currentLine];
-                
-                // Check for blank line first - handle before depth check
+
                 if (isBlankLine(line)) {
-                    if (options.strict()) {
-                        throw new IllegalArgumentException("Blank line inside tabular array at line " + (currentLine + 1));
+                    if (handleBlankLineInTabularArray(depth)) {
+                        break;
                     }
-                    // In non-strict mode, skip blank lines (they have depth 0 but should be ignored)
-                    currentLine++;
                     continue;
                 }
-                
-                int lineDepth = getDepth(line);
 
-                // If line depth is less than expected, check if it's a key-value pair at same depth as parent
-                // This terminates the array (e.g., "count: 2" after tabular array)
-                if (lineDepth < depth + 1) {
-                    if (lineDepth == depth) {
-                        String content = line.substring(depth * options.indent());
-                        // Check if it's a key-value pair (unquoted colon)
-                        int colonIdx = findUnquotedColon(content);
-                        if (colonIdx > 0) {
-                            // This is a key-value pair at same depth - terminate array
-                            break;
-                        }
-                    }
+                int lineDepth = getDepth(line);
+                if (shouldTerminateTabularArray(line, lineDepth, depth)) {
                     break;
                 }
 
-                if (lineDepth == depth + 1) {
-                    String rowContent = line.substring((depth + 1) * options.indent());
-                    Map<String, Object> row = parseTabularRow(rowContent, keys, arrayDelimiter);
-                    result.add(row);
+                if (processTabularRow(line, lineDepth, depth, keys, arrayDelimiter, result)) {
+                    currentLine++;
                 }
-                currentLine++;
             }
 
             validateArrayLength(header, result.size());
@@ -433,60 +449,166 @@ public final class ValueDecoder {
         }
 
         /**
+         * Handles blank line processing in tabular array.
+         * Returns true if array should terminate, false if line should be skipped.
+         */
+        private boolean handleBlankLineInTabularArray(int depth) {
+            int nextNonBlankLine = findNextNonBlankLine(currentLine + 1);
+
+            if (nextNonBlankLine < lines.length) {
+                int nextDepth = getDepth(lines[nextNonBlankLine]);
+                if (nextDepth <= depth) {
+                    return true; // Blank line is outside array - terminate
+                }
+            }
+
+            // Blank line is inside array
+            if (options.strict()) {
+                throw new IllegalArgumentException(
+                        "Blank line inside tabular array at line " + (currentLine + 1));
+            }
+            // In non-strict mode, skip blank lines
+            currentLine++;
+            return false;
+        }
+
+        /**
+         * Finds the next non-blank line starting from the given index.
+         */
+        private int findNextNonBlankLine(int startIndex) {
+            int index = startIndex;
+            while (index < lines.length && isBlankLine(lines[index])) {
+                index++;
+            }
+            return index;
+        }
+
+        /**
+         * Determines if tabular array parsing should terminate based on line depth.
+         * Returns true if array should terminate, false otherwise.
+         */
+        private boolean shouldTerminateTabularArray(String line, int lineDepth, int depth) {
+            if (lineDepth < depth + 1) {
+                if (lineDepth == depth) {
+                    String content = line.substring(depth * options.indent());
+                    int colonIdx = findUnquotedColon(content);
+                    if (colonIdx > 0) {
+                        return true; // Key-value pair at same depth - terminate array
+                    }
+                }
+                return true; // Line depth is less than expected - terminate
+            }
+
+            // Check for key-value pair at expected row depth
+            if (lineDepth == depth + 1) {
+                String rowContent = line.substring((depth + 1) * options.indent());
+                int colonIdx = findUnquotedColon(rowContent);
+                return colonIdx > 0; // Key-value pair at same depth as rows - terminate array
+            }
+
+            return false;
+        }
+
+        /**
+         * Processes a tabular row if it matches the expected depth.
+         * Returns true if line was processed and currentLine should be incremented,
+         * false otherwise.
+         */
+        private boolean processTabularRow(String line, int lineDepth, int depth, List<String> keys,
+                String arrayDelimiter, List<Object> result) {
+            if (lineDepth == depth + 1) {
+                String rowContent = line.substring((depth + 1) * options.indent());
+                Map<String, Object> row = parseTabularRow(rowContent, keys, arrayDelimiter);
+                result.add(row);
+                return true;
+            } else if (lineDepth > depth + 1) {
+                // Line is deeper than expected - might be nested content, skip it
+                currentLine++;
+                return false;
+            }
+            return true;
+        }
+
+        /**
          * Parses list array format where items are prefixed with "- ".
          * Example: items[2]:\n - item1\n - item2
          */
-        private List<Object> parseListArray(int depth, String arrayDelimiter, String header) {
+        private List<Object> parseListArray(int depth, String header) {
             List<Object> result = new ArrayList<>();
             currentLine++;
 
             while (currentLine < lines.length) {
                 String line = lines[currentLine];
-                
-                // Check for blank line first - handle before depth check
+
                 if (isBlankLine(line)) {
-                    if (options.strict()) {
-                        throw new IllegalArgumentException("Blank line inside list array at line " + (currentLine + 1));
+                    if (handleBlankLineInListArray(depth)) {
+                        break;
                     }
-                    // In non-strict mode, skip blank lines (they have depth 0 but should be ignored)
-                    currentLine++;
                     continue;
                 }
-                
-                int lineDepth = getDepth(line);
 
-                // If line depth is less than expected, check if it's a key-value pair at same depth as parent
-                // This terminates the array
-                if (lineDepth < depth + 1) {
-                    if (lineDepth == depth) {
-                        String content = line.substring(depth * options.indent());
-                        // Check if it's a key-value pair (unquoted colon)
-                        int colonIdx = findUnquotedColon(content);
-                        if (colonIdx > 0) {
-                            // This is a key-value pair at same depth - terminate array
-                            break;
-                        }
-                    }
+                int lineDepth = getDepth(line);
+                if (shouldTerminateListArray(lineDepth, depth)) {
                     break;
                 }
 
-                if (lineDepth == depth + 1) {
-                    String content = line.substring((depth + 1) * options.indent());
-
-                    if (content.startsWith("-")) {
-                        result.add(parseListItem(content, depth));
-                    } else {
-                        currentLine++;
-                    }
-                } else {
-                    currentLine++;
-                }
+                processListArrayItem(line, lineDepth, depth, result);
             }
 
             if (header != null) {
                 validateArrayLength(header, result.size());
             }
             return result;
+        }
+
+        /**
+         * Handles blank line processing in list array.
+         * Returns true if array should terminate, false if line should be skipped.
+         */
+        private boolean handleBlankLineInListArray(int depth) {
+            int nextNonBlankLine = findNextNonBlankLine(currentLine + 1);
+
+            if (nextNonBlankLine >= lines.length) {
+                return true; // End of file - terminate array
+            }
+
+            int nextDepth = getDepth(lines[nextNonBlankLine]);
+            if (nextDepth <= depth) {
+                return true; // Blank line is outside array - terminate
+            }
+
+            // Blank line is inside array
+            if (options.strict()) {
+                throw new IllegalArgumentException("Blank line inside list array at line " + (currentLine + 1));
+            }
+            // In non-strict mode, skip blank lines
+            currentLine++;
+            return false;
+        }
+
+        /**
+         * Determines if list array parsing should terminate based on line depth.
+         * Returns true if array should terminate, false otherwise.
+         */
+        private boolean shouldTerminateListArray(int lineDepth, int depth) {
+            return lineDepth < depth + 1; // Line depth is less than expected - terminate
+        }
+
+        /**
+         * Processes a single list array item if it matches the expected depth.
+         */
+        private void processListArrayItem(String line, int lineDepth, int depth, List<Object> result) {
+            if (lineDepth == depth + 1) {
+                String content = line.substring((depth + 1) * options.indent());
+
+                if (content.startsWith("-")) {
+                    result.add(parseListItem(content, depth));
+                } else {
+                    currentLine++;
+                }
+            } else {
+                currentLine++;
+            }
         }
 
         /**
@@ -501,52 +623,50 @@ public final class ValueDecoder {
             } else {
                 itemContent = "";
             }
-            
+
             // Handle empty item: just "-"
             if (itemContent.isEmpty()) {
                 currentLine++;
                 return new LinkedHashMap<>();
             }
-            
+
             // Check for standalone array (e.g., "[2]: 1,2")
             if (itemContent.startsWith("[")) {
                 // For nested arrays in list items, default to comma delimiter if not specified
                 String nestedArrayDelimiter = extractDelimiterFromHeader(itemContent);
                 // parseArrayWithDelimiter handles currentLine increment internally
-                // For inline arrays, it increments. For multi-line arrays, parseListArray handles it.
+                // For inline arrays, it increments. For multi-line arrays, parseListArray
+                // handles it.
                 // We need to increment here only if it was an inline array that we just parsed
-                // Actually, parseArrayWithDelimiter always handles currentLine, so we don't need to increment
+                // Actually, parseArrayWithDelimiter always handles currentLine, so we don't
+                // need to increment
                 return parseArrayWithDelimiter(itemContent, depth + 1, nestedArrayDelimiter);
             }
-            
+
             // Check for keyed array pattern (e.g., "tags[3]: a,b,c" or "data[2]{id}: ...")
             Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(itemContent);
             if (keyedArray.matches()) {
                 String originalKey = keyedArray.group(1).trim();
                 String key = StringEscaper.unescape(originalKey);
                 String arrayHeader = itemContent.substring(keyedArray.group(1).length());
-                
+
                 // For nested arrays in list items, default to comma delimiter if not specified
                 String nestedArrayDelimiter = extractDelimiterFromHeader(arrayHeader);
                 var arrayValue = parseArrayWithDelimiter(arrayHeader, depth + 1, nestedArrayDelimiter);
-                
+
                 Map<String, Object> item = new LinkedHashMap<>();
                 item.put(key, arrayValue);
-                
-                // parseArrayWithDelimiter handles currentLine for inline arrays
-                // For multi-line arrays, we need to make sure currentLine is correct
-                // Actually, parseArrayWithDelimiter should handle it, but for keyed arrays we might need to increment
-                // Let's check: if it was inline, currentLine was incremented. If multi-line, parseListArray/parseTabularArray handle it.
-                // For keyed arrays that are inline, we need to increment. For multi-line, the array parser handles it.
-                // For now, always increment - parseArrayWithDelimiter will have incremented for inline, and for multi-line
-                // the array parsers leave currentLine at the right place, so we need to check if we're past the array
-                // Actually, this is complex. Let's just increment and see if it works.
-                currentLine++;
+
+                // parseArrayWithDelimiter manages currentLine correctly:
+                // - For inline arrays, it increments currentLine
+                // - For multi-line arrays (list/tabular), the array parsers leave currentLine
+                // at the line after the array
+                // So we don't need to increment here. Just parse additional fields.
                 parseListItemFields(item, depth);
-                
+
                 return item;
             }
-            
+
             int colonIdx = findUnquotedColon(itemContent);
 
             // Simple scalar: - value
@@ -569,6 +689,106 @@ public final class ValueDecoder {
         }
 
         /**
+         * Parses a field value, handling nested objects, empty values, and primitives.
+         * 
+         * @param fieldValue the value string to parse
+         * @param fieldDepth the depth at which the field is located
+         * @return the parsed value (Map, List, or primitive)
+         */
+        private Object parseFieldValue(String fieldValue, int fieldDepth) {
+            // Check if next line is nested
+            if (currentLine + 1 < lines.length) {
+                int nextDepth = getDepth(lines[currentLine + 1]);
+                if (nextDepth > fieldDepth) {
+                    currentLine++;
+                    // parseNestedObject manages currentLine, so we don't increment here
+                    return parseNestedObject(fieldDepth);
+                } else {
+                    // If value is empty, create empty object; otherwise parse as primitive
+                    if (fieldValue.trim().isEmpty()) {
+                        currentLine++;
+                        return new LinkedHashMap<>();
+                    } else {
+                        currentLine++;
+                        return PrimitiveDecoder.parse(fieldValue);
+                    }
+                }
+            } else {
+                // If value is empty, create empty object; otherwise parse as primitive
+                if (fieldValue.trim().isEmpty()) {
+                    currentLine++;
+                    return new LinkedHashMap<>();
+                } else {
+                    currentLine++;
+                    return PrimitiveDecoder.parse(fieldValue);
+                }
+            }
+        }
+
+        /**
+         * Parses a keyed array field and adds it to the item map.
+         * 
+         * @param fieldContent the field content to parse
+         * @param item         the map to add the field to
+         * @param depth        the depth of the list item
+         * @return true if the field was processed as a keyed array, false otherwise
+         */
+        private boolean parseKeyedArrayField(String fieldContent, Map<String, Object> item, int depth) {
+            Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(fieldContent);
+            if (!keyedArray.matches()) {
+                return false;
+            }
+
+            String originalKey = keyedArray.group(1).trim();
+            String key = StringEscaper.unescape(originalKey);
+            String arrayHeader = fieldContent.substring(keyedArray.group(1).length());
+
+            // For nested arrays in list items, default to comma delimiter if not specified
+            String nestedArrayDelimiter = extractDelimiterFromHeader(arrayHeader);
+            var arrayValue = parseArrayWithDelimiter(arrayHeader, depth + 2, nestedArrayDelimiter);
+
+            // Handle path expansion for array keys
+            if (shouldExpandKey(originalKey)) {
+                expandPathIntoMap(item, key, arrayValue);
+            } else {
+                item.put(key, arrayValue);
+            }
+
+            // parseArrayWithDelimiter manages currentLine correctly
+            return true;
+        }
+
+        /**
+         * Parses a key-value field and adds it to the item map.
+         * 
+         * @param fieldContent the field content to parse
+         * @param item         the map to add the field to
+         * @param depth        the depth of the list item
+         * @return true if the field was processed as a key-value pair, false otherwise
+         */
+        private boolean parseKeyValueField(String fieldContent, Map<String, Object> item, int depth) {
+            int colonIdx = findUnquotedColon(fieldContent);
+            if (colonIdx <= 0) {
+                return false;
+            }
+
+            String fieldKey = StringEscaper.unescape(fieldContent.substring(0, colonIdx).trim());
+            String fieldValue = fieldContent.substring(colonIdx + 1).trim();
+
+            Object parsedValue = parseFieldValue(fieldValue, depth + 2);
+
+            // Handle path expansion
+            if (shouldExpandKey(fieldKey)) {
+                expandPathIntoMap(item, fieldKey, parsedValue);
+            } else {
+                item.put(fieldKey, parsedValue);
+            }
+
+            // parseFieldValue manages currentLine appropriately
+            return true;
+        }
+
+        /**
          * Parses additional fields for a list item object.
          */
         private void parseListItemFields(Map<String, Object> item, int depth) {
@@ -582,65 +802,22 @@ public final class ValueDecoder {
 
                 if (lineDepth == depth + 2) {
                     String fieldContent = line.substring((depth + 2) * options.indent());
-                    
-                    // Check for keyed array pattern first
-                    Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(fieldContent);
-                    if (keyedArray.matches()) {
-                        String originalKey = keyedArray.group(1).trim();
-                        String key = StringEscaper.unescape(originalKey);
-                        String arrayHeader = fieldContent.substring(keyedArray.group(1).length());
-                        
-                        // For nested arrays in list items, default to comma delimiter if not specified
-                        String nestedArrayDelimiter = extractDelimiterFromHeader(arrayHeader);
-                        var arrayValue = parseArrayWithDelimiter(arrayHeader, depth + 2, nestedArrayDelimiter);
-                        
-                        // Handle path expansion for array keys
-                        if (shouldExpandKey(originalKey)) {
-                            expandPathIntoMap(item, key, arrayValue);
-                        } else {
-                            item.put(key, arrayValue);
-                        }
-                    } else {
-                        int colonIdx = findUnquotedColon(fieldContent);
 
-                        if (colonIdx > 0) {
-                            String fieldKey = StringEscaper.unescape(fieldContent.substring(0, colonIdx).trim());
-                            String fieldValue = fieldContent.substring(colonIdx + 1).trim();
-                            
-                            // Check if next line is nested
-                            Object parsedValue;
-                            if (currentLine + 1 < lines.length) {
-                                int nextDepth = getDepth(lines[currentLine + 1]);
-                                if (nextDepth > depth + 2) {
-                                    currentLine++;
-                                    parsedValue = parseNestedObject(depth + 2);
-                                } else {
-                                    // If value is empty, create empty object; otherwise parse as primitive
-                                    if (fieldValue.trim().isEmpty()) {
-                                        parsedValue = new LinkedHashMap<>();
-                                    } else {
-                                        parsedValue = PrimitiveDecoder.parse(fieldValue);
-                                    }
-                                }
-                            } else {
-                                // If value is empty, create empty object; otherwise parse as primitive
-                                if (fieldValue.trim().isEmpty()) {
-                                    parsedValue = new LinkedHashMap<>();
-                                } else {
-                                    parsedValue = PrimitiveDecoder.parse(fieldValue);
-                                }
-                            }
-                            
-                            // Handle path expansion
-                            if (shouldExpandKey(fieldKey)) {
-                                expandPathIntoMap(item, fieldKey, parsedValue);
-                            } else {
-                                item.put(fieldKey, parsedValue);
-                            }
-                        }
+                    // Try to parse as keyed array first, then as key-value pair
+                    if (parseKeyedArrayField(fieldContent, item, depth)) {
+                        continue;
                     }
+
+                    if (parseKeyValueField(fieldContent, item, depth)) {
+                        continue;
+                    }
+
+                    // If neither pattern matched, skip this line to avoid infinite loop
+                    currentLine++;
+                } else {
+                    // Depth is greater than depth + 2, skip this line
+                    currentLine++;
                 }
-                currentLine++;
             }
         }
 
@@ -649,19 +826,14 @@ public final class ValueDecoder {
          * Validates that the row uses the correct delimiter.
          */
         private Map<String, Object> parseTabularRow(String rowContent, List<String> keys, String arrayDelimiter) {
-            // Validate delimiter mismatch - check if row contains wrong delimiter
-            if (options.strict()) {
-                validateRowDelimiter(rowContent, arrayDelimiter);
-            }
-
             Map<String, Object> row = new LinkedHashMap<>();
             List<Object> values = parseArrayValues(rowContent, arrayDelimiter);
 
             // Validate value count matches key count
             if (options.strict() && values.size() != keys.size()) {
                 throw new IllegalArgumentException(
-                    String.format("Tabular row value count (%d) does not match header field count (%d)", 
-                        values.size(), keys.size()));
+                        String.format("Tabular row value count (%d) does not match header field count (%d)",
+                                values.size(), keys.size()));
             }
 
             for (int i = 0; i < keys.size() && i < values.size(); i++) {
@@ -669,44 +841,6 @@ public final class ValueDecoder {
             }
 
             return row;
-        }
-
-        /**
-         * Validates that a row uses the correct delimiter.
-         */
-        private void validateRowDelimiter(String rowContent, String expectedDelimiter) {
-            // Check for delimiter mismatches - if header declares tab, row shouldn't use comma, etc.
-            char expectedChar = expectedDelimiter.charAt(0);
-            boolean inQuotes = false;
-            boolean escaped = false;
-
-            for (int i = 0; i < rowContent.length(); i++) {
-                char c = rowContent.charAt(i);
-                if (escaped) {
-                    escaped = false;
-                    continue;
-                }
-                if (c == '\\') {
-                    escaped = true;
-                    continue;
-                }
-                if (c == '"') {
-                    inQuotes = !inQuotes;
-                    continue;
-                }
-                if (!inQuotes) {
-                    // Check for wrong delimiter
-                    if (expectedChar == '\t' && c == ',') {
-                        throw new IllegalArgumentException("Delimiter mismatch: header declares tab, row uses comma");
-                    }
-                    if (expectedChar == '|' && c == ',') {
-                        throw new IllegalArgumentException("Delimiter mismatch: header declares pipe, row uses comma");
-                    }
-                    if (expectedChar == ',' && (c == '\t' || c == '|')) {
-                        throw new IllegalArgumentException("Delimiter mismatch: header declares comma, row uses different delimiter");
-                    }
-                }
-            }
         }
 
         /**
@@ -750,17 +884,26 @@ public final class ValueDecoder {
                     continue;
                 }
                 if (!inQuotes) {
-                    // Check for wrong delimiter in keys
-                    if (expectedChar == '\t' && c == ',') {
-                        throw new IllegalArgumentException("Delimiter mismatch: bracket declares tab, brace fields use comma");
-                    }
-                    if (expectedChar == '|' && c == ',') {
-                        throw new IllegalArgumentException("Delimiter mismatch: bracket declares pipe, brace fields use comma");
-                    }
-                    if (expectedChar == ',' && (c == '\t' || c == '|')) {
-                        throw new IllegalArgumentException("Delimiter mismatch: bracket declares comma, brace fields use different delimiter");
-                    }
+                    checkDelimiterMismatch(expectedChar, c);
                 }
+            }
+        }
+
+        /**
+         * Checks for delimiter mismatch and throws an exception if found.
+         */
+        private void checkDelimiterMismatch(char expectedChar, char actualChar) {
+            if (expectedChar == '\t' && actualChar == ',') {
+                throw new IllegalArgumentException(
+                        "Delimiter mismatch: bracket declares tab, brace fields use comma");
+            }
+            if (expectedChar == '|' && actualChar == ',') {
+                throw new IllegalArgumentException(
+                        "Delimiter mismatch: bracket declares pipe, brace fields use comma");
+            }
+            if (expectedChar == ',' && (actualChar == '\t' || actualChar == '|')) {
+                throw new IllegalArgumentException(
+                        "Delimiter mismatch: bracket declares comma, brace fields use different delimiter");
             }
         }
 
@@ -787,29 +930,35 @@ public final class ValueDecoder {
             boolean escaped = false;
             char delimChar = arrayDelimiter.charAt(0);
 
-            for (int i = 0; i < input.length(); i++) {
+            int i = 0;
+            while (i < input.length()) {
                 char c = input.charAt(i);
 
                 if (escaped) {
                     current.append(c);
                     escaped = false;
+                    i++;
                 } else if (c == '\\') {
                     current.append(c);
                     escaped = true;
+                    i++;
                 } else if (c == '"') {
                     current.append(c);
                     inQuotes = !inQuotes;
+                    i++;
                 } else if (c == delimChar && !inQuotes) {
                     // Found delimiter - add current value (trimmed) and reset
                     String value = current.toString().trim();
                     result.add(value);
                     current = new StringBuilder();
+                    i++; // Move past the delimiter
                     // Skip whitespace after delimiter
-                    while (i + 1 < input.length() && Character.isWhitespace(input.charAt(i + 1))) {
+                    while (i < input.length() && Character.isWhitespace(input.charAt(i))) {
                         i++;
                     }
                 } else {
                     current.append(c);
+                    i++;
                 }
             }
 
@@ -843,18 +992,7 @@ public final class ValueDecoder {
 
                 Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(content);
                 if (keyedArray.matches()) {
-                    String originalKey = keyedArray.group(1).trim();
-                    String key = StringEscaper.unescape(originalKey);
-                    String arrayHeader = content.substring(keyedArray.group(1).length());
-
-                    var arrayValue = parseArray(arrayHeader, depth);
-
-                    // Handle path expansion for array keys
-                    if (shouldExpandKey(originalKey)) {
-                        expandPathIntoMap(obj, key, arrayValue);
-                    } else {
-                        obj.put(key, arrayValue);
-                    }
+                    processRootKeyedArrayLine(obj, content, keyedArray, depth);
                 } else {
                     int colonIdx = findUnquotedColon(content);
                     if (colonIdx > 0) {
@@ -862,12 +1000,30 @@ public final class ValueDecoder {
                         String value = content.substring(colonIdx + 1).trim();
 
                         parseKeyValuePairIntoMap(obj, key, value, depth);
-
-                        currentLine++;
                     } else {
                         return;
                     }
                 }
+            }
+        }
+
+        /**
+         * Processes a keyed array line in root object fields.
+         */
+        private void processRootKeyedArrayLine(Map<String, Object> obj, String content, Matcher keyedArray, int depth) {
+            String originalKey = keyedArray.group(1).trim();
+            String key = StringEscaper.unescape(originalKey);
+            String arrayHeader = content.substring(keyedArray.group(1).length());
+
+            var arrayValue = parseArray(arrayHeader, depth);
+
+            // Handle path expansion for array keys
+            if (shouldExpandKey(originalKey)) {
+                expandPathIntoMap(obj, key, arrayValue);
+            } else {
+                // Check for conflicts with existing expanded paths
+                checkPathExpansionConflict(obj, key, arrayValue);
+                obj.put(key, arrayValue);
             }
         }
 
@@ -879,7 +1035,6 @@ public final class ValueDecoder {
 
             while (currentLine < lines.length) {
                 String line = lines[currentLine];
-
                 int depth = getDepth(line);
 
                 if (depth <= parentDepth) {
@@ -887,52 +1042,74 @@ public final class ValueDecoder {
                 }
 
                 if (depth == parentDepth + 1) {
-                    // Skip blank lines
-                    if (isBlankLine(line)) {
-                        currentLine++;
-                        continue;
-                    }
-                    
-                    String content = line.substring((parentDepth + 1) * options.indent());
-
-                    // Check for keyed array
-                    Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(content);
-
-                    if (keyedArray.matches()) {
-                        String originalKey = keyedArray.group(1).trim();
-                        String key = StringEscaper.unescape(originalKey);
-                        String arrayHeader = content.substring(keyedArray.group(1).length());
-                        List<Object> arrayValue = parseArray(arrayHeader, parentDepth + 1);
-
-                        // Handle path expansion for array keys
-                        if (shouldExpandKey(originalKey)) {
-                            expandPathIntoMap(result, key, arrayValue);
-                        } else {
-                            result.put(key, arrayValue);
-                        }
-                    } else {
-                        int colonIdx = findUnquotedColon(content);
-
-                        if (colonIdx > 0) {
-                            String key = content.substring(0, colonIdx).trim();
-                            String value = content.substring(colonIdx + 1).trim();
-
-                            parseKeyValuePairIntoMap(result, key, value, depth);
-                        } else {
-                            // No colon found in key-value context - this is an error
-                            if (options.strict()) {
-                                throw new IllegalArgumentException("Missing colon in key-value context at line " + (currentLine + 1));
-                            }
-                        }
-                        currentLine++;
-                    }
+                    processDirectChildLine(result, line, parentDepth, depth);
                 } else {
-                    // Depth is greater than parentDepth + 1, skip this line
                     currentLine++;
                 }
             }
 
             return result;
+        }
+
+        /**
+         * Processes a line at depth == parentDepth + 1 (direct child).
+         * Returns true if the line was processed, false if it was a blank line that was
+         * skipped.
+         */
+        private void processDirectChildLine(Map<String, Object> result, String line, int parentDepth, int depth) {
+            // Skip blank lines
+            if (isBlankLine(line)) {
+                currentLine++;
+            }
+
+            String content = line.substring((parentDepth + 1) * options.indent());
+            Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(content);
+
+            if (keyedArray.matches()) {
+                processKeyedArrayLine(result, content, keyedArray, parentDepth);
+            } else {
+                processKeyValueLine(result, content, depth);
+            }
+        }
+
+        /**
+         * Processes a keyed array line (e.g., "key[3]: value").
+         */
+        private void processKeyedArrayLine(Map<String, Object> result, String content, Matcher keyedArray,
+                int parentDepth) {
+            String originalKey = keyedArray.group(1).trim();
+            String key = StringEscaper.unescape(originalKey);
+            String arrayHeader = content.substring(keyedArray.group(1).length());
+            List<Object> arrayValue = parseArray(arrayHeader, parentDepth + 1);
+
+            // Handle path expansion for array keys
+            if (shouldExpandKey(originalKey)) {
+                expandPathIntoMap(result, key, arrayValue);
+            } else {
+                // Check for conflicts with existing expanded paths
+                checkPathExpansionConflict(result, key, arrayValue);
+                result.put(key, arrayValue);
+            }
+        }
+
+        /**
+         * Processes a key-value line (e.g., "key: value").
+         */
+        private void processKeyValueLine(Map<String, Object> result, String content, int depth) {
+            int colonIdx = findUnquotedColon(content);
+
+            if (colonIdx > 0) {
+                String key = content.substring(0, colonIdx).trim();
+                String value = content.substring(colonIdx + 1).trim();
+                parseKeyValuePairIntoMap(result, key, value, depth);
+            } else {
+                // No colon found in key-value context - this is an error
+                if (options.strict()) {
+                    throw new IllegalArgumentException(
+                            "Missing colon in key-value context at line " + (currentLine + 1));
+                }
+                currentLine++;
+            }
         }
 
         /**
@@ -952,7 +1129,8 @@ public final class ValueDecoder {
             if (!key.contains(".")) {
                 return false;
             }
-            // Valid identifier: starts with letter or underscore, followed by letters, digits, underscores
+            // Valid identifier: starts with letter or underscore, followed by letters,
+            // digits, underscores
             // Each segment must match this pattern
             String[] segments = key.split("\\.");
             for (String segment : segments) {
@@ -989,8 +1167,8 @@ public final class ValueDecoder {
                     // Conflict: existing is not a Map
                     if (options.strict()) {
                         throw new IllegalArgumentException(
-                            String.format("Path expansion conflict: %s is %s, cannot expand to object",
-                                segment, existing.getClass().getSimpleName()));
+                                String.format("Path expansion conflict: %s is %s, cannot expand to object",
+                                        segment, existing.getClass().getSimpleName()));
                     }
                     // LWW: overwrite with new nested object
                     Map<String, Object> nested = new LinkedHashMap<>();
@@ -1003,22 +1181,27 @@ public final class ValueDecoder {
             String finalSegment = segments[segments.length - 1];
             Object existing = current.get(finalSegment);
 
+            checkFinalValueConflict(finalSegment, existing, value);
+
+            // LWW: last write wins (always overwrite in non-strict, or if types match in
+            // strict)
+            current.put(finalSegment, value);
+        }
+
+        private void checkFinalValueConflict(String finalSegment, Object existing, Object value) {
             if (existing != null && options.strict()) {
                 // Check for conflicts in strict mode
                 if (existing instanceof Map && !(value instanceof Map)) {
                     throw new IllegalArgumentException(
-                        String.format("Path expansion conflict: %s is object, cannot set to %s",
-                            finalSegment, value.getClass().getSimpleName()));
+                            String.format("Path expansion conflict: %s is object, cannot set to %s",
+                                    finalSegment, value.getClass().getSimpleName()));
                 }
                 if (existing instanceof List && !(value instanceof List)) {
                     throw new IllegalArgumentException(
-                        String.format("Path expansion conflict: %s is array, cannot set to %s",
-                            finalSegment, value.getClass().getSimpleName()));
+                            String.format("Path expansion conflict: %s is array, cannot set to %s",
+                                    finalSegment, value.getClass().getSimpleName()));
                 }
             }
-
-            // LWW: last write wins (always overwrite in non-strict, or if types match in strict)
-            current.put(finalSegment, value);
         }
 
         /**
@@ -1084,6 +1267,7 @@ public final class ValueDecoder {
                 if (nextDepth > depth) {
                     currentLine++;
                     parsedValue = parseNestedObject(depth);
+                    // parseNestedObject manages currentLine, so we don't increment here
                 } else {
                     // If value is empty, create empty object; otherwise parse as primitive
                     if (value.trim().isEmpty()) {
@@ -1091,6 +1275,8 @@ public final class ValueDecoder {
                     } else {
                         parsedValue = PrimitiveDecoder.parse(value);
                     }
+                    // Increment currentLine for non-nested values
+                    currentLine++;
                 }
             } else {
                 // If value is empty, create empty object; otherwise parse as primitive
@@ -1099,6 +1285,8 @@ public final class ValueDecoder {
                 } else {
                     parsedValue = PrimitiveDecoder.parse(value);
                 }
+                // Increment currentLine for non-nested values
+                currentLine++;
             }
 
             // Handle path expansion
@@ -1118,19 +1306,19 @@ public final class ValueDecoder {
             if (!options.strict()) {
                 return;
             }
-            
+
             Object existing = map.get(key);
             if (existing != null) {
                 // Check for conflicts: existing is object/array but value is not
                 if (existing instanceof Map && !(value instanceof Map)) {
                     throw new IllegalArgumentException(
-                        String.format("Path expansion conflict: %s is object, cannot set to %s",
-                            key, value.getClass().getSimpleName()));
+                            String.format("Path expansion conflict: %s is object, cannot set to %s",
+                                    key, value.getClass().getSimpleName()));
                 }
                 if (existing instanceof List && !(value instanceof List)) {
                     throw new IllegalArgumentException(
-                        String.format("Path expansion conflict: %s is array, cannot set to %s",
-                            key, value.getClass().getSimpleName()));
+                            String.format("Path expansion conflict: %s is array, cannot set to %s",
+                                    key, value.getClass().getSimpleName()));
                 }
             }
         }
@@ -1171,6 +1359,7 @@ public final class ValueDecoder {
                 return 0;
             }
 
+            // Validate indentation (including tabs) in strict mode
             if (options.strict()) {
                 validateIndentation(line);
             }
@@ -1194,11 +1383,10 @@ public final class ValueDecoder {
             // In strict mode, check if it's an exact multiple
             if (options.strict() && leadingSpaces > 0
                     && leadingSpaces % indentSize != 0) {
-                    throw new IllegalArgumentException(
+                throw new IllegalArgumentException(
                         String.format("Non-multiple indentation: %d spaces with indent=%d at line %d",
-                            leadingSpaces, indentSize, currentLine + 1));
-                }
-
+                                leadingSpaces, indentSize, currentLine + 1));
+            }
 
             return depth;
         }
@@ -1220,7 +1408,7 @@ public final class ValueDecoder {
                 char c = line.charAt(i);
                 if (c == '\t') {
                     throw new IllegalArgumentException(
-                        String.format("Tab character used in indentation at line %d", currentLine + 1));
+                            String.format("Tab character used in indentation at line %d", currentLine + 1));
                 } else if (c == ' ') {
                     leadingSpaces++;
                 } else {
@@ -1232,8 +1420,8 @@ public final class ValueDecoder {
             // Check for non-multiple indentation (only if there's actual content)
             if (leadingSpaces > 0 && leadingSpaces % indentSize != 0) {
                 throw new IllegalArgumentException(
-                    String.format("Non-multiple indentation: %d spaces with indent=%d at line %d",
-                        leadingSpaces, indentSize, currentLine + 1));
+                        String.format("Non-multiple indentation: %d spaces with indent=%d at line %d",
+                                leadingSpaces, indentSize, currentLine + 1));
             }
         }
     }

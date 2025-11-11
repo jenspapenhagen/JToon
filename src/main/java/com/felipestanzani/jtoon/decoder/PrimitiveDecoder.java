@@ -9,14 +9,15 @@ import com.felipestanzani.jtoon.util.StringEscaper;
  * Converts TOON scalar representations to appropriate Java types:
  * </p>
  * <ul>
- *   <li>{@code "null"} → {@code null}</li>
- *   <li>{@code "true"} / {@code "false"} → {@code Boolean}</li>
- *   <li>Numeric strings → {@code Long} or {@code Double}</li>
- *   <li>Quoted strings → {@code String} (with unescaping)</li>
- *   <li>Bare strings → {@code String}</li>
+ * <li>{@code "null"} → {@code null}</li>
+ * <li>{@code "true"} / {@code "false"} → {@code Boolean}</li>
+ * <li>Numeric strings → {@code Long} or {@code Double}</li>
+ * <li>Quoted strings → {@code String} (with unescaping)</li>
+ * <li>Bare strings → {@code String}</li>
  * </ul>
  *
  * <h2>Examples:</h2>
+ * 
  * <pre>{@code
  * parse("null")      → null
  * parse("true")      → true
@@ -72,9 +73,8 @@ final class PrimitiveDecoder {
         String trimmed = value.trim();
         if (trimmed.length() > 1 && trimmed.matches("^-?0+[\\d].*")
                 && !trimmed.matches("^-?0+(\\.0+)?([eE][+-]?\\d+)?$")) {
-                return value;
-            }
-
+            return value;
+        }
 
         // Try parsing as number
         try {
@@ -89,7 +89,8 @@ final class PrimitiveDecoder {
                 if (parsed == Math.floor(parsed)
                         && !Double.isInfinite(parsed)
                         && parsed >= Long.MIN_VALUE
-                        && parsed <= Long.MAX_VALUE) return (long) parsed;
+                        && parsed <= Long.MAX_VALUE)
+                    return (long) parsed;
 
                 return parsed;
             } else {
