@@ -234,19 +234,16 @@ public final class ValueDecoder {
          * Validates that there are no multiple primitives at root level in strict mode.
          */
         private void validateNoMultiplePrimitivesAtRoot() {
-            // Skip blank lines and check for more content at root level
-            while (currentLine < lines.length) {
-                String nextLine = lines[currentLine];
-                if (isBlankLine(nextLine)) {
-                    currentLine++;
-                    continue;
-                }
-                int nextDepth = getDepth(nextLine);
+            int lineIndex = currentLine;
+            while (lineIndex < lines.length && isBlankLine(lines[lineIndex])) {
+                lineIndex++;
+            }
+            if (lineIndex < lines.length) {
+                int nextDepth = getDepth(lines[lineIndex]);
                 if (nextDepth == 0) {
                     throw new IllegalArgumentException(
-                            "Multiple primitives at root depth in strict mode at line " + (currentLine + 1));
+                            "Multiple primitives at root depth in strict mode at line " + (lineIndex + 1));
                 }
-                break;
             }
         }
 
@@ -387,27 +384,36 @@ public final class ValueDecoder {
             currentLine++;
 
             while (currentLine < lines.length) {
-                String line = lines[currentLine];
-
-                if (isBlankLine(line)) {
-                    if (handleBlankLineInTabularArray(depth)) {
-                        break;
-                    }
-                    continue;
-                }
-
-                int lineDepth = getDepth(line);
-                if (shouldTerminateTabularArray(line, lineDepth, depth)) {
+                if (!processTabularArrayLine(depth, keys, arrayDelimiter, result)) {
                     break;
-                }
-
-                if (processTabularRow(line, lineDepth, depth, keys, arrayDelimiter, result)) {
-                    currentLine++;
                 }
             }
 
             validateArrayLength(header, result.size());
             return result;
+        }
+
+        /**
+         * Processes a single line in a tabular array.
+         * Returns true if parsing should continue, false if array should terminate.
+         */
+        private boolean processTabularArrayLine(int depth, List<String> keys, String arrayDelimiter,
+                List<Object> result) {
+            String line = lines[currentLine];
+
+            if (isBlankLine(line)) {
+                return !handleBlankLineInTabularArray(depth);
+            }
+
+            int lineDepth = getDepth(line);
+            if (shouldTerminateTabularArray(line, lineDepth, depth)) {
+                return false;
+            }
+
+            if (processTabularRow(line, lineDepth, depth, keys, arrayDelimiter, result)) {
+                currentLine++;
+            }
+            return true;
         }
 
         /**
@@ -499,22 +505,22 @@ public final class ValueDecoder {
             List<Object> result = new ArrayList<>();
             currentLine++;
 
-            while (currentLine < lines.length) {
+            boolean shouldContinue = true;
+            while (shouldContinue && currentLine < lines.length) {
                 String line = lines[currentLine];
 
                 if (isBlankLine(line)) {
                     if (handleBlankLineInListArray(depth)) {
-                        break;
+                        shouldContinue = false;
                     }
-                    continue;
+                } else {
+                    int lineDepth = getDepth(line);
+                    if (shouldTerminateListArray(lineDepth, depth, line)) {
+                        shouldContinue = false;
+                    } else {
+                        processListArrayItem(line, lineDepth, depth, result);
+                    }
                 }
-
-                int lineDepth = getDepth(line);
-                if (shouldTerminateListArray(lineDepth, depth, line)) {
-                    break;
-                }
-
-                processListArrayItem(line, lineDepth, depth, result);
             }
 
             if (header != null) {
@@ -822,24 +828,26 @@ public final class ValueDecoder {
                 int lineDepth = getDepth(line);
 
                 if (lineDepth < depth + 2) {
-                    break;
+                    return;
                 }
 
                 if (lineDepth == depth + 2) {
                     String fieldContent = line.substring((depth + 2) * options.indent());
 
                     // Try to parse as keyed array first, then as key-value pair
-                    if (parseKeyedArrayField(fieldContent, item, depth)) {
-                        continue;
-                    }
-
-                    if (parseKeyValueField(fieldContent, item, depth)) {
-                        continue;
+                    boolean wasParsed = parseKeyedArrayField(fieldContent, item, depth);
+                    if (!wasParsed) {
+                        wasParsed = parseKeyValueField(fieldContent, item, depth);
                     }
 
                     // If neither pattern matched, skip this line to avoid infinite loop
+                    if (!wasParsed) {
+                        currentLine++;
+                    }
+                } else {
+                    // lineDepth > depth + 2, skip this line
+                    currentLine++;
                 }
-                currentLine++;
             }
         }
 
@@ -895,17 +903,11 @@ public final class ValueDecoder {
                 char c = keysStr.charAt(i);
                 if (escaped) {
                     escaped = false;
-                    continue;
-                }
-                if (c == '\\') {
+                } else if (c == '\\') {
                     escaped = true;
-                    continue;
-                }
-                if (c == '"') {
+                } else if (c == '"') {
                     inQuotes = !inQuotes;
-                    continue;
-                }
-                if (!inQuotes) {
+                } else if (!inQuotes) {
                     checkDelimiterMismatch(expectedChar, c);
                 }
             }
