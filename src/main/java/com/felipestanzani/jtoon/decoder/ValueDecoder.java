@@ -483,7 +483,7 @@ public final class ValueDecoder {
          * false otherwise.
          */
         private boolean processTabularRow(String line, int lineDepth, int depth, List<String> keys,
-                String arrayDelimiter, List<Object> result) {
+                                          String arrayDelimiter, List<Object> result) {
             if (lineDepth == depth + 1) {
                 String rowContent = line.substring((depth + 1) * options.indent());
                 Map<String, Object> row = parseTabularRow(rowContent, keys, arrayDelimiter);
@@ -671,9 +671,17 @@ public final class ValueDecoder {
             String key = StringEscaper.unescape(itemContent.substring(0, colonIdx).trim());
             String value = itemContent.substring(colonIdx + 1).trim();
 
+            currentLine++;
+
             Map<String, Object> item = new LinkedHashMap<>();
-            // List item is at depth + 1, so pass depth + 1 to parseObjectItemValue
-            Object parsedValue = parseObjectItemValue(value, depth + 1);
+            Object parsedValue;
+            // If no next line exists, handle simple case
+            if (currentLine >= lines.length) {
+                parsedValue = value.trim().isEmpty() ? new LinkedHashMap<>() : PrimitiveDecoder.parse(value);
+            } else {
+                // List item is at depth + 1, so pass depth + 1 to parseObjectItemValue
+                parsedValue = parseObjectItemValue(value, depth + 1);
+            }
             item.put(key, parsedValue);
             parseListItemFields(item, depth);
 
@@ -684,22 +692,16 @@ public final class ValueDecoder {
          * Parses the value portion of an object item in a list, handling nested
          * objects,
          * empty values, and primitives.
-         * 
+         *
          * @param value the value string to parse
          * @param depth the depth of the list item
          * @return the parsed value (Map, List, or primitive)
          */
-        private Object parseObjectItemValue(String value, int depth) {
-            currentLine++;
-            boolean isEmpty = value.trim().isEmpty();
-
-            // If no next line exists, handle simple case
-            if (currentLine >= lines.length) {
-                return isEmpty ? new LinkedHashMap<>() : PrimitiveDecoder.parse(value);
-            }
+        private Object parseObjectItemValue(final String value, final int depth) {
+            final boolean isEmpty = value.trim().isEmpty();
 
             // Find next non-blank line and its depth
-            Integer nextDepth = findNextNonBlankLineDepth();
+            final Integer nextDepth = findNextNonBlankLineDepth();
             if (nextDepth == null) {
                 // No non-blank line found - create empty object
                 return new LinkedHashMap<>();
@@ -719,7 +721,7 @@ public final class ValueDecoder {
 
         /**
          * Finds the depth of the next non-blank line, skipping blank lines.
-         * 
+         *
          * @return the depth of the next non-blank line, or null if none exists
          */
         private Integer findNextNonBlankLineDepth() {
@@ -737,7 +739,7 @@ public final class ValueDecoder {
 
         /**
          * Parses a field value, handling nested objects, empty values, and primitives.
-         * 
+         *
          * @param fieldValue the value string to parse
          * @param fieldDepth the depth at which the field is located
          * @return the parsed value (Map, List, or primitive)
@@ -774,7 +776,7 @@ public final class ValueDecoder {
 
         /**
          * Parses a keyed array field and adds it to the item map.
-         * 
+         *
          * @param fieldContent the field content to parse
          * @param item         the map to add the field to
          * @param depth        the depth of the list item
@@ -807,7 +809,7 @@ public final class ValueDecoder {
 
         /**
          * Parses a key-value field and adds it to the item map.
-         * 
+         *
          * @param fieldContent the field content to parse
          * @param item         the map to add the field to
          * @param depth        the depth of the list item
@@ -1123,7 +1125,7 @@ public final class ValueDecoder {
          * Processes a keyed array line (e.g., "key[3]: value").
          */
         private void processKeyedArrayLine(Map<String, Object> result, String content, Matcher keyedArray,
-                int parentDepth) {
+                                           int parentDepth) {
             String originalKey = keyedArray.group(1).trim();
             String key = StringEscaper.unescape(originalKey);
             String arrayHeader = content.substring(keyedArray.group(1).length());
