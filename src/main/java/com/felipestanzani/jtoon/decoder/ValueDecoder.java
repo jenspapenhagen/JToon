@@ -398,7 +398,7 @@ public final class ValueDecoder {
          * Returns true if parsing should continue, false if array should terminate.
          */
         private boolean processTabularArrayLine(int depth, List<String> keys, String arrayDelimiter,
-                List<Object> result) {
+                                                List<Object> result) {
             String line = lines[currentLine];
 
             if (isBlankLine(line)) {
@@ -536,38 +536,22 @@ public final class ValueDecoder {
         private boolean handleBlankLineInListArray(int depth) {
             int nextNonBlankLine = findNextNonBlankLine(currentLine + 1);
 
-                    if (nextNonBlankLine >= lines.length) {
-                        break; // End of file - terminate array
-                    }
-
-                    int nextDepth = getDepth(lines[nextNonBlankLine]);
-                    if (nextDepth <= depth) {
-                        break; // Blank line is outside array - terminate
-                    }
-
-                    // Blank line is inside array
-                    if (options.strict()) {
-                        throw new IllegalArgumentException("Blank line inside list array at line " + (currentLine + 1));
-                    }
-
-                    // In non-strict mode, skip blank lines
-                    currentLine++;
-
-                    continue;
-                }
-
-                int lineDepth = getDepth(line);
-                if (shouldTerminateListArray(lineDepth, depth, line)) {
-                    break;
-                }
-
-                processListArrayItem(line, lineDepth, depth, result);
+            if (nextNonBlankLine >= lines.length) {
+                return true; // End of file - terminate array
             }
 
-            if (header != null) {
-                validateArrayLength(header, result.size());
+            int nextDepth = getDepth(lines[nextNonBlankLine]);
+            if (nextDepth <= depth) {
+                return true; // Blank line is outside array - terminate
             }
-            return result;
+
+            // Blank line is inside array
+            if (options.strict()) {
+                throw new IllegalArgumentException("Blank line inside list array at line " + (currentLine + 1));
+            }
+            // In non-strict mode, skip blank lines
+            currentLine++;
+            return false;
         }
 
         /**
@@ -697,11 +681,11 @@ public final class ValueDecoder {
          * @param depth the depth of the list item
          * @return the parsed value (Map, List, or primitive)
          */
-        private Object parseObjectItemValue(final String value, final int depth) {
-            final boolean isEmpty = value.trim().isEmpty();
+        private Object parseObjectItemValue(String value, int depth) {
+            boolean isEmpty = value.trim().isEmpty();
 
             // Find next non-blank line and its depth
-            final Integer nextDepth = findNextNonBlankLineDepth();
+            Integer nextDepth = findNextNonBlankLineDepth();
             if (nextDepth == null) {
                 // No non-blank line found - create empty object
                 return new LinkedHashMap<>();
@@ -1303,7 +1287,7 @@ public final class ValueDecoder {
          * @param value        the value to put
          */
         private void putKeyValueIntoMap(Map<String, Object> map, String originalKey, String unescapedKey,
-                Object value) {
+                                        Object value) {
             // Handle path expansion
             if (shouldExpandKey(originalKey)) {
                 expandPathIntoMap(map, unescapedKey, value);
