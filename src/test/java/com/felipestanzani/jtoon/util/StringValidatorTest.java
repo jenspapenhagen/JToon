@@ -48,6 +48,25 @@ public class StringValidatorTest {
         void testStringWithInnerSpaces() {
             assertTrue(StringValidator.isSafeUnquoted("hello world", ","));
         }
+
+        @Test
+        @DisplayName("should return false for a number")
+        void testNumber() {
+            assertFalse(StringValidator.isSafeUnquoted("123456", ","));
+        }
+
+        @Test
+        @DisplayName("should return false for a Scientific Notation number")
+        void testScientificNumber() {
+            assertFalse(StringValidator.isSafeUnquoted("-2.5E-8", ","));
+            assertFalse(StringValidator.isSafeUnquoted("1e10", ","));
+        }
+
+        @Test
+        @DisplayName("should return false for a octal number")
+        void testOctalNumber() {
+            assertFalse(StringValidator.isSafeUnquoted("07", ","));
+        }
     }
 
     @Nested
