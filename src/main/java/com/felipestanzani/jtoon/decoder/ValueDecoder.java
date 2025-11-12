@@ -138,7 +138,7 @@ public final class ValueDecoder {
 
         /**
          * Parses the current line at root level (depth 0).
-         * Routes to appropriate handler based on line content.
+         * Routes to appropriate handler based online content.
          */
         Object parseValue() {
             if (currentLine >= lines.length) {
@@ -358,53 +358,8 @@ public final class ValueDecoder {
          */
         private List<Object> parseArray(String header, int depth) {
             String arrayDelimiter = extractDelimiterFromHeader(header);
-            Matcher tabularMatcher = TABULAR_HEADER_PATTERN.matcher(header);
-            Matcher arrayMatcher = ARRAY_HEADER_PATTERN.matcher(header);
 
-            if (tabularMatcher.find()) {
-                return parseTabularArray(header, depth, arrayDelimiter);
-            }
-
-            if (arrayMatcher.find()) {
-                int headerEndIdx = arrayMatcher.end();
-                String afterHeader = header.substring(headerEndIdx).trim();
-
-                if (afterHeader.startsWith(":")) {
-                    String inlineContent = afterHeader.substring(1).trim();
-
-                    if (!inlineContent.isEmpty()) {
-                        List<Object> result = parseArrayValues(inlineContent, arrayDelimiter);
-                        validateArrayLength(header, result.size());
-                        currentLine++;
-                        return result;
-                    }
-                }
-
-                currentLine++;
-                if (currentLine < lines.length) {
-                    String nextLine = lines[currentLine];
-                    int nextDepth = getDepth(nextLine);
-                    String nextContent = nextLine.substring(nextDepth * options.indent());
-
-                    if (nextContent.startsWith("- ")) {
-                        currentLine--;
-                        return parseListArray(depth, header);
-                    } else {
-                        currentLine++;
-                        List<Object> result = parseArrayValues(nextContent, arrayDelimiter);
-                        validateArrayLength(header, result.size());
-                        return result;
-                    }
-                }
-                List<Object> empty = new ArrayList<>();
-                validateArrayLength(header, 0);
-                return empty;
-            }
-
-            if (options.strict()) {
-                throw new IllegalArgumentException("Invalid array header: " + header);
-            }
-            return Collections.emptyList();
+            return parseArrayWithDelimiter(header, depth, arrayDelimiter);
         }
 
         /**
@@ -491,7 +446,7 @@ public final class ValueDecoder {
         }
 
         /**
-         * Determines if tabular array parsing should terminate based on line depth.
+         * Determines if tabular array parsing should terminate based online depth.
          * Returns true if array should terminate, false otherwise.
          */
         private boolean shouldTerminateTabularArray(String line, int lineDepth, int depth) {
@@ -594,7 +549,7 @@ public final class ValueDecoder {
         }
 
         /**
-         * Determines if list array parsing should terminate based on line depth.
+         * Determines if list array parsing should terminate based online depth.
          * Returns true if array should terminate, false otherwise.
          */
         private boolean shouldTerminateListArray(int lineDepth, int depth, String line) {
@@ -883,11 +838,8 @@ public final class ValueDecoder {
                     }
 
                     // If neither pattern matched, skip this line to avoid infinite loop
-                    currentLine++;
-                } else {
-                    // Depth is greater than depth + 2, skip this line
-                    currentLine++;
                 }
+                currentLine++;
             }
         }
 
@@ -1021,11 +973,10 @@ public final class ValueDecoder {
                     String value = current.toString().trim();
                     result.add(value);
                     current = new StringBuilder();
-                    i++; // Move past the delimiter
                     // Skip whitespace after delimiter
-                    while (i < input.length() && Character.isWhitespace(input.charAt(i))) {
+                    do {
                         i++;
-                    }
+                    } while (i < input.length() && Character.isWhitespace(input.charAt(i)));
                 } else {
                     current.append(c);
                     i++;
@@ -1212,7 +1163,7 @@ public final class ValueDecoder {
             // Each segment must match this pattern
             String[] segments = key.split("\\.");
             for (String segment : segments) {
-                if (!segment.matches("^[a-zA-Z_][\\w]*$")) {
+                if (!segment.matches("^[a-zA-Z_]\\w*$")) {
                     return false;
                 }
             }
@@ -1283,47 +1234,71 @@ public final class ValueDecoder {
         }
 
         /**
-         * Parses a key-value pair at root level, creating a new Map.
+         * Parses a key-value string into an Object, handling nested objects, empty
+         * values, and primitives.
+         * 
+         * @param value the value string to parse
+         * @param depth the depth at which the key-value pair is located
+         * @return the parsed value (Map, List, or primitive)
          */
-        private Object parseKeyValuePair(String key, String value, int depth, boolean parseRootFields) {
-            String originalKey = key;
-            key = StringEscaper.unescape(key);
-
+        private Object parseKeyValue(String value, int depth) {
             // Check if next line is nested (deeper indentation)
-            Object parsedValue;
             if (currentLine + 1 < lines.length) {
                 int nextDepth = getDepth(lines[currentLine + 1]);
                 if (nextDepth > depth) {
                     currentLine++;
-                    parsedValue = parseNestedObject(depth);
+                    // parseNestedObject manages currentLine, so we don't increment here
+                    return parseNestedObject(depth);
                 } else {
                     // If value is empty, create empty object; otherwise parse as primitive
+                    Object parsedValue;
                     if (value.trim().isEmpty()) {
                         parsedValue = new LinkedHashMap<>();
                     } else {
                         parsedValue = PrimitiveDecoder.parse(value);
                     }
                     currentLine++;
+                    return parsedValue;
                 }
             } else {
                 // If value is empty, create empty object; otherwise parse as primitive
+                Object parsedValue;
                 if (value.trim().isEmpty()) {
                     parsedValue = new LinkedHashMap<>();
                 } else {
                     parsedValue = PrimitiveDecoder.parse(value);
                 }
                 currentLine++;
+                return parsedValue;
             }
+        }
 
-            Map<String, Object> obj = new LinkedHashMap<>();
-
+        /**
+         * Puts a key-value pair into a map, handling path expansion.
+         * 
+         * @param map          the map to put the key-value pair into
+         * @param originalKey  the original key before being unescaped (used for path
+         *                     expansion check)
+         * @param unescapedKey the unescaped key
+         * @param value        the value to put
+         */
+        private void putKeyValueIntoMap(Map<String, Object> map, String originalKey, String unescapedKey,
+                Object value) {
             // Handle path expansion
             if (shouldExpandKey(originalKey)) {
-                expandPathIntoMap(obj, key, parsedValue);
+                expandPathIntoMap(map, unescapedKey, value);
             } else {
-                checkPathExpansionConflict(obj, key, parsedValue);
-                obj.put(key, parsedValue);
+                checkPathExpansionConflict(map, unescapedKey, value);
+                map.put(unescapedKey, value);
             }
+        }
+
+        /**
+         * Parses a key-value pair at root level, creating a new Map.
+         */
+        private Object parseKeyValuePair(String key, String value, int depth, boolean parseRootFields) {
+            Map<String, Object> obj = new LinkedHashMap<>();
+            parseKeyValuePairIntoMap(obj, key, value, depth);
 
             if (parseRootFields) {
                 parseRootObjectFields(obj, depth);
@@ -1335,45 +1310,10 @@ public final class ValueDecoder {
          * Parses a key-value pair and adds it to an existing map.
          */
         private void parseKeyValuePairIntoMap(Map<String, Object> map, String key, String value, int depth) {
-            String originalKey = key;
-            key = StringEscaper.unescape(key);
+            String unescapedKey = StringEscaper.unescape(key);
 
-            // Check if next line is nested
-            Object parsedValue;
-            if (currentLine + 1 < lines.length) {
-                int nextDepth = getDepth(lines[currentLine + 1]);
-                if (nextDepth > depth) {
-                    currentLine++;
-                    parsedValue = parseNestedObject(depth);
-                    // parseNestedObject manages currentLine, so we don't increment here
-                } else {
-                    // If value is empty, create empty object; otherwise parse as primitive
-                    if (value.trim().isEmpty()) {
-                        parsedValue = new LinkedHashMap<>();
-                    } else {
-                        parsedValue = PrimitiveDecoder.parse(value);
-                    }
-                    // Increment currentLine for non-nested values
-                    currentLine++;
-                }
-            } else {
-                // If value is empty, create empty object; otherwise parse as primitive
-                if (value.trim().isEmpty()) {
-                    parsedValue = new LinkedHashMap<>();
-                } else {
-                    parsedValue = PrimitiveDecoder.parse(value);
-                }
-                // Increment currentLine for non-nested values
-                currentLine++;
-            }
-
-            // Handle path expansion
-            if (shouldExpandKey(originalKey)) {
-                expandPathIntoMap(map, key, parsedValue);
-            } else {
-                checkPathExpansionConflict(map, key, parsedValue);
-                map.put(key, parsedValue);
-            }
+            Object parsedValue = parseKeyValue(value, depth);
+            putKeyValueIntoMap(map, key, unescapedKey, parsedValue);
         }
 
         /**
@@ -1386,19 +1326,7 @@ public final class ValueDecoder {
             }
 
             Object existing = map.get(key);
-            if (existing != null) {
-                // Check for conflicts: existing is object/array but value is not
-                if (existing instanceof Map && !(value instanceof Map)) {
-                    throw new IllegalArgumentException(
-                            String.format("Path expansion conflict: %s is object, cannot set to %s",
-                                    key, value.getClass().getSimpleName()));
-                }
-                if (existing instanceof List && !(value instanceof List)) {
-                    throw new IllegalArgumentException(
-                            String.format("Path expansion conflict: %s is array, cannot set to %s",
-                                    key, value.getClass().getSimpleName()));
-                }
-            }
+            checkFinalValueConflict(key, existing, value);
         }
 
         /**

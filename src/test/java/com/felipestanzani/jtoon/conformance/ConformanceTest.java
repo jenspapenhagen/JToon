@@ -197,11 +197,10 @@ public class ConformanceTest {
 
             boolean strict = options.strict() != null ? options.strict() : true;
 
-            PathExpansion expandPaths = PathExpansion.OFF;
+            PathExpansion expandPaths = null;
             if (options.expandPaths() != null) {
                 expandPaths = switch (options.expandPaths().toLowerCase()) {
                     case "safe" -> PathExpansion.SAFE;
-                    case "off" -> PathExpansion.OFF;
                     default -> PathExpansion.OFF;
                 };
             }
