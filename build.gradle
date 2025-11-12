@@ -29,6 +29,11 @@ repositories {
     mavenCentral()
 }
 
+jacoco {
+    toolVersion = "0.8.14"
+    reportsDirectory = layout.buildDirectory.dir('customJacocoReportDir')
+}
+
 dependencies {
     implementation 'tools.jackson.core:jackson-databind:3.0.2'
     implementation 'tools.jackson.module:jackson-module-afterburner:3.0.2'
