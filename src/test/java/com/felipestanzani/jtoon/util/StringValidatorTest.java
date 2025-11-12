@@ -5,7 +5,14 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for StringValidator utility class.
@@ -368,6 +375,20 @@ public class StringValidatorTest {
         void testEmptyKey() {
             assertFalse(StringValidator.isValidUnquotedKey(""));
         }
+    }
+
+    @Test
+    @DisplayName("throws unsupported Operation Exception for calling the constructor")
+    void throwsOnConstructor() throws NoSuchMethodException {
+        final Constructor<StringValidator> constructor = StringValidator.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+
+        final InvocationTargetException thrown =
+                assertThrows(InvocationTargetException.class, constructor::newInstance);
+
+        final Throwable cause = thrown.getCause();
+        assertInstanceOf(UnsupportedOperationException.class, cause);
+        assertEquals("Utility class cannot be instantiated", cause.getMessage());
     }
 }
 
