@@ -536,22 +536,38 @@ public final class ValueDecoder {
         private boolean handleBlankLineInListArray(int depth) {
             int nextNonBlankLine = findNextNonBlankLine(currentLine + 1);
 
-            if (nextNonBlankLine >= lines.length) {
-                return true; // End of file - terminate array
+                    if (nextNonBlankLine >= lines.length) {
+                        break; // End of file - terminate array
+                    }
+
+                    int nextDepth = getDepth(lines[nextNonBlankLine]);
+                    if (nextDepth <= depth) {
+                        break; // Blank line is outside array - terminate
+                    }
+
+                    // Blank line is inside array
+                    if (options.strict()) {
+                        throw new IllegalArgumentException("Blank line inside list array at line " + (currentLine + 1));
+                    }
+
+                    // In non-strict mode, skip blank lines
+                    currentLine++;
+
+                    continue;
+                }
+
+                int lineDepth = getDepth(line);
+                if (shouldTerminateListArray(lineDepth, depth, line)) {
+                    break;
+                }
+
+                processListArrayItem(line, lineDepth, depth, result);
             }
 
-            int nextDepth = getDepth(lines[nextNonBlankLine]);
-            if (nextDepth <= depth) {
-                return true; // Blank line is outside array - terminate
+            if (header != null) {
+                validateArrayLength(header, result.size());
             }
-
-            // Blank line is inside array
-            if (options.strict()) {
-                throw new IllegalArgumentException("Blank line inside list array at line " + (currentLine + 1));
-            }
-            // In non-strict mode, skip blank lines
-            currentLine++;
-            return false;
+            return result;
         }
 
         /**
@@ -1238,7 +1254,7 @@ public final class ValueDecoder {
         /**
          * Parses a key-value string into an Object, handling nested objects, empty
          * values, and primitives.
-         * 
+         *
          * @param value the value string to parse
          * @param depth the depth at which the key-value pair is located
          * @return the parsed value (Map, List, or primitive)
@@ -1277,7 +1293,7 @@ public final class ValueDecoder {
 
         /**
          * Puts a key-value pair into a map, handling path expansion.
-         * 
+         *
          * @param map          the map to put the key-value pair into
          * @param originalKey  the original key before being unescaped (used for path
          *                     expansion check)
