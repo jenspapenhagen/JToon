@@ -1,6 +1,5 @@
-package com.felipestanzani.jtoon;
+package com.felipestanzani.jtoon.util;
 
-import com.felipestanzani.jtoon.util.StringValidator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
