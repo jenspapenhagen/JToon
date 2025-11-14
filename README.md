@@ -271,7 +271,7 @@ The `delimiter` option allows you to choose between comma (default), tab, or pip
 Using tab delimiters instead of commas can reduce token count further, especially for tabular data:
 
 ```java
-
+import dev.toonformat.toon.*;
 import java.util.*;
 
 record Item(String sku, String name, int qty, double price) {}
@@ -346,7 +346,7 @@ System.out.println(JToon.encode(data, new EncodeOptions(2, Delimiter.COMMA, true
 //   B2,1,14.5
 
 // Works with custom delimiters
-        System.out.println(JToon.encode(data, new EncodeOptions(2, Delimiter.PIPE, true)));
+System.out.println(JToon.encode(data, new EncodeOptions(2, Delimiter.PIPE, true)));
 // tags[#3|]: reading|gaming|coding
 // items[#2|]{sku|qty|price}:
 //   A1|2|9.99
@@ -403,15 +403,15 @@ import java.util.*;
 
 // Original data
 Map<String, Object> data = new LinkedHashMap<>();
-data.put("id",123);
-data.put("name","Ada");
-data.put("tags",Arrays.asList("dev", "admin"));
+data.put("id", 123);
+data.put("name", "Ada");
+data.put("tags", Arrays.asList("dev", "admin"));
 
-        // Encode to TOON
-        String toon = JToon.encode(data);
+ // Encode to TOON
+String toon = JToon.encode(data);
 
-        // Decode back to objects
-        Object decoded = JToon.decode(toon);
+// Decode back to objects
+ Object decoded = JToon.decode(toon);
 
 // Values are preserved (note: integers decode as Long)
 ```
