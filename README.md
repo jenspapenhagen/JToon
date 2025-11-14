@@ -274,20 +274,16 @@ Using tab delimiters instead of commas can reduce token count further, especiall
 
 import java.util.*;
 
-record Item(String sku, String name, int qty, double price) {
-}
+record Item(String sku, String name, int qty, double price) {}
 
-record Data(List<Item> items) {
-}
+record Data(List<Item> items) {}
 
 Item item1 = new Item("A1", "Widget", 2, 9.99);
 Item item2 = new Item("B2", "Gadget", 1, 14.5);
 Data data = new Data(List.of(item1, item2));
 
 EncodeOptions options = new EncodeOptions(2, Delimiter.TAB, false);
-System.out.
-
-println(JToon.encode(data, options));
+System.out.println(JToon.encode(data, options));
 ```
 
 **Output:**
@@ -332,31 +328,25 @@ items[2|]{sku|name|qty|price}:
 The `lengthMarker` option adds an optional hash (`#`) prefix to array lengths to emphasize that the bracketed value represents a count, not an index:
 
 ```java
-
+import dev.toonformat.toon.*;
 import java.util.*;
 
-record Item(String sku, int qty, double price) {
-}
+record Item(String sku, int qty, double price) {}
 
-record Data(List<String> tags, List<Item> items) {
-}
+record Data(List<String> tags, List<Item> items) {}
 
 Item item1 = new Item("A1", 2, 9.99);
 Item item2 = new Item("B2", 1, 14.5);
 Data data = new Data(List.of("reading", "gaming", "coding"), List.of(item1, item2));
 
-System.out.
-
-println(JToon.encode(data, new EncodeOptions(2, Delimiter.COMMA, true)));
+System.out.println(JToon.encode(data, new EncodeOptions(2, Delimiter.COMMA, true)));
 // tags[#3]: reading,gaming,coding
 // items[#2]{sku,qty,price}:
 //   A1,2,9.99
 //   B2,1,14.5
 
 // Works with custom delimiters
-        System.out.
-
-println(JToon.encode(data, new EncodeOptions(2, Delimiter.PIPE, true)));
+        System.out.println(JToon.encode(data, new EncodeOptions(2, Delimiter.PIPE, true)));
 // tags[#3|]: reading|gaming|coding
 // items[#2|]{sku|qty|price}:
 //   A1|2|9.99
@@ -408,20 +398,14 @@ String json = JToon.decodeToJson(toon);
 #### Round-Trip Conversion
 
 ```java
-
+import dev.toonformat.toon.*;
 import java.util.*;
 
 // Original data
 Map<String, Object> data = new LinkedHashMap<>();
-data.
-
-        put("id",123);
-data.
-
-        put("name","Ada");
-data.
-
-        put("tags",Arrays.asList("dev", "admin"));
+data.put("id",123);
+data.put("name","Ada");
+data.put("tags",Arrays.asList("dev", "admin"));
 
         // Encode to TOON
         String toon = JToon.encode(data);
@@ -435,7 +419,7 @@ data.
 #### Custom Decode Options
 
 ```java
-
+import dev.toonformat.toon.*;
 
 String toon = "tags[3|]: a|b|c";
 
