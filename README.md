@@ -67,7 +67,7 @@ JToon is available on Maven Central. Add it to your project using your preferred
 
 ```gradle
 dependencies {
-    implementation 'com.felipestanzani:jtoon:0.1.2'
+    implementation 'com.felipestanzani:jtoon:0.1.3'
 }
 ```
 
@@ -75,7 +75,7 @@ dependencies {
 
 ```kotlin
 dependencies {
-    implementation("com.felipestanzani:jtoon:0.1.2")
+    implementation("com.felipestanzani:jtoon:0.1.3")
 }
 ```
 
@@ -85,7 +85,7 @@ dependencies {
 <dependency>
     <groupId>com.felipestanzani</groupId>
     <artifactId>jtoon</artifactId>
-    <version>0.1.2</version>
+    <version>0.1.3</version>
 </dependency>
 ```
 
