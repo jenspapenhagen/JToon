@@ -1,61 +1,15 @@
-![TOON logo with step‑by‑step guide](./.github/og.png)
+# JToon – TOON Format for Java
 
-# JToon - Token-Oriented Object Notation (TOON)
-
-[![Build](https://github.com/felipestanzani/jtoon/actions/workflows/build.yml/badge.svg)](https://github.com/felipestanzani/jtoon/actions/workflows/build.yml)
-[![Release](https://github.com/felipestanzani/jtoon/actions/workflows/release.yml/badge.svg)](https://github.com/felipestanzani/jtoon/actions/workflows/release.yml)
-[![Maven Central](https://img.shields.io/maven-central/v/com.felipestanzani/jtoon.svg)](https://central.sonatype.com/artifact/com.felipestanzani/jtoon)
+[![Build](https://github.com/toon-format/toon-java/actions/workflows/build.yml/badge.svg)](https://github.com/toon-format/toon-java/actions/workflows/build.yml)
+[![Release](https://github.com/toon-format/toon-java/actions/workflows/release.yml/badge.svg)](https://github.com/toon-format/toon-java/actions/workflows/release.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/dev.toonformat/jtoon.svg)](https://central.sonatype.com/artifact/dev.toonformat/jtoon)
 ![Coverage](.github/badges/jacoco.svg)
 
-**Token-Oriented Object Notation** is a compact, human-readable format designed for passing structured data to Large Language Models with significantly reduced token usage.
+> **⚠️ Beta Status (v0.1.x):** This library is in active development and working towards spec compliance. Beta published to Maven Central. API may change before 1.0.0 release.
 
-TOON excels at **uniform complex objects** – multiple fields per row, same structure across items. It borrows YAML's indentation-based structure for nested objects and CSV's tabular format for uniform data rows, then optimizes both for token efficiency in LLM contexts.
+Compact, human-readable serialization format for LLM contexts with **30-60% token reduction** vs JSON. Combines YAML-like indentation with CSV-like tabular arrays. Working towards full compatibility with the [official TOON specification](https://github.com/toon-format/spec).
 
-## Why TOON?
-
-AI is becoming cheaper and more accessible, but larger context windows allow for larger data inputs as well. **LLM tokens still cost money** – and standard JSON is verbose and token-expensive:
-
-```json
-{
-  "users": [
-    { "id": 1, "name": "Alice", "role": "admin" },
-    { "id": 2, "name": "Bob", "role": "user" }
-  ]
-}
-```
-
-TOON conveys the same information with **fewer tokens**:
-
-```
-users[2]{id,name,role}:
-  1,Alice,admin
-  2,Bob,user
-```
-
-*Test the differences on [THIS online playground](https://www.curiouslychase.com/playground/format-tokenization-exploration)*
-
-<details>
-<summary>Another reason</summary>
-
-[![xkcd: Standards](https://imgs.xkcd.com/comics/standards_2x.png)](https://xkcd.com/927/)
-
-</details>
-
-## Benchmarks
-
-> **Learn more:** For complete format specification, rules, and additional benchmarks, see [TOON-SPECIFICATION.md](TOON-SPECIFICATION.md).
-
-### Token Efficiency Example
-
-TOON typically achieves **30–60% fewer tokens than JSON**. Here's a quick summary:
-
-```
-Total across 4 datasets        ████████████░░░░░░░░░░░░░  13,418 tokens
-                               vs JSON: 26,379  💰 49.1% saved
-                               vs XML:  30,494  💰 56.0% saved
-```
-
-**See [TOON-SPECIFICATION.md](TOON-SPECIFICATION.md#benchmarks) for detailed benchmark results and LLM retrieval accuracy tests.**
+**Key Features:** Minimal syntax • TOON Encoding and Decoding • Tabular arrays for uniform data • Array length validation • Java 17 • Comprehensive test coverage.
 
 ## Installation
 
@@ -67,7 +21,7 @@ JToon is available on Maven Central. Add it to your project using your preferred
 
 ```gradle
 dependencies {
-    implementation 'com.felipestanzani:jtoon:0.1.3'
+    implementation 'dev.toonformat:jtoon:0.1.3'
 }
 ```
 
@@ -75,7 +29,7 @@ dependencies {
 
 ```kotlin
 dependencies {
-    implementation("com.felipestanzani:jtoon:0.1.3")
+    implementation("dev.toonformat:jtoon:0.1.3")
 }
 ```
 
@@ -83,22 +37,22 @@ dependencies {
 
 ```xml
 <dependency>
-    <groupId>com.felipestanzani</groupId>
+    <groupId>dev.toonformat</groupId>
     <artifactId>jtoon</artifactId>
     <version>0.1.3</version>
 </dependency>
 ```
 
-> **Note:** See the [latest version](https://central.sonatype.com/artifact/com.felipestanzani/jtoon) on Maven Central (also shown in the badge above).
+> **Note:** See the [latest version](https://central.sonatype.com/artifact/dev.toonformat/jtoon) on Maven Central (also shown in the badge above).
 
 ### Alternative: Manual Installation
 
-You can also download the JAR directly from the [GitHub Releases](https://github.com/felipestanzani/jtoon/releases) page and add it to your project's classpath.
+You can also download the JAR directly from the [GitHub Releases](https://github.com/toon-format/toon-java/releases) page and add it to your project's classpath.
 
 ## Quick Start
 
 ```java
-import com.felipestanzani.jtoon.JToon;
+import dev.toonformat.jtoon.JToon;
 import java.util.*;
 
 record User(int id, String name, List<String> tags, boolean active, List<?> preferences) {}
@@ -110,7 +64,7 @@ Data data = new Data(user);
 System.out.println(JToon.encode(data));
 ```
 
-Output:
+**Output:**
 
 ```
 user:
@@ -121,70 +75,27 @@ user:
   preferences[0]:
 ```
 
-## TOON Format Basics
-
-> **Complete specification:** For detailed formatting rules, quoting rules, and comprehensive examples, see [TOON-SPECIFICATION.md](TOON-SPECIFICATION.md).
-
-TOON uses indentation-based structure (like YAML) combined with efficient tabular format for uniform arrays (like CSV):
-
-**Simple objects:**
-
-```
-id: 123
-name: Ada
-```
-
-**Nested objects:**
-
-```
-user:
-  id: 123
-  name: Ada
-```
-
-**Primitive arrays:**
-
-```
-tags[3]: admin,ops,dev
-```
-
-**Tabular arrays** (uniform objects with same fields):
-
-```
-items[2]{sku,qty,price}:
-  A1,2,9.99
-  B2,1,14.5
-```
-
 ## Type Conversions
 
 Some Java-specific types are automatically normalized for LLM-safe output:
 
-| Input Type | Output |
-|---|---|
-| Number (finite) | Decimal form; `-0` → `0`; whole numbers as integers |
-| Number (`NaN`, `±Infinity`) | `null` |
-| `BigInteger` | Integer if within Long range, otherwise string (no quotes) |
-| `BigDecimal` | Decimal number |
-| `LocalDateTime` | ISO date-time string in quotes |
-| `LocalDate` | ISO date string in quotes |
-| `LocalTime` | ISO time string in quotes |
-| `ZonedDateTime` | ISO zoned date-time string in quotes |
-| `OffsetDateTime` | ISO offset date-time string in quotes |
-| `Instant` | ISO instant string in quotes |
-| `java.util.Date` | ISO instant string in quotes |
-| `Optional<T>` | Unwrapped value or `null` if empty |
-| `Stream<T>` | Materialized to array |
-| `Map` | Object with string keys |
-| `Collection`, arrays | Arrays |
-
-Number normalization examples:
-
-```
--0    → 0
-1e6   → 1000000
-1e-6  → 0.000001
-```
+| Input Type                  | Output                                                     |
+| --------------------------- | ---------------------------------------------------------- |
+| Number (finite)             | Decimal form; `-0` → `0`; whole numbers as integers        |
+| Number (`NaN`, `±Infinity`) | `null`                                                     |
+| `BigInteger`                | Integer if within Long range, otherwise string (no quotes) |
+| `BigDecimal`                | Decimal number                                             |
+| `LocalDateTime`             | ISO date-time string in quotes                             |
+| `LocalDate`                 | ISO date string in quotes                                  |
+| `LocalTime`                 | ISO time string in quotes                                  |
+| `ZonedDateTime`             | ISO zoned date-time string in quotes                       |
+| `OffsetDateTime`            | ISO offset date-time string in quotes                      |
+| `Instant`                   | ISO instant string in quotes                               |
+| `java.util.Date`            | ISO instant string in quotes                               |
+| `Optional<T>`               | Unwrapped value or `null` if empty                         |
+| `Stream<T>`                 | Materialized to array                                      |
+| `Map`                       | Object with string keys                                    |
+| `Collection`, arrays        | Arrays                                                     |
 
 ## API
 
@@ -217,7 +128,7 @@ A TOON-formatted string with no trailing newline or spaces.
 **Example:**
 
 ```java
-import com.felipestanzani.jtoon.JToon;
+import dev.toonformat.jtoon.JToon;
 import java.util.*;
 
 record Item(String sku, int qty, double price) {}
@@ -271,10 +182,11 @@ The `delimiter` option allows you to choose between comma (default), tab, or pip
 Using tab delimiters instead of commas can reduce token count further, especially for tabular data:
 
 ```java
-import com.felipestanzani.jtoon.*;
+import dev.toonformat.jtoon.*;
 import java.util.*;
 
 record Item(String sku, String name, int qty, double price) {}
+
 record Data(List<Item> items) {}
 
 Item item1 = new Item("A1", "Widget", 2, 9.99);
@@ -327,10 +239,11 @@ items[2|]{sku|name|qty|price}:
 The `lengthMarker` option adds an optional hash (`#`) prefix to array lengths to emphasize that the bracketed value represents a count, not an index:
 
 ```java
-import com.felipestanzani.jtoon.*;
+import dev.toonformat.jtoon.*;
 import java.util.*;
 
 record Item(String sku, int qty, double price) {}
+
 record Data(List<String> tags, List<Item> items) {}
 
 Item item1 = new Item("A1", 2, 9.99);
@@ -378,7 +291,7 @@ For `decodeToJson`: A JSON string representation
 **Example:**
 
 ```java
-import com.felipestanzani.jtoon.JToon;
+import dev.toonformat.jtoon.JToon;
 
 String toon = """
     users[2]{id,name,role}:
@@ -396,7 +309,7 @@ String json = JToon.decodeToJson(toon);
 #### Round-Trip Conversion
 
 ```java
-import com.felipestanzani.jtoon.*;
+import dev.toonformat.jtoon.*;
 import java.util.*;
 
 // Original data
@@ -405,11 +318,11 @@ data.put("id", 123);
 data.put("name", "Ada");
 data.put("tags", Arrays.asList("dev", "admin"));
 
-// Encode to TOON
+ // Encode to TOON
 String toon = JToon.encode(data);
 
 // Decode back to objects
-Object decoded = JToon.decode(toon);
+ Object decoded = JToon.decode(toon);
 
 // Values are preserved (note: integers decode as Long)
 ```
@@ -417,7 +330,7 @@ Object decoded = JToon.decode(toon);
 #### Custom Decode Options
 
 ```java
-import com.felipestanzani.jtoon.*;
+import dev.toonformat.jtoon.*;
 
 String toon = "tags[3|]: a|b|c";
 
@@ -430,24 +343,23 @@ DecodeOptions lenient = DecodeOptions.withStrict(false);
 Object result2 = JToon.decode(invalidToon, lenient);
 ```
 
-## See Also
+**CI/CD:** GitHub Actions • Java 17 • Coverage enforcement • PR coverage comments
 
-- **[TOON Format Specification](TOON-SPECIFICATION.md)** – Complete format rules, benchmarks, and examples
-- **[Changelog](CHANGELOG.md)** – Version history and notable changes
+## Project Status
 
-## Implementations in Other Languages
+This project is 100% compliant with TOON specification. Release conformance enforced on CI/CD.
 
-- **TypeScript/JavaScript**: [@johannschopplich/toon](https://github.com/johannschopplich/toon) (original)
-- **Elixir:** [toon_ex](https://github.com/kentaro/toon_ex)
-- **PHP:** [toon-php](https://github.com/HelgeSverre/toon-php)
-- **Python:** [python-toon](https://github.com/xaviviro/python-toon) or [pytoon](https://github.com/bpradana/pytoon)
-- **Ruby:** [toon-ruby](https://github.com/andrepcg/toon-ruby)
-- **Java:** [JToon](https://github.com/felipestanzani/JToon)
-- **.NET:** [toon.NET](https://github.com/ghost1face/toon.NET)
-- **Swift:** [TOONEncoder](https://github.com/mattt/TOONEncoder)
-- **Go:** [gotoon](https://github.com/alpkeskin/gotoon)
-- **Rust:** [toon-rs](https://github.com/JadJabbour/toon-rs)
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+## Documentation
+
+- [📘 Full Documentation](docs/) - Extended guides and references
+- [🔧 API Reference](https://toon-format.github.io/toon-java/javadoc/) - Detailed Javadoc
+- [📋 Format Specification](docs/FORMAT.md) - TOON syntax and rules
+- [📜 TOON Spec](https://github.com/toon-format/spec) - Official specification
+- [🐛 Issues](https://github.com/toon-format/toon-java/issues) - Bug reports and features
+- [🤝 Contributing](CONTRIBUTING.md) - Contribution guidelines
 
 ## License
 
-[MIT](./LICENSE) License © 2025-PRESENT [Felipe Stanzani](https://felipestanzani.com)
+MIT License – see [LICENSE](LICENSE) for details
