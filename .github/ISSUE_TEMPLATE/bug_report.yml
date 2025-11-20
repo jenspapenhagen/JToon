@@ -1,6 +1,6 @@
 name: Bug Report
 description: Report a bug or unexpected behavior
-labels: ["bug"]
+labels: [ "bug" ]
 body:
   - type: markdown
     attributes:
@@ -44,6 +44,28 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: version
+    attributes:
+      label: Version
+      description: What version of our software are you running?
+      options:
+        - 0.1.14
+        - 0.1.13
+        - 0.1.12
+        - < 0.1.12
+    validations:
+      required: true
+
+  - type: dropdown
+    id: buildtool
+    attributes:
+      label: What building tool are you the problem on?
+      multiple: true
+      options:
+          - Maven
+          - Gradle
+
   - type: textarea
     id: environment
     attributes:
@@ -51,11 +73,9 @@ body:
       description: |
         Please provide:
         - Java version
-        - JToon version (from build.gradle or pom.xml)
         - Operating system
       placeholder: |
         - Java 21.0.1
-        - JToon 0.1.2
         - macOS 15.0
     validations:
       required: true
