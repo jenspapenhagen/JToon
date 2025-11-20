@@ -43,7 +43,33 @@ body:
       description: What actually happened (including error messages and stack traces)
     validations:
       required: true
+      
+  - type: dropdown
+    id: version
+    attributes:
+      label: Version
+      description: What version of our software are you running?
+      options:
+        - 0.1.14
+        - 0.1.13
+        - 0.1.12
+        - < 0.1.12
+      default: 0
+    validations:
+      required: true
 
+ - type: dropdown
+    id: buildtool
+    attributes:
+      label: What building tool are you the problem on?
+      multiple: true
+      options:
+        - Maven
+        - Gradle
+        default: 0
+    validations:
+      required: true
+      
   - type: textarea
     id: environment
     attributes:
