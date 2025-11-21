@@ -12,7 +12,7 @@ package dev.toonformat.jtoon;
  * @param flatten      Optional flag to flatten nested objects to a single level.
  *                     (default: false)
  * @param flattenDepth Optional maximum depth to flatten nested objects.
- *                     (default: 3)
+ *                     (default: Integer.MAX_VALUE)
  */
 public record EncodeOptions(
         int indent,
@@ -23,13 +23,13 @@ public record EncodeOptions(
     /**
      * Default encoding options: 2 spaces indent, comma delimiter, no length marker
      */
-    public static final EncodeOptions DEFAULT = new EncodeOptions(2, Delimiter.COMMA, false, false, 3);
+    public static final EncodeOptions DEFAULT = new EncodeOptions(2, Delimiter.COMMA, false, false, Integer.MAX_VALUE);
 
     /**
      * Creates EncodeOptions with default values.
      */
     public EncodeOptions() {
-        this(2, Delimiter.COMMA, false, false, 3);
+        this(2, Delimiter.COMMA, false, false, Integer.MAX_VALUE);
     }
 
     /**
@@ -40,7 +40,7 @@ public record EncodeOptions(
      * @return a new EncodeOptions instance with the specified indent
      */
     public static EncodeOptions withIndent(int indent) {
-        return new EncodeOptions(indent, Delimiter.COMMA, false, false, 3);
+        return new EncodeOptions(indent, Delimiter.COMMA, false, false, Integer.MAX_VALUE);
     }
 
     /**
@@ -51,7 +51,7 @@ public record EncodeOptions(
      * @return a new EncodeOptions instance with the specified delimiter
      */
     public static EncodeOptions withDelimiter(Delimiter delimiter) {
-        return new EncodeOptions(2, delimiter, false, false, 3);
+        return new EncodeOptions(2, delimiter, false, false, Integer.MAX_VALUE);
     }
 
     /**
@@ -62,7 +62,7 @@ public record EncodeOptions(
      * @return a new EncodeOptions instance with the specified length marker setting
      */
     public static EncodeOptions withLengthMarker(boolean lengthMarker) {
-        return new EncodeOptions(2, Delimiter.COMMA, lengthMarker, false, 3);
+        return new EncodeOptions(2, Delimiter.COMMA, lengthMarker, false, Integer.MAX_VALUE);
     }
 
     /**
@@ -73,7 +73,7 @@ public record EncodeOptions(
      * @return a new EncodeOptions instance with the flatten setting
      */
     public static EncodeOptions withFlatten(boolean flatten) {
-        return new EncodeOptions(2, Delimiter.COMMA, false, flatten, 3);
+        return new EncodeOptions(2, Delimiter.COMMA, false, flatten, Integer.MAX_VALUE);
     }
 
     /**
