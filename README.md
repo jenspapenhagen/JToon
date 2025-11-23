@@ -5,7 +5,7 @@
 [![Maven Central](https://img.shields.io/maven-central/v/dev.toonformat/jtoon.svg)](https://central.sonatype.com/artifact/dev.toonformat/jtoon)
 ![Coverage](.github/badges/jacoco.svg)
 
-> **⚠️ Beta Status (v0.1.x):** This library is in active development and working towards spec compliance. Beta published to Maven Central. API may change before 1.0.0 release.
+> **⚠️ Beta Status (v1.x.x):** This library is in active development and working towards spec compliance. Beta published to Maven Central. API may change before 2.0.0 release.
 
 Compact, human-readable serialization format for LLM contexts with **30-60% token reduction** vs JSON. Combines YAML-like indentation with CSV-like tabular arrays. Working towards full compatibility with the [official TOON specification](https://github.com/toon-format/spec).
 
@@ -21,7 +21,7 @@ JToon is available on Maven Central. Add it to your project using your preferred
 
 ```gradle
 dependencies {
-    implementation 'dev.toonformat:jtoon:0.1.5'
+    implementation 'dev.toonformat:jtoon:1.0.5'
 }
 ```
 
@@ -29,7 +29,7 @@ dependencies {
 
 ```kotlin
 dependencies {
-    implementation("dev.toonformat:jtoon:0.1.5")
+    implementation("dev.toonformat:jtoon:1.0.5")
 }
 ```
 
@@ -39,7 +39,7 @@ dependencies {
 <dependency>
     <groupId>dev.toonformat</groupId>
     <artifactId>jtoon</artifactId>
-    <version>0.1.5</version>
+    <version>1.0.5</version>
 </dependency>
 ```
 

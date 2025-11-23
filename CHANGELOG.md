@@ -4,13 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to Semantic Versioning and follows a Keep a Changelog-like format.
 
-## [0.1.5] - 2025-11-23
+## [1.0.5] - 2025-11-23
 
 ### Added
 
 - Key Folding Option with folding death
 - Added unit tests for PrimitiveDecoder to validate handling of primitives and edge cases.
-- Added unit tests for StringValidator, covering the updated pattern evaluation order. 
+- Added unit tests for StringValidator, covering the updated pattern evaluation order.
 
 ### Changed
 
@@ -91,7 +91,7 @@ This project adheres to Semantic Versioning and follows a Keep a Changelog-like 
 - Delimiter options (comma, tab, pipe) and optional length marker.
 - Comprehensive README with specification overview and examples.
 
-[0.1.5]: https://github.com/toon-format/toon-java/releases/tag/v0.1.5
+[1.0.5]: https://github.com/toon-format/toon-java/releases/tag/v1.0.5
 [0.1.4]: https://github.com/toon-format/toon-java/releases/tag/v0.1.4
 [0.1.3]: https://github.com/toon-format/toon-java/releases/tag/v0.1.3
 [0.1.2]: https://github.com/toon-format/toon-java/releases/tag/v0.1.2
