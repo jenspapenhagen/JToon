@@ -6,6 +6,7 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -27,26 +28,26 @@ public final class TabularArrayEncoder {
      */
     public static List<String> detectTabularHeader(ArrayNode rows) {
         if (rows.isEmpty()) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         JsonNode firstRow = rows.get(0);
         if (!firstRow.isObject()) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         ObjectNode firstObj = (ObjectNode) firstRow;
         List<String> firstKeys = new ArrayList<>(firstObj.propertyNames());
 
         if (firstKeys.isEmpty()) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         if (isTabularArray(rows, firstKeys)) {
             return firstKeys;
         }
 
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     /**
