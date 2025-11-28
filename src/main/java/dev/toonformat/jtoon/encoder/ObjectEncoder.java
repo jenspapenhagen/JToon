@@ -108,7 +108,7 @@ public final class ObjectEncoder {
         }
 
         if (value.isValueNode()) {
-            writer.push(depth, encodedKey + COLON + SPACE + PrimitiveEncoder.encodePrimitive(value, options.delimiter().getValue()));
+            writer.push(depth, encodedKey + COLON + SPACE + PrimitiveEncoder.encodePrimitive(value, options.delimiter().toString()));
         } else if (value.isArray()) {
             ArrayEncoder.encodeArray(key, (ArrayNode) value, writer, depth, options);
         } else if (value.isObject()) {
@@ -180,7 +180,7 @@ public final class ObjectEncoder {
             writer.push(depth,
                         indentedLine(depth,
                                      encodedFoldedKey + ": " +
-                                         PrimitiveEncoder.encodePrimitive(leaf, options.delimiter().getValue()),
+                                         PrimitiveEncoder.encodePrimitive(leaf, options.delimiter().toString()),
                                      options.indent()));
             return;
         }

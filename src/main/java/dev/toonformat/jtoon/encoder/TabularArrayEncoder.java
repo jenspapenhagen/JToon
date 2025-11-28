@@ -93,7 +93,7 @@ public final class TabularArrayEncoder {
      */
     public static void encodeArrayOfObjectsAsTabular(String prefix, ArrayNode rows, List<String> header,
                                                      LineWriter writer, int depth, EncodeOptions options) {
-        String headerStr = PrimitiveEncoder.formatHeader(rows.size(), prefix, header, options.delimiter().getValue(),
+        String headerStr = PrimitiveEncoder.formatHeader(rows.size(), prefix, header, options.delimiter().toString(),
                 options.lengthMarker());
         writer.push(depth, headerStr);
 
@@ -122,7 +122,7 @@ public final class TabularArrayEncoder {
             for (String key : header) {
                 values.add(obj.get(key));
             }
-            String joinedValue = PrimitiveEncoder.joinEncodedValues(values, options.delimiter().getValue());
+            String joinedValue = PrimitiveEncoder.joinEncodedValues(values, options.delimiter().toString());
             writer.push(depth, joinedValue);
         }
     }
