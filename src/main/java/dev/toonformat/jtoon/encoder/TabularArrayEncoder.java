@@ -112,6 +112,10 @@ public final class TabularArrayEncoder {
     public static void writeTabularRows(ArrayNode rows, List<String> header, LineWriter writer, int depth,
                                         EncodeOptions options) {
         for (JsonNode row : rows) {
+            //skip non-object rows
+            if (!row.isObject()) {
+                continue;
+            }
             ObjectNode obj = (ObjectNode) row;
             List<JsonNode> values = new ArrayList<>();
             for (String key : header) {
