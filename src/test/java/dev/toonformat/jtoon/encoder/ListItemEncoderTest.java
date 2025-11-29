@@ -166,4 +166,34 @@ class ListItemEncoderTest {
                                       "    status: active");
         assertEquals(expected, writer.toString());
     }
+
+    @Test
+    @DisplayName("given mixed-type array as first value when encoded then writes complex list format")
+    void givenMixedTypeArrayAsFirstValue_whenEncoded_thenWritesComplexListFormat() {
+        // Given
+        ObjectNode obj = jsonNodeFactory.objectNode();
+        ArrayNode mixed = jsonNodeFactory.arrayNode();
+        // primitive
+        mixed.add(1);
+        // array of primitives
+        mixed.add(jsonNodeFactory.arrayNode().add(10).add(11));
+        // object
+        ObjectNode nested = jsonNodeFactory.objectNode();
+        nested.put("a", 5);
+        mixed.add(nested);
+        obj.set("mixed", mixed);
+
+        LineWriter writer = new LineWriter(options.indent());
+
+        // When
+        ListItemEncoder.encodeObjectAsListItem(obj, writer, 0, options);
+
+        // Then
+        String expected = String.join("\n",
+                "- mixed[3]:",
+                "    - 1",
+                "    - [2]: 10,11",
+                "    - a: 5");
+        assertEquals(expected, writer.toString());
+    }
 }

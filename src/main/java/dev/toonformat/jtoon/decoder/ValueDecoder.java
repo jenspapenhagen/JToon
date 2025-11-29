@@ -133,7 +133,7 @@ public final class ValueDecoder {
         Parser(String toon, DecodeOptions options) {
             this.lines = toon.split("\n", -1);
             this.options = options;
-            this.delimiter = options.delimiter().getValue();
+            this.delimiter = options.delimiter().toString();
         }
 
         /**
