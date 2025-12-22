@@ -1243,7 +1243,7 @@ class JToonTest {
             @DisplayName("encodes a POJO with SQLDate")
             void encodesSQLDate() {
                 // Given
-                UserDTO userDTO = new UserDTO(123,"Bob", "Marley", new java.sql.Date(25,1,1));
+                UserDTO userDTO = new UserDTO(123,"Bob", "Marley", new java.sql.Date(1766419274));
 
                 // When
                 String encode = encode(userDTO);
@@ -1254,7 +1254,7 @@ class JToonTest {
                         id: 123
                         firstName: Bob
                         lastName: Marley
-                        lastLogin: "1925-01-31T23:00:00.000Z\"""",
+                        lastLogin: "1970-01-21T10:40:19.274Z\"""",
                     encode);
             }
 
