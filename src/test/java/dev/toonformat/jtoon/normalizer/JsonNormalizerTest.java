@@ -329,6 +329,17 @@ class JsonNormalizerTest {
         }
 
         @Test
+        @DisplayName("should convert LocalDateTime to ISO formatted StringNode")
+        void testSQLDate() {
+            java.sql.Date dateTime = new java.sql.Date(125,1,1);
+            JsonNode result = JsonNormalizer.normalize(dateTime);
+            assertTrue(result.isString());
+            assertEquals("2025-02-01", result.asString());
+        }
+
+
+
+        @Test
         @DisplayName("should convert LocalDate to ISO formatted StringNode")
         void testLocalDate() {
             LocalDate date = LocalDate.of(2023, 10, 15);

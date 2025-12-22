@@ -221,6 +221,8 @@ public final class JsonNormalizer {
             return formatTemporal(offsetDateTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         } else if (value instanceof Instant instant) {
             return StringNode.valueOf(instant.toString());
+        } else if (value instanceof java.sql.Date date) {
+            return StringNode.valueOf(date.toString());
         } else if (value instanceof Date date) {
             return StringNode.valueOf(LocalDate.ofInstant(date.toInstant(), ZoneId.systemDefault()).toString());
         } else {

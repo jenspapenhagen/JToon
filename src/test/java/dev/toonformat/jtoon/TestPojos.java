@@ -4,15 +4,12 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.annotation.JsonRootName;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.annotation.JsonSerialize;
 import tools.jackson.databind.ser.std.StdSerializer;
 
-import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 
@@ -171,6 +168,8 @@ public class TestPojos {
                                         String hotelPrice,
                                         String hotelAddressDistance) {
     }
+
+    public record UserDTO(Integer id, String firstName, String lastName, java.sql.Date lastLogin) {}
 
     /**
      * Custom Serializer for HotelInfoLlmRerankDTO

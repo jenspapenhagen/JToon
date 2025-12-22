@@ -8,7 +8,9 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
+import java.sql.Date;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1236,6 +1238,26 @@ class JToonTest {
                           zipCode: "99999\"""",
                     encode);
             }
+
+            @Test
+            @DisplayName("encodes a POJO with SQLDate")
+            void encodesSQLDate() {
+                // Given
+                UserDTO userDTO = new UserDTO(123,"Bob", "Marley", new java.sql.Date(25,1,1));
+
+                // When
+                String encode = encode(userDTO);
+
+                // Then
+                assertEquals(
+                    """
+                        id: 123
+                        firstName: Bob
+                        lastName: Marley
+                        lastLogin: "1925-01-31T23:00:00.000Z\"""",
+                    encode);
+            }
+
 
             @Test
             @DisplayName("encodes POJO with annotation: JsonSerialize")
