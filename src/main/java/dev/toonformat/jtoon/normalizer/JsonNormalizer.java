@@ -17,6 +17,7 @@ import tools.jackson.databind.node.StringNode;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,6 +26,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -52,6 +54,8 @@ public final class JsonNormalizer {
         JsonNormalizer::tryNormalizeTemporal,
         JsonNormalizer::tryNormalizeCollection,
         JsonNormalizer::tryNormalizePojo);
+
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
     private JsonNormalizer() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
@@ -219,10 +223,16 @@ public final class JsonNormalizer {
             return formatTemporal(zonedDateTime, DateTimeFormatter.ISO_ZONED_DATE_TIME);
         } else if (value instanceof OffsetDateTime offsetDateTime) {
             return formatTemporal(offsetDateTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        } else if (value instanceof Calendar calendar) {
+            return StringNode.valueOf(calendar.toInstant().toString());
         } else if (value instanceof Instant instant) {
             return StringNode.valueOf(instant.toString());
         } else if (value instanceof java.sql.Date date) {
-            return StringNode.valueOf(date.toString());
+            return StringNode.valueOf(DATE_FORMAT.format(date));
+        } else if (value instanceof java.sql.Time time) {
+            return StringNode.valueOf(DATE_FORMAT.format(time));
+        } else if (value instanceof java.sql.Timestamp timestamp) {
+            return StringNode.valueOf(DATE_FORMAT.format(timestamp));
         } else if (value instanceof Date date) {
             return StringNode.valueOf(LocalDate.ofInstant(date.toInstant(), ZoneId.systemDefault()).toString());
         } else {
