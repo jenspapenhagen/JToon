@@ -336,7 +336,7 @@ class JsonNormalizerTest {
             java.sql.Date dateTime = new java.sql.Date(1766419274);
             JsonNode result = JsonNormalizer.normalize(dateTime);
             assertTrue(result.isString());
-            assertEquals("1970-01-21T11:40:19+0100", result.asString());
+            assertEquals("1970-01-21", result.asString());
         }
 
         @Test
@@ -345,7 +345,7 @@ class JsonNormalizerTest {
             java.sql.Time time = new java.sql.Time(1766419274);
             JsonNode result = JsonNormalizer.normalize(time);
             assertTrue(result.isString());
-            assertEquals("1970-01-21T11:40:19+0100", result.asString());
+            assertEquals("11:40:19", result.asString());
         }
 
         @Test
@@ -354,7 +354,7 @@ class JsonNormalizerTest {
             java.sql.Timestamp dateTime = new java.sql.Timestamp(1766419274);
             JsonNode result = JsonNormalizer.normalize(dateTime);
             assertTrue(result.isString());
-            assertEquals("1970-01-21T11:40:19+0100", result.asString());
+            assertEquals("1970-01-21T11:40:19.274", result.asString());
         }
 
 
