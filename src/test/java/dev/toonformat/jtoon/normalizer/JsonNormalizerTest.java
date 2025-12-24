@@ -30,8 +30,10 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -327,6 +329,34 @@ class JsonNormalizerTest {
             assertTrue(result.isString());
             assertEquals("2023-10-15T14:30:45", result.asString());
         }
+
+        @Test
+        @DisplayName("should convert java.sql.Date to ISO formatted StringNode")
+        void testSQLDate() {
+            java.sql.Date dateTime = new java.sql.Date(1766419274);
+            JsonNode result = JsonNormalizer.normalize(dateTime);
+            assertTrue(result.isString());
+            assertEquals("1970-01-21", result.asString());
+        }
+
+        @Test
+        @DisplayName("should convert java.sql.Time to ISO formatted StringNode")
+        void testSQLTime() {
+            java.sql.Time time = new java.sql.Time(1766419274);
+            JsonNode result = JsonNormalizer.normalize(time);
+            assertTrue(result.isString());
+            assertEquals("11:40:19", result.asString());
+        }
+
+        @Test
+        @DisplayName("should convert java.sql.Timestamp to ISO formatted StringNode")
+        void testSQLTimeStamp() {
+            java.sql.Timestamp dateTime = new java.sql.Timestamp(1766419274);
+            JsonNode result = JsonNormalizer.normalize(dateTime);
+            assertTrue(result.isString());
+            assertEquals("1970-01-21T11:40:19.274", result.asString());
+        }
+
 
         @Test
         @DisplayName("should convert LocalDate to ISO formatted StringNode")
@@ -1146,6 +1176,36 @@ class JsonNormalizerTest {
             // Then
             assertInstanceOf(StringNode.class, result);
             assertEquals("2025-11-26T14:45:36Z", ((JsonNode) result).asString());
+        }
+
+        @Test
+        @DisplayName("Given Calendar, When tryNormalizeTemporal is called, Then an ISO date StringNode is returned")
+        void givenCalendar_whenTryNormalizeTemporal_thenIsoStringNode() throws Exception {
+            // Given
+            Calendar input = Calendar.getInstance();
+            input.set(2017, Calendar.FEBRUARY, 16, 20, 22, 28);
+            input.set(Calendar.MILLISECOND, 0);
+
+            // When
+            Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
+
+            // Then
+            assertInstanceOf(StringNode.class, result);
+            assertEquals("2017-02-16T19:22:28Z", ((JsonNode) result).asString());
+        }
+
+        @Test
+        @DisplayName("Given GregorianCalendar, When tryNormalizeTemporal is called, Then an ISO date StringNode is returned")
+        void givenGregorianCalendar_whenTryNormalizeTemporal_thenIsoStringNode() throws Exception {
+            // Given
+            GregorianCalendar input = new GregorianCalendar(2017, Calendar.FEBRUARY, 16, 20, 22, 28);
+
+            // When
+            Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
+
+            // Then
+            assertInstanceOf(StringNode.class, result);
+            assertEquals("2017-02-16T19:22:28Z", ((JsonNode) result).asString());
         }
 
         @Test

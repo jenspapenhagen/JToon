@@ -25,6 +25,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -219,8 +220,16 @@ public final class JsonNormalizer {
             return formatTemporal(zonedDateTime, DateTimeFormatter.ISO_ZONED_DATE_TIME);
         } else if (value instanceof OffsetDateTime offsetDateTime) {
             return formatTemporal(offsetDateTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        } else if (value instanceof Calendar calendar) {
+            return StringNode.valueOf(calendar.toInstant().toString());
         } else if (value instanceof Instant instant) {
             return StringNode.valueOf(instant.toString());
+        } else if (value instanceof java.sql.Timestamp timestamp) {
+            return formatTemporal(timestamp.toLocalDateTime(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } else if (value instanceof java.sql.Date date) {
+            return formatTemporal(date.toLocalDate(), DateTimeFormatter.ISO_LOCAL_DATE);
+        } else if (value instanceof java.sql.Time time) {
+            return formatTemporal(time.toLocalTime(), DateTimeFormatter.ISO_LOCAL_TIME);
         } else if (value instanceof Date date) {
             return StringNode.valueOf(LocalDate.ofInstant(date.toInstant(), ZoneId.systemDefault()).toString());
         } else {
