@@ -28,7 +28,7 @@ import dev.toonformat.jtoon.util.StringEscaper;
  * parse("")          → "" (empty string)
  * }</pre>
  */
-final class PrimitiveDecoder {
+public final class PrimitiveDecoder {
 
     private PrimitiveDecoder() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
@@ -71,9 +71,7 @@ final class PrimitiveDecoder {
 
         // Check for leading zeros (treat as string, except for "0", "-0", "0.0", etc.)
         String trimmed = value.trim();
-        if (trimmed.length() > 1
-            && trimmed.matches("^-?0+[0-7].*") //octal number
-            && !trimmed.matches("^-?0+(\\.0+)?([eE][+-]?\\d+)?$")) {
+        if (trimmed.length() > 1 && trimmed.matches("^-?0+[0-7].*")) {
             return value;
         }
 
