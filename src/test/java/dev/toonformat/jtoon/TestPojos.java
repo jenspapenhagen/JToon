@@ -143,7 +143,7 @@ public class TestPojos {
      * Class with Jackson Annotations
      */
     public static class FullEmployee {
-        public AnnotatedEmployee employee;
+        public final AnnotatedEmployee employee;
         private final Map<String, String> properties;
 
         public FullEmployee(AnnotatedEmployee employee, Map<String, String> properties) {
@@ -154,6 +154,10 @@ public class TestPojos {
         @JsonAnyGetter
         public Map<String, String> getProperties() {
             return properties;
+        }
+
+        public AnnotatedEmployee employee() {
+            return employee;
         }
     }
 
@@ -194,14 +198,22 @@ public class TestPojos {
      * POJO with custom serializer
      */
     public static class HotelInfoLlmRerankDTOWithSerializer {
-        public String name;
+        private final String name;
 
         @JsonSerialize(using = CustomHotelInfoLlmRerankDTOSerializer.class)
-        public HotelInfoLlmRerankDTO hotelInfo;
+        private final HotelInfoLlmRerankDTO hotelInfo;
 
         public HotelInfoLlmRerankDTOWithSerializer(String name, HotelInfoLlmRerankDTO hotelInfo) {
             this.name = name;
             this.hotelInfo = hotelInfo;
+        }
+
+        public String name() {
+            return name;
+        }
+
+        public HotelInfoLlmRerankDTO hotelInfo() {
+            return hotelInfo;
         }
     }
 

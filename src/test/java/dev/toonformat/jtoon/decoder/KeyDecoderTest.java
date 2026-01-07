@@ -156,6 +156,9 @@ class KeyDecoderTest {
         // Then
         Map<String, Object> expectedNestedMap = new LinkedHashMap<>();
         expectedNestedMap.put("bar", expectedArray);
+
+        assertNull(result.get("bar"));
+        assertEquals(result.size(),  expectedNestedMap.size());
     }
 
     @Test
