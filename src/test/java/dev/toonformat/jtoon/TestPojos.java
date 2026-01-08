@@ -173,7 +173,8 @@ public class TestPojos {
                                         String hotelAddressDistance) {
     }
 
-    public record UserDTO(Integer id, String firstName, String lastName, java.sql.Date lastLogin) {}
+    public record UserDTO(Integer id, String firstName, String lastName, java.sql.Date lastLogin) {
+    }
 
     /**
      * Custom Serializer for HotelInfoLlmRerankDTO
@@ -198,22 +199,14 @@ public class TestPojos {
      * POJO with custom serializer
      */
     public static class HotelInfoLlmRerankDTOWithSerializer {
-        private final String name;
+        public String name;
 
         @JsonSerialize(using = CustomHotelInfoLlmRerankDTOSerializer.class)
-        private final HotelInfoLlmRerankDTO hotelInfo;
+        public HotelInfoLlmRerankDTO hotelInfo;
 
         public HotelInfoLlmRerankDTOWithSerializer(String name, HotelInfoLlmRerankDTO hotelInfo) {
             this.name = name;
             this.hotelInfo = hotelInfo;
-        }
-
-        public String name() {
-            return name;
-        }
-
-        public HotelInfoLlmRerankDTO hotelInfo() {
-            return hotelInfo;
         }
     }
 
