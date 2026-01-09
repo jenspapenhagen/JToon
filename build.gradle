@@ -1,8 +1,11 @@
+import com.github.spotbugs.snom.SpotBugsTask
+
 plugins {
     id 'java'
     id 'maven-publish'
     id 'signing'
     id 'jacoco'
+    id 'com.github.spotbugs' version '6.4.8'
 }
 
 group = 'dev.toonformat'
@@ -32,6 +35,12 @@ repositories {
 jacoco {
     toolVersion = "0.8.14"
     reportsDirectory = layout.buildDirectory.dir('customJacocoReportDir')
+}
+
+spotbugs {
+    ignoreFailures = false
+    showProgress = true
+    excludeFilter = file("spotbugs-filter.xml")
 }
 
 dependencies {
@@ -95,4 +104,11 @@ tasks.register('specsValidation', Test) {
     group = 'verification'
 
     include '**/ConformanceTest.class'
+}
+
+tasks.withType(SpotBugsTask).configureEach {
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
 }
