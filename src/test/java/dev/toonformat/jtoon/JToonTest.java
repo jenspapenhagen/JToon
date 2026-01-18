@@ -4,6 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -1228,6 +1229,21 @@ class JToonTest {
             // Then
             assertEquals("pairs[#2]:\n  - [#2]: a,b\n  - [#2]: c,d",
                 encode(obj, new EncodeOptions(2, Delimiter.COMMA, true, KeyFolding.OFF, Integer.MAX_VALUE)));
+        }
+
+        @Test
+        @DisplayName("adds length marker to nested arrays")
+        void addsMarkerToNested222() {
+            ObjectMapper mapper = new ObjectMapper();
+            // Given
+            Map<String, Object> obj = obj("pairs", list(list("a", "b"), list("c", "d")));
+
+            // Then
+            assertEquals("pairs[#2]:\n  - [#2]: a,b\n  - [#2]: c,d",
+                JToon.encode(obj,
+                    new EncodeOptions(2, Delimiter.COMMA, true, KeyFolding.OFF, Integer.MAX_VALUE),
+                    mapper)
+                );
         }
 
         @Test
