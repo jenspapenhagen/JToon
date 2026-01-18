@@ -4,6 +4,7 @@ import dev.toonformat.jtoon.decoder.ValueDecoder;
 import dev.toonformat.jtoon.encoder.ValueEncoder;
 import dev.toonformat.jtoon.normalizer.JsonNormalizer;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Main entry point for encoding and decoding TOON (Token-Oriented Object Notation) format.
@@ -43,6 +44,26 @@ public final class JToon {
      * @return The JToon-formatted string
      */
     public static String encode(Object input, EncodeOptions options) {
+        JsonNode normalizedValue = JsonNormalizer.normalize(input);
+        return ValueEncoder.encodeValue(normalizedValue, options);
+    }
+
+    /**
+     * Encodes a Java object to JToon format using custom options.
+     *
+     * <p>
+     * The object is first normalized (Java types are converted to
+     * JSON-compatible representations, with a given Jackson 3 ObjectMapper),
+     * then encoded to JToon format.
+     * </p>
+     *
+     * @param input   the object to encode; may be any value supported by the {@code ObjectMapper}
+     * @param options encoding options that control the encoding behavior
+     * @param mapper  the {@code ObjectMapper} used for JSON normalization
+     * @return the encoded string representation of the normalized input
+     */
+    public static String encode(Object input, EncodeOptions options, ObjectMapper mapper) {
+        JsonNormalizer.MAPPER = mapper;
         JsonNode normalizedValue = JsonNormalizer.normalize(input);
         return ValueEncoder.encodeValue(normalizedValue, options);
     }
