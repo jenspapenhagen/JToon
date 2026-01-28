@@ -1,6 +1,5 @@
 package dev.toonformat.jtoon.decoder;
 
-import dev.toonformat.jtoon.DecodeOptions;
 import dev.toonformat.jtoon.JToon;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -8,7 +7,11 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -22,17 +25,19 @@ class DecodeContextRaceConditionTest {
         int iterationsPerThread = 100;
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 
-        String toonInput = "name: JToon\n" +
-                "version: 1.0.0\n" +
-                "tags[3]:\n" +
-                "  - java\n" +
-                "  - json\n" +
-                "  - toon\n" +
-                "metadata:\n" +
-                "  author: dev\n" +
-                "  active: true";
+        String toonInput = new StringBuilder()
+            .append("name: JToon\n")
+            .append("version: 1.0.0\n")
+            .append("tags[3]:\n")
+            .append("  - java\n")
+            .append("  - json\n")
+            .append("  - toon\n")
+            .append("metadata:\n")
+            .append("  author: dev\n")
+            .append("  active: true")
+            .toString();
 
-        List<Future<Object>> futures = new ArrayList<>();
+        final List<Future<Object>> futures = new ArrayList<>();
 
         for (int i = 0; i < threadCount * iterationsPerThread; i++) {
             futures.add(executor.submit(() -> JToon.decode(toonInput)));
@@ -60,8 +65,8 @@ class DecodeContextRaceConditionTest {
     void concurrentDifferentInputs() throws InterruptedException, ExecutionException {
         int threadCount = 10;
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-        
-        List<Future<Void>> futures = new ArrayList<>();
+
+        final List<Future<Void>> futures = new ArrayList<>();
 
         for (int i = 0; i < 1000; i++) {
             final int index = i;

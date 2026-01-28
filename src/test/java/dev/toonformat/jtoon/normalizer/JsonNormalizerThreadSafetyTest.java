@@ -11,8 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Execution(ExecutionMode.CONCURRENT)
 class JsonNormalizerThreadSafetyTest {
@@ -36,7 +35,7 @@ class JsonNormalizerThreadSafetyTest {
         assertNotNull(normalized);
         assertTrue(normalized.isObject());
         assertTrue(normalized.has("id"));
-        assertTrue(normalized.get("id").asText().equals(id));
+        assertEquals(normalized.get("id").asString(), id);
     }
 
     @RepeatedTest(100)
@@ -52,6 +51,6 @@ class JsonNormalizerThreadSafetyTest {
         // Then
         assertNotNull(parsed);
         assertTrue(parsed.isObject());
-        assertTrue(parsed.get("id").asText().equals(id));
+        assertEquals(parsed.get("id").asString(), id);
     }
 }

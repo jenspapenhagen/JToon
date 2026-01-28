@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 @Execution(ExecutionMode.CONCURRENT)
 class ValueDecoderThreadSafetyTest {
@@ -22,20 +22,20 @@ class ValueDecoderThreadSafetyTest {
         // Given
         String id = UUID.randomUUID().toString();
         String toon = "id: " + id + "\n" +
-                      "tags[3]: a, b, c\n" +
-                      "meta:\n" +
-                      "  active: true\n" +
-                      "  score: 42";
+            "tags[3]: a, b, c\n" +
+            "meta:\n" +
+            "  active: true\n" +
+            "  score: 42";
 
         // When
         Object decoded = ValueDecoder.decode(toon, DecodeOptions.DEFAULT);
 
         // Then
-        assertTrue(decoded instanceof Map);
+        assertInstanceOf(Map.class, decoded);
         Map<?, ?> map = (Map<?, ?>) decoded;
         assertEquals(id, map.get("id"));
         assertEquals(List.of("a", "b", "c"), map.get("tags"));
-        
+
         Map<?, ?> meta = (Map<?, ?>) map.get("meta");
         assertEquals(true, meta.get("active"));
         assertEquals(42L, meta.get("score"));
