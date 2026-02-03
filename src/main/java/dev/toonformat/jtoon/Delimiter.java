@@ -33,4 +33,8 @@ public enum Delimiter {
     public String toString() {
         return value;
     }
+
+    public char getValue() {
+        return value.charAt(0);
+    }
 }
