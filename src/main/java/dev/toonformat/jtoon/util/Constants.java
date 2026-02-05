@@ -18,6 +18,10 @@ public final class Constants {
     public static final String COLON = ":";
     /** Space character. */
     public static final String SPACE = " ";
+    /** Dot character. */
+    public static final String DOT = ".";
+    /** Hashtag character. */
+    public static final String HASHTAG = "#";
 
     // Brackets and braces
     /** Opening bracket character for arrays. */
