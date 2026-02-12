@@ -6,6 +6,11 @@
         <Class name="~.*Test.*" />
     </Match>
     
+    <!-- Exclude JMH benchmark classes -->
+    <Match>
+        <Class name="~.*JToonBenchmark.*" />
+    </Match>
+    
     <!-- Exclude generated classes -->
     <Match>
         <Class name="~.*\.generated\..*" />

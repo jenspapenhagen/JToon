@@ -10,11 +10,7 @@
 
     <!-- Best Practices -->
     <rule ref="category/java/bestpractices.xml">
-        <exclude name="AvoidAccessibilityAlteration" />
-        <exclude name="AvoidCatchingThrowable" />
-        <exclude name="AvoidThrowingRawExceptionTypes" />
         <exclude name="GuardLogStatement" />
-        <exclude name="JUnit5TestShouldBePackagePrivate" />
         <exclude name="JUnitAssertionsShouldIncludeMessage" />
         <exclude name="JUnitTestContainsTooManyAsserts" />
         <exclude name="JUnitTestsShouldIncludeAssert" />
@@ -30,8 +26,6 @@
         <exclude name="ConfusingTernary" />
         <exclude name="ControlStatementBraces" />
         <exclude name="FieldNamingConventions" />
-        <exclude name="FinalFieldCouldBeStatic" />
-        <exclude name="JUnit5TestShouldBePackagePrivate" />
         <exclude name="LinguisticNaming" />
         <exclude name="LocalVariableCouldBeFinal" />
         <exclude name="LongVariable" />
@@ -50,7 +44,6 @@
         <exclude name="UnnecessaryModifier" />
         <exclude name="UnnecessaryReturn" />
         <exclude name="UseExplicitTypes" />
-        <exclude name="UseLocaleWithCaseConversions" />
         <exclude name="UselessParentheses" />
         <exclude name="UselessQualifiedThis" />
         <exclude name="UseUnderscoresInNumericLiterals" />
@@ -61,8 +54,6 @@
         <exclude name="AbstractClassWithoutAnyMethod" />
         <exclude name="AvoidCatchingGenericException" />
         <exclude name="AvoidDeeplyNestedIfStmts" />
-        <exclude name="AvoidUncheckedExceptionsInSignatures" />
-        <exclude name="ClassNamingConventions" />
         <exclude name="CognitiveComplexity" />
         <exclude name="CollapsibleIfStatements" />
         <exclude name="CouplingBetweenObjects" />
@@ -70,7 +61,6 @@
         <exclude name="DataClass" />
         <exclude name="ExcessiveImports" />
         <exclude name="ExcessivePublicCount" />
-        <exclude name="FinalFieldCouldBeStatic" />
         <exclude name="GodClass" />
         <exclude name="ImmutableField" />
         <exclude name="LawOfDemeter" />
@@ -88,12 +78,10 @@
 
     <!-- Error Prone -->
     <rule ref="category/java/errorprone.xml">
-        <exclude name="AvoidAccessibilityAlteration" />
         <exclude name="AvoidDuplicateLiterals" />
         <exclude name="AvoidFieldNameMatchingMethodName" />
         <exclude name="AvoidLiteralsInIfCondition" />
         <exclude name="AvoidMultipleUnaryOperators" />
-        <exclude name="AvoidUncheckedExceptionsInSignatures" />
         <exclude name="CheckSkipResult" />
         <exclude name="ClassCastExceptionWithToArray" />
         <exclude name="CloseResource" />
