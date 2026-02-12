@@ -5,6 +5,7 @@ plugins {
     id 'jacoco'
     id 'com.github.spotbugs' version '6.0.15'
     id 'pmd'
+    id 'checkstyle'
 }
 
 group = 'dev.toonformat'
@@ -95,6 +96,24 @@ tasks.pmdTest {
     }
 }
 
+checkstyle {
+    toolVersion = '10.12.5'
+    configFile = file('checkstyle.xml')
+    showViolations = true
+    ignoreFailures = true
+}
+
+tasks.checkstyleMain {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+tasks.checkstyleTest {
+    enabled = false
+}
+
 dependencies {
     implementation 'tools.jackson.core:jackson-databind:3.0.4'
     implementation 'tools.jackson.module:jackson-module-afterburner:3.0.4'
@@ -142,6 +161,7 @@ jacocoTestCoverageVerification {
 check.dependsOn jacocoTestReport
 check.dependsOn spotbugsMain
 check.dependsOn pmdMain
+check.dependsOn checkstyleMain
 
 tasks.register('generateJavadoc', Javadoc) {
     description = 'Generates Javadoc HTML documentation in the docs/javadoc folder'

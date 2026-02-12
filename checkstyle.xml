@@ -22,7 +22,6 @@
         <module name="OuterTypeFilename"/>
         <module name="IllegalTokenText"/>
         <module name="AvoidEscapedUnicodeCharacters"/>
-        <module name="AvoidDuplicateLiterals"/>
         
         <!-- Naming Conventions -->
         <module name="PackageName"/>
@@ -37,8 +36,8 @@
         <!-- Code blocks -->
         <module name="EmptyBlock"/>
         <module name="NeedBraces"/>
-        <module name="LeftCurlyBrace"/>
-        <module name="RightCurlyBrace"/>
+        <module name="LeftCurly"/>
+        <module name="RightCurly"/>
         
         <!-- Whitespace -->
         <module name="WhitespaceAround"/>
@@ -62,14 +61,10 @@
         
         <!-- Javadoc -->
         <module name="JavadocMethod">
-            <property name="accessModifiers" value="public"/>
             <property name="allowMissingParamTags" value="true"/>
             <property name="allowMissingReturnTag" value="true"/>
         </module>
-        <module name="JavadocType">
-            <property name="accessModifiers" value="public"/>
-            <property name="allowMissingParamTags" value="true"/>
-        </module>
+        <module name="JavadocType"/>
         <module name="JavadocStyle"/>
         
         <!-- Error Prevention -->
