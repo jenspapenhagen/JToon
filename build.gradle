@@ -133,6 +133,9 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.awaitility:awaitility:4.3.0'
     testImplementation 'org.pitest:pitest-junit5-plugin:1.2.3'
+    testImplementation 'org.openjdk.jmh:jmh-core:1.37'
+    testImplementation 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
+    testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 }
 
 test {
@@ -192,5 +195,16 @@ tasks.register('specsValidation', Test) {
     group = 'verification'
 
     include '**/ConformanceTest.class'
+}
+
+tasks.register('jmh', JavaExec) {
+    group = 'verification'
+    description = 'Run JMH benchmarks'
+    classpath = configurations.testRuntimeClasspath + sourceSets.test.runtimeClasspath
+    mainClass = 'dev.toonformat.jtoon.JToonBenchmark'
+    workingDir = projectDir
+    doFirst {
+        file('build/jmh-results').mkdirs()
+    }
 }
 
