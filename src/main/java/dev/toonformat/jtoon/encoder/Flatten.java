@@ -2,14 +2,12 @@ package dev.toonformat.jtoon.encoder;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-
 import static dev.toonformat.jtoon.util.Constants.DOT;
 
 /**
@@ -38,7 +36,7 @@ public final class Flatten {
     }
 
     /**
-     * Represents the result of the Collect segments of the single-key chain
+     * Represents the result of the Collect segments of the single-key chain.
      *
      * @param segments  collected single-key object
      * @param tail      the tail node (if any)
@@ -77,7 +75,7 @@ public final class Flatten {
         }
 
         // start chain from absolute key
-        String absKey = (pathPrefix == null) ? key : String.join(DOT, pathPrefix, key);
+        final String absKey = (pathPrefix == null) ? key : String.join(DOT, pathPrefix, key);
 
         // Collect segments of the single-key chain
         final ChainResult chain = collectSingleKeyChain(absKey, value, remainingDepth);
@@ -99,7 +97,7 @@ public final class Flatten {
         }
 
         // Build folded key
-        String foldedKey = String.join(DOT, chain.segments);
+        final String foldedKey = String.join(DOT, chain.segments);
 
         // Detect collisions with sibling keys
         if (siblings.contains(foldedKey)) {

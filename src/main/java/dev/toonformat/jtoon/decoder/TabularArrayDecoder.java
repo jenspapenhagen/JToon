@@ -34,22 +34,23 @@ public final class TabularArrayDecoder {
      * @param context        decode an object to deal with lines, delimiter and options
      * @return tabular array converted to JSON format
      */
-    public static List<Object> parseTabularArray(String header, int depth, Delimiter arrayDelimiter, DecodeContext context) {
-        Matcher matcher = TABULAR_HEADER_PATTERN.matcher(header);
+    public static List<Object> parseTabularArray(String header, int depth, Delimiter arrayDelimiter,
+                                                  DecodeContext context) {
+        final Matcher matcher = TABULAR_HEADER_PATTERN.matcher(header);
         if (!matcher.find()) {
             return Collections.emptyList();
         }
 
-        String keysStr = matcher.group(4);
-        List<String> keys = parseTabularKeys(keysStr, arrayDelimiter, context);
+        final String keysStr = matcher.group(4);
+        final List<String> keys = parseTabularKeys(keysStr, arrayDelimiter, context);
 
-        List<Object> result = new ArrayList<>();
+        final List<Object> result = new ArrayList<>();
         context.currentLine++;
 
         // Determine the expected row depth dynamically from the first non-blank line
         int expectedRowDepth = depth + 1;
         if (context.currentLine < context.lines.length) {
-            int nextNonBlankLine = DecodeHelper.findNextNonBlankLine(context.currentLine, context);
+            final int nextNonBlankLine = DecodeHelper.findNextNonBlankLine(context.currentLine, context);
             if (nextNonBlankLine < context.lines.length) {
                 expectedRowDepth = DecodeHelper.getDepth(context.lines[nextNonBlankLine], context);
             }
@@ -80,8 +81,8 @@ public final class TabularArrayDecoder {
             validateKeysDelimiter(keysStr, arrayDelimiter);
         }
 
-        List<String> result = new ArrayList<>();
-        List<String> rawValues = ArrayDecoder.parseDelimitedValues(keysStr, arrayDelimiter);
+        final List<String> result = new ArrayList<>();
+        final List<String> rawValues = ArrayDecoder.parseDelimitedValues(keysStr, arrayDelimiter);
         for (String key : rawValues) {
             result.add(StringEscaper.unescape(key));
         }
