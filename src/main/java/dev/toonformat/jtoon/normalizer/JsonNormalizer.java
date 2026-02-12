@@ -1,7 +1,6 @@
 package dev.toonformat.jtoon.normalizer;
 
 import dev.toonformat.jtoon.util.ObjectMapperSingleton;
-import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
@@ -46,7 +45,7 @@ public final class JsonNormalizer {
     /**
      * Shared ObjectMapper instance configured for JSON normalization.
      */
-    public static final ObjectMapper MAPPER = ObjectMapperSingleton.getInstance();
+    public static ObjectMapper MAPPER = ObjectMapperSingleton.getInstance();
 
     private static final List<Function<Object, JsonNode>> NORMALIZERS = List.of(
         JsonNormalizer::tryNormalizePrimitive,
