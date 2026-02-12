@@ -3,6 +3,7 @@ plugins {
     id 'maven-publish'
     id 'signing'
     id 'jacoco'
+    id 'com.github.spotbugs' version '6.0.15'
 }
 
 group = 'dev.toonformat'
@@ -35,9 +36,44 @@ jacoco {
     reportsDirectory = layout.buildDirectory.dir('customJacocoReportDir')
 }
 
+spotbugs {
+    toolVersion = '4.8.6'
+    excludeFilter = file('spotbugs-exclude.xml')
+    effort = "max"
+    reportLevel = "low"
+    reportsDir = layout.buildDirectory.dir('spotbugs')
+}
+
+tasks.spotbugsMain {
+    reports {
+        html {
+            required = true
+            outputLocation = file("${spotbugs.reportsDir.get()}/spotbugs-main.html")
+        }
+        xml {
+            required = true
+            outputLocation = file("${spotbugs.reportsDir.get()}/spotbugs-main.xml")
+        }
+    }
+}
+
+tasks.spotbugsTest {
+    reports {
+        html {
+            required = true
+            outputLocation = file("${spotbugs.reportsDir.get()}/spotbugs-test.html")
+        }
+        xml {
+            required = true
+            outputLocation = file("${spotbugs.reportsDir.get()}/spotbugs-test.xml")
+        }
+    }
+}
+
 dependencies {
     implementation 'tools.jackson.core:jackson-databind:3.0.4'
     implementation 'tools.jackson.module:jackson-module-afterburner:3.0.4'
+    compileOnly 'com.github.spotbugs:spotbugs-annotations:4.8.6'
     testImplementation platform('org.junit:junit-bom:6.0.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -79,6 +115,7 @@ jacocoTestCoverageVerification {
     }
 }
 check.dependsOn jacocoTestReport
+check.dependsOn spotbugsMain
 
 tasks.register('generateJavadoc', Javadoc) {
     description = 'Generates Javadoc HTML documentation in the docs/javadoc folder'

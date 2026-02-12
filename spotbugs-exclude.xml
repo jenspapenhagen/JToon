@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    
+    <!-- Exclude test classes -->
+    <Match>
+        <Class name="~.*Test.*" />
+    </Match>
+    
+    <!-- Exclude generated classes -->
+    <Match>
+        <Class name="~.*\.generated\..*" />
+    </Match>
+       
+	<Match>
+        <Bug pattern="EI_EXPOSE_REP" />
+    </Match>
+	
+	<Match>
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+	    
+    <!-- Exclude warnings for string concatenation in logging -->
+    <Match>
+        <Method name="~.*log.*|.*info.*|.*debug.*|.*error.*" />
+        <Bug pattern="SBSC_USE_STRINGBUFFER_CONCATENATION" />
+    </Match>
+</FindBugsFilter>
