@@ -110,7 +110,6 @@
         <exclude name="AvoidCatchingThrowable" />
         <exclude name="AvoidAccessibilityAlteration" />
         <exclude name="UseLocaleWithCaseConversions" />
-        <exclude name="AvoidUncheckedExceptionsInSignatures" />
     </rule>
 
     <!-- Performance -->
