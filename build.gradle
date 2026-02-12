@@ -4,6 +4,7 @@ plugins {
     id 'signing'
     id 'jacoco'
     id 'com.github.spotbugs' version '6.0.15'
+    id 'pmd'
 }
 
 group = 'dev.toonformat'
@@ -70,6 +71,30 @@ tasks.spotbugsTest {
     }
 }
 
+pmd {
+    toolVersion = '7.0.0'
+    ruleSetFiles = files('pmd-rules.xml')
+    ruleSets = [] // Disable default rulesets, use custom file only
+    consoleOutput = true
+    ignoreFailures = true
+}
+
+tasks.pmdMain {
+    reports {
+        html.required = true
+        xml.required = true
+    }
+}
+
+tasks.pmdTest {
+    ruleSetFiles = files('pmd-rules-test.xml')
+    ignoreFailures = true
+    reports {
+        html.required = true
+        xml.required = true
+    }
+}
+
 dependencies {
     implementation 'tools.jackson.core:jackson-databind:3.0.4'
     implementation 'tools.jackson.module:jackson-module-afterburner:3.0.4'
@@ -116,6 +141,7 @@ jacocoTestCoverageVerification {
 }
 check.dependsOn jacocoTestReport
 check.dependsOn spotbugsMain
+check.dependsOn pmdMain
 
 tasks.register('generateJavadoc', Javadoc) {
     description = 'Generates Javadoc HTML documentation in the docs/javadoc folder'
