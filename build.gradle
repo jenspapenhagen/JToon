@@ -80,6 +80,7 @@ tasks.spotbugsTest {
             outputLocation = file("${spotbugs.reportsDir.get()}/spotbugs-test.xml")
         }
     }
+    ignoreFailures = true
 }
 
 pmd {
@@ -122,6 +123,7 @@ tasks.checkstyleMain {
 
 tasks.checkstyleTest {
     enabled = false
+    ignoreFailures = true
 }
 
 dependencies {

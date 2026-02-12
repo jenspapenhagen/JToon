@@ -5,11 +5,7 @@ import java.util.regex.Pattern;
 /**
  * Patterns in form of regex that must be followed in order to decode arrays, tabular, keyed arrays.
  */
-public class Headers {
-
-    private Headers() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
-    }
+public final class Headers {
 
     /**
      * Matches standalone array headers: [3], [#2], [3\t], [2|].
@@ -30,5 +26,9 @@ public class Headers {
      * group(4)=optional field spec
      */
     public static final Pattern KEYED_ARRAY_PATTERN = Pattern.compile("^(.+?)\\[(#?)\\d+([\\t|])?](\\{[^}]+})?:.*$");
+
+    private Headers() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+    }
 
 }

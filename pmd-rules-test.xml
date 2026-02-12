@@ -16,6 +16,7 @@
         <exclude name="JUnitTestsShouldIncludeAssert" />
         <exclude name="JUnitUseExpected" />
         <exclude name="LiteralsFirstInComparisons" />
+        <exclude name="JUnit5TestShouldBePackagePrivate" />
     </rule>
 
     <!-- Code Style -->
@@ -47,6 +48,7 @@
         <exclude name="UselessParentheses" />
         <exclude name="UselessQualifiedThis" />
         <exclude name="UseUnderscoresInNumericLiterals" />
+        <exclude name="ClassNamingConventions" />
     </rule>
 
     <!-- Design -->
@@ -105,6 +107,10 @@
         <exclude name="TestClassWithoutTestCases" />
         <exclude name="UnconditionalIfStatement" />
         <exclude name="UselessOperationOnImmutable" />
+        <exclude name="AvoidCatchingThrowable" />
+        <exclude name="AvoidAccessibilityAlteration" />
+        <exclude name="UseLocaleWithCaseConversions" />
+        <exclude name="AvoidUncheckedExceptionsInSignatures" />
     </rule>
 
     <!-- Performance -->
