@@ -2,7 +2,6 @@ package dev.toonformat.jtoon.encoder;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import static dev.toonformat.jtoon.util.Constants.SPACE;
 
 /**
@@ -28,7 +27,7 @@ public final class LineWriter {
      * @param content Line content to add
      */
     public void push(int depth, String content) {
-        String indent = indentationString.repeat(depth);
+        final String indent = indentationString.repeat(depth);
         lines.add(indent + content);
     }
 

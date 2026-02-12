@@ -1,7 +1,6 @@
 package dev.toonformat.jtoon.decoder;
 
 import dev.toonformat.jtoon.util.StringEscaper;
-
 import static dev.toonformat.jtoon.util.Constants.DOT;
 import static dev.toonformat.jtoon.util.Constants.NULL_LITERAL;
 import static dev.toonformat.jtoon.util.Constants.TRUE_LITERAL;
@@ -75,7 +74,7 @@ public final class PrimitiveDecoder {
         }
 
         // Check for leading zeros (treat as string, except for "0", "-0", "0.0", etc.)
-        String trimmed = value.trim();
+        final String trimmed = value.trim();
         if (trimmed.length() > 1 && trimmed.matches("^-?0+[0-7].*")) {
             return value;
         }
@@ -84,7 +83,7 @@ public final class PrimitiveDecoder {
         try {
             // Check if it contains exponent notation or decimal point
             if (value.contains(DOT) || value.contains("e") || value.contains("E")) {
-                double parsed = Double.parseDouble(value);
+                final double parsed = Double.parseDouble(value);
                 // Handle negative zero - Java doesn't distinguish, but spec says it should be 0
                 if (parsed == 0.0) {
                     return 0L;

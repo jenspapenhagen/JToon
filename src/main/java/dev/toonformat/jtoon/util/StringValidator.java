@@ -1,7 +1,6 @@
 package dev.toonformat.jtoon.util;
 
 import java.util.regex.Pattern;
-
 import static dev.toonformat.jtoon.util.Constants.*;
 
 /**
@@ -92,7 +91,9 @@ public final class StringValidator {
     }
 
     private static boolean looksLikeNumber(String value) {
-        return OCTAL_PATTERN.matcher(value).matches() || LEADING_ZERO_PATTERN.matcher(value).matches() || NUMERIC_PATTERN.matcher(value).matches();
+        return OCTAL_PATTERN.matcher(value).matches()
+            || LEADING_ZERO_PATTERN.matcher(value).matches()
+            || NUMERIC_PATTERN.matcher(value).matches();
     }
 
     private static boolean containsColon(String value) {

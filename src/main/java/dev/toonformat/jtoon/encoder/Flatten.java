@@ -105,7 +105,7 @@ public final class Flatten {
         }
 
         // Compute absolute dotted path
-        String absolutePath =
+        final String absolutePath =
                 (pathPrefix != null && !pathPrefix.isEmpty())
                         ? String.join(DOT, pathPrefix, foldedKey)
                         : foldedKey;
@@ -125,7 +125,7 @@ public final class Flatten {
 
     /**
      * Traverses nested single-key {@link ObjectNode} values, collecting the
-     * sequence of keys until one of the following occurs:
+     * sequence of keys until one of the following occurs.
      * - A non-object value is encountered
      * - An object with zero or more than one key is encountered
      * - An empty object is encountered (treated as a leaf)
@@ -138,7 +138,7 @@ public final class Flatten {
      */
     private static ChainResult collectSingleKeyChain(String startKey, JsonNode startValue, int maxDepth) {
         // normalize absolute key to its local segment
-        String localStartKey = startKey.contains(DOT)
+        final String localStartKey = startKey.contains(DOT)
                 ? startKey.substring(startKey.lastIndexOf(DOT.charAt(0)) + 1)
                 : startKey;
 
@@ -151,14 +151,14 @@ public final class Flatten {
 
         while (currentValue.isObject() && depthCounter < maxDepth) {
             final ObjectNode obj = (ObjectNode) currentValue;
-            Iterator<Map.Entry<String, JsonNode>> it = obj.properties().iterator();
+            final Iterator<Map.Entry<String, JsonNode>> it = obj.properties().iterator();
 
             // empty object leaf
             if (!it.hasNext()) {
                 return new ChainResult(segments, null, currentValue);
             }
 
-            Map.Entry<String, JsonNode> entry = it.next();
+            final Map.Entry<String, JsonNode> entry = it.next();
 
             // >1 field, this is a tail object
             if (it.hasNext()) {

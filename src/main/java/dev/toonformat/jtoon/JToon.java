@@ -43,7 +43,7 @@ public final class JToon {
      * @return The JToon-formatted string
      */
     public static String encode(Object input, EncodeOptions options) {
-        JsonNode normalizedValue = JsonNormalizer.normalize(input);
+        final JsonNode normalizedValue = JsonNormalizer.normalize(input);
         return ValueEncoder.encodeValue(normalizedValue, options);
     }
 
@@ -79,7 +79,7 @@ public final class JToon {
      * @throws IllegalArgumentException if the input is not valid JSON
      */
     public static String encodeJson(String json, EncodeOptions options) {
-        JsonNode parsed = JsonNormalizer.parse(json);
+        final JsonNode parsed = JsonNormalizer.parse(json);
         return ValueEncoder.encodeValue(parsed, options);
     }
 

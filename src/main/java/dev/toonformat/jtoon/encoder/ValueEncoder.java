@@ -4,7 +4,6 @@ import dev.toonformat.jtoon.EncodeOptions;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -32,12 +31,12 @@ public final class ValueEncoder {
         }
 
         // Complex values need a LineWriter for indentation
-        LineWriter writer = new LineWriter(options.indent());
+        final LineWriter writer = new LineWriter(options.indent());
 
         if (value.isArray()) {
             ArrayEncoder.encodeArray(null, (ArrayNode) value, writer, 0, options);
         } else if (value.isObject()) {
-            Set<String> jsonNodes = new HashSet<>(value.propertyNames());
+            final Set<String> jsonNodes = new HashSet<>(value.propertyNames());
             ObjectEncoder.encodeObject((ObjectNode) value, writer, 0, options, jsonNodes, null, null, new HashSet<>());
         }
 

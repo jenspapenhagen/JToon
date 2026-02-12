@@ -44,7 +44,7 @@ public final class StringEscaper {
 
         // Check for invalid escape sequences in quoted strings
         if (value.startsWith("\"") && value.endsWith("\"")) {
-            String unquoted = value.substring(1, value.length() - 1);
+            final String unquoted = value.substring(1, value.length() - 1);
             boolean escaped = false;
 
             for (char c : unquoted.toCharArray()) {
@@ -90,7 +90,7 @@ public final class StringEscaper {
             unquoted = value.substring(1, value.length() - 1);
         }
 
-        StringBuilder result = new StringBuilder();
+        final StringBuilder result = new StringBuilder();
         boolean escaped = false;
 
         for (char c : unquoted.toCharArray()) {

@@ -3,11 +3,9 @@ package dev.toonformat.jtoon.encoder;
 import dev.toonformat.jtoon.util.StringEscaper;
 import dev.toonformat.jtoon.util.StringValidator;
 import tools.jackson.databind.JsonNode;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
-
 import static dev.toonformat.jtoon.util.Constants.NULL_LITERAL;
 import static dev.toonformat.jtoon.util.Constants.DOUBLE_QUOTE;
 
@@ -47,9 +45,9 @@ public final class PrimitiveEncoder {
             return value.asString();
         }
 
-        double doubleValue = value.asDouble();
-        BigDecimal decimal = BigDecimal.valueOf(doubleValue);
-        String plainString = decimal.toPlainString();
+        final double doubleValue = value.asDouble();
+        final BigDecimal decimal = BigDecimal.valueOf(doubleValue);
+        final String plainString = decimal.toPlainString();
 
         return stripTrailingZeros(plainString);
     }

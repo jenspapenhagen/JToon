@@ -92,7 +92,9 @@ public final class ObjectEncoder {
         }
         final String encodedKey = PrimitiveEncoder.encodeKey(key);
         final String currentPath = pathPrefix != null ? pathPrefix + DOT + key : key;
-        final int effectiveFlattenDepth = flattenDepth != null && flattenDepth > 0 ? flattenDepth : options.flattenDepth();
+        final int effectiveFlattenDepth = flattenDepth != null && flattenDepth > 0
+                ? flattenDepth
+                : options.flattenDepth();
         final int remainingDepth = effectiveFlattenDepth - depth;
         EncodeOptions currentOptions = options;
 

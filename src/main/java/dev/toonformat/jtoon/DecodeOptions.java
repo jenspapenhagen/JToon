@@ -18,7 +18,7 @@ public record DecodeOptions(
         boolean strict,
         PathExpansion expandPaths) {
     /**
-     * Default decoding options: 2 spaces indent, comma delimiter, strict validation, path expansion off
+     * Default decoding options: 2 spaces indent, comma delimiter, strict validation, path expansion off.
      */
     public static final DecodeOptions DEFAULT = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF);
 

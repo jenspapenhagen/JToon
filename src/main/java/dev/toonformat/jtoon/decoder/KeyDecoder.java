@@ -165,7 +165,7 @@ public final class KeyDecoder {
         // Valid identifier: starts with a letter or underscore, followed by letters,
         // digits, underscores
         // Each segment must match this pattern
-        String[] segments = key.split("\\.");
+        final String[] segments = key.split("\\.");
         for (String segment : segments) {
             if (!segment.matches("^[a-zA-Z_]\\w*$")) {
                 return false;

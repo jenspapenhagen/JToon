@@ -4,7 +4,7 @@ import dev.toonformat.jtoon.DecodeOptions;
 import dev.toonformat.jtoon.Delimiter;
 
 /**
- * Deals with the main attributes used to decode TOON to JSON format
+ * Deals with the main attributes used to decode TOON to JSON format.
  */
 public class DecodeContext {
 
@@ -26,7 +26,7 @@ public class DecodeContext {
     protected int currentLine;
 
     /**
-     * Default constructor
+     * Default constructor.
      */
     public DecodeContext() {
     }

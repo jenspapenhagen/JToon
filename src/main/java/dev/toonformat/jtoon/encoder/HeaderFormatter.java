@@ -1,7 +1,6 @@
 package dev.toonformat.jtoon.encoder;
 
 import java.util.List;
-
 import static dev.toonformat.jtoon.util.Constants.COLON;
 import static dev.toonformat.jtoon.util.Constants.OPEN_BRACKET;
 import static dev.toonformat.jtoon.util.Constants.COMMA;
@@ -43,7 +42,7 @@ public final class HeaderFormatter {
      * @return Formatted header string
      */
     public static String format(HeaderConfig config) {
-        StringBuilder header = new StringBuilder();
+        final StringBuilder header = new StringBuilder();
 
         appendKeyIfPresent(header, config.key());
         appendArrayLength(header, config.length(), config.delimiter(), config.lengthMarker());
@@ -69,7 +68,7 @@ public final class HeaderFormatter {
             List<String> fields,
             String delimiter,
             boolean lengthMarker) {
-        HeaderConfig config = new HeaderConfig(length, key, fields, delimiter, lengthMarker);
+        final HeaderConfig config = new HeaderConfig(length, key, fields, delimiter, lengthMarker);
         return format(config);
     }
 

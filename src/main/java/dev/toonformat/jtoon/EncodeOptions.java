@@ -21,9 +21,10 @@ public record EncodeOptions(
         KeyFolding flatten,
         int flattenDepth) {
     /**
-     * Default encoding options: 2 spaces indent, comma delimiter, no length marker
+     * Default encoding options: 2 spaces indent, comma delimiter, no length marker.
      */
-    public static final EncodeOptions DEFAULT = new EncodeOptions(2, Delimiter.COMMA, false, KeyFolding.OFF, Integer.MAX_VALUE);
+    public static final EncodeOptions DEFAULT = new EncodeOptions(
+            2, Delimiter.COMMA, false, KeyFolding.OFF, Integer.MAX_VALUE);
 
     /**
      * Creates EncodeOptions with default values.
@@ -73,12 +74,13 @@ public record EncodeOptions(
      * @return a new EncodeOptions instance with the flatten setting
      */
     public static EncodeOptions withFlatten(boolean flatten) {
-        return new EncodeOptions(2, Delimiter.COMMA, false, flatten ? KeyFolding.SAFE : KeyFolding.OFF, Integer.MAX_VALUE);
+        return new EncodeOptions(2, Delimiter.COMMA, false,
+                flatten ? KeyFolding.SAFE : KeyFolding.OFF, Integer.MAX_VALUE);
     }
 
     /**
-     * Creates EncodeOptions with custom flatten flag and the depth of to flatten the nested objects, using default indent and
-     * delimiter.
+     * Creates EncodeOptions with custom flatten flag and the depth of to flatten
+     * the nested objects, using default indent and delimiter.
      *
      * @param flattenDepth optional maximum depth to flatten nested objects.
      * @return a new EncodeOptions instance with the flatten setting and the depth of to flatten the nested objects.

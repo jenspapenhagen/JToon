@@ -14,7 +14,6 @@ import tools.jackson.databind.node.NullNode;
 import tools.jackson.databind.node.ObjectNode;
 import tools.jackson.databind.node.ShortNode;
 import tools.jackson.databind.node.StringNode;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -174,7 +173,7 @@ public final class JsonNormalizer {
         if (value > Long.MAX_VALUE || value < Long.MIN_VALUE) {
             return Optional.empty();
         }
-        long longVal = value.longValue();
+        final long longVal = value.longValue();
         return Optional.of(LongNode.valueOf(longVal));
     }
 
@@ -196,7 +195,7 @@ public final class JsonNormalizer {
      * Normalizes BigInteger, converting to long if within range.
      */
     private static JsonNode normalizeBigInteger(BigInteger value) {
-        boolean fitsInLong = value.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0
+        final boolean fitsInLong = value.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0
             && value.compareTo(BigInteger.valueOf(Long.MIN_VALUE)) >= 0;
         return fitsInLong
             ? LongNode.valueOf(value.longValue())
@@ -260,7 +259,7 @@ public final class JsonNormalizer {
      * Normalizes a Collection to an ArrayNode.
      */
     private static ArrayNode normalizeCollection(Collection<?> collection) {
-        ArrayNode arrayNode = MAPPER.createArrayNode();
+        final ArrayNode arrayNode = MAPPER.createArrayNode();
         collection.forEach(item -> arrayNode.add(normalize(item)));
         return arrayNode;
     }
@@ -269,7 +268,7 @@ public final class JsonNormalizer {
      * Normalizes a Map to an ObjectNode.
      */
     private static ObjectNode normalizeMap(Map<?, ?> map) {
-        ObjectNode objectNode = MAPPER.createObjectNode();
+        final ObjectNode objectNode = MAPPER.createObjectNode();
         map.forEach((key, value) -> objectNode.set(String.valueOf(key), normalize(value)));
         return objectNode;
     }
@@ -317,7 +316,7 @@ public final class JsonNormalizer {
      * Builds an ArrayNode using a functional approach.
      */
     private static ArrayNode buildArrayNode(int length, IntFunction<JsonNode> mapper) {
-        ArrayNode arrayNode = MAPPER.createArrayNode();
+        final ArrayNode arrayNode = MAPPER.createArrayNode();
         for (int i = 0; i < length; i++) {
             arrayNode.add(mapper.apply(i));
         }
