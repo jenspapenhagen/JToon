@@ -34,6 +34,11 @@ public enum Delimiter {
         return value;
     }
 
+
+    /**
+     * Returns the character representation of this delimiter.
+     * @return the character value of this delimiter
+     */
     public char getValue() {
         return value.charAt(0);
     }

@@ -7,6 +7,10 @@ import java.util.regex.Pattern;
  */
 public class Headers {
 
+    private Headers() {
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+    }
+
     /**
      * Matches standalone array headers: [3], [#2], [3\t], [2|].
      * Group 1: optional # marker, Group 2: digits, Group 3: optional delimiter
