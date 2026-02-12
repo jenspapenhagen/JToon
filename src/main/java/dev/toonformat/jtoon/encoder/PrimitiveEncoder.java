@@ -5,7 +5,6 @@ import dev.toonformat.jtoon.util.StringValidator;
 import tools.jackson.databind.JsonNode;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Objects;
 import static dev.toonformat.jtoon.util.Constants.NULL_LITERAL;
 import static dev.toonformat.jtoon.util.Constants.DOUBLE_QUOTE;
 
@@ -16,17 +15,20 @@ import static dev.toonformat.jtoon.util.Constants.DOUBLE_QUOTE;
  */
 public final class PrimitiveEncoder {
 
+    private static final int INITIAL_BUFFER_SIZE = 128;
+
     private PrimitiveEncoder() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
     /**
      * Encodes a primitive JsonNode value.
-     * @param value the primitive value to encode
+     *
+     * @param value     the primitive value to encode
      * @param delimiter the delimiter to use (for string validation)
      * @return the encoded string representation
      */
-    public static String encodePrimitive(JsonNode value, String delimiter) {
+    public static String encodePrimitive(final JsonNode value, final String delimiter) {
         return switch (value.getNodeType()) {
             case BOOLEAN -> String.valueOf(value.asBoolean());
             case NUMBER -> encodeNumber(value);
@@ -40,7 +42,7 @@ public final class PrimitiveEncoder {
      * Ensures LLM-safe output by converting all numbers to plain decimal
      * representation.
      */
-    private static String encodeNumber(JsonNode value) {
+    private static String encodeNumber(final JsonNode value) {
         if (value.isIntegralNumber()) {
             return value.asString();
         }
@@ -57,28 +59,33 @@ public final class PrimitiveEncoder {
      * decimal point.
      * Examples: "1.500" -> "1.5", "1.0" -> "1", "0.000001" -> "0.000001"
      */
-    private static String stripTrailingZeros(String value) {
-        if (!value.contains(".")) {
+    private static String stripTrailingZeros(final String value) {
+        final int dotIndex = value.indexOf('.');
+        if (dotIndex < 0) {
             return value;
         }
 
-        String stripped = value.replaceAll("0+$", "");
-
-        if (stripped.endsWith(".")) {
-            stripped = stripped.substring(0, stripped.length() - 1);
+        int lastNonZero = value.length() - 1;
+        while (lastNonZero > dotIndex && value.charAt(lastNonZero) == '0') {
+            lastNonZero--;
         }
 
-        return stripped;
+        if (lastNonZero == dotIndex) {
+            return value.substring(0, dotIndex);
+        }
+
+        return value.substring(0, lastNonZero + 1);
     }
 
     /**
      * Encodes a string literal, quoting if necessary.
      * Delegates validation to StringValidator and escaping to StringEscaper.
-     * @param value the string value to encode
+     *
+     * @param value     the string value to encode
      * @param delimiter the delimiter to use (for validation)
      * @return the encoded string, quoted if necessary
      */
-    public static String encodeStringLiteral(String value, String delimiter) {
+    public static String encodeStringLiteral(final String value, final String delimiter) {
         if (StringValidator.isSafeUnquoted(value, delimiter)) {
             return value;
         }
@@ -89,10 +96,11 @@ public final class PrimitiveEncoder {
     /**
      * Encodes an object key, quoting if necessary.
      * Delegates validation to StringValidator and escaping to StringEscaper.
+     *
      * @param key the key to encode
      * @return the encoded key, quoted if necessary
      */
-    public static String encodeKey(String key) {
+    public static String encodeKey(final String key) {
         if (StringValidator.isValidUnquotedKey(key)) {
             return key;
         }
@@ -102,22 +110,35 @@ public final class PrimitiveEncoder {
 
     /**
      * Joins encoded primitive values with the specified delimiter.
-     * @param values the list of primitive values to join
+     *
+     * @param values    the list of primitive values to join
      * @param delimiter the delimiter to use between values
      * @return the joined string of encoded values
      */
-    public static String joinEncodedValues(List<JsonNode> values, String delimiter) {
-        return values.stream()
-            .filter(Objects::nonNull)
-                .map(v -> encodePrimitive(v, delimiter))
-                .reduce((a, b) -> a + delimiter + b)
-                .orElse("");
+    public static String joinEncodedValues(final List<JsonNode> values, final String delimiter) {
+        if (values == null || values.isEmpty()) {
+            return "";
+        }
+
+        final StringBuilder stringBuilder = new StringBuilder(INITIAL_BUFFER_SIZE);
+        boolean first = true;
+        for (final JsonNode node : values) {
+            if (node == null) {
+                continue;
+            }
+            if (!first) {
+                stringBuilder.append(delimiter);
+            }
+            first = false;
+            stringBuilder.append(encodePrimitive(node, delimiter));
+        }
+        return stringBuilder.toString();
     }
 
     /**
      * Formats a header for arrays and tables.
      * Delegates to HeaderFormatter for implementation.
-     * 
+     *
      * @param length       Array length
      * @param key          Optional key prefix
      * @param fields       Optional field names for tabular format
@@ -126,11 +147,11 @@ public final class PrimitiveEncoder {
      * @return Formatted header string
      */
     public static String formatHeader(
-            int length,
-            String key,
-            List<String> fields,
-            String delimiter,
-            boolean lengthMarker) {
+        final int length,
+        final String key,
+        final List<String> fields,
+        final String delimiter,
+        final boolean lengthMarker) {
         return HeaderFormatter.format(length, key, fields, delimiter, lengthMarker);
     }
 }

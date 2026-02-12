@@ -51,8 +51,8 @@ pitest {
 spotbugs {
     toolVersion = '4.9.8'
     excludeFilter = file('spotbugs-exclude.xml')
-    effort = "max"
-    reportLevel = "low"
+    effort = com.github.spotbugs.snom.Effort.MAX
+    reportLevel = com.github.spotbugs.snom.Confidence.values()[0]
     reportsDir = layout.buildDirectory.dir('spotbugs')
 }
 

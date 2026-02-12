@@ -63,12 +63,12 @@ public final class Flatten {
      * @param remainingDepth  the remaining depth of the object
      * @return a {@link FoldResult}, or null if folding is not possible
      */
-    public static FoldResult tryFoldKeyChain(String key,
-                                             JsonNode value,
-                                             Set<String> siblings,
-                                             Set<String> rootLiteralKeys,
-                                             String pathPrefix,
-                                             Integer remainingDepth) {
+    public static FoldResult tryFoldKeyChain(final String key,
+                                              final JsonNode value,
+                                              final Set<String> siblings,
+                                              final Set<String> rootLiteralKeys,
+                                              final String pathPrefix,
+                                              final Integer remainingDepth) {
         // Must be an object to begin folding
         if (!value.isObject() || remainingDepth <= 1) {
             return null;
@@ -136,7 +136,7 @@ public final class Flatten {
      * @param maxDepth   maximum number of allowed segments
      * @return a {@link ChainResult} containing segments, tail, and leafValue
      */
-    private static ChainResult collectSingleKeyChain(String startKey, JsonNode startValue, int maxDepth) {
+    private static ChainResult collectSingleKeyChain(final String startKey, final JsonNode startValue, final int maxDepth) {
         // normalize absolute key to its local segment
         final String localStartKey = startKey.contains(DOT)
                 ? startKey.substring(startKey.lastIndexOf(DOT.charAt(0)) + 1)

@@ -58,7 +58,11 @@
         <module name="OverloadMethodsDeclarationOrder"/>
         <module name="VariableDeclarationUsageDistance"/>
         <module name="CustomImportOrder"/>
-        
+
+        <module name="FinalParameters">
+            <property name="ignorePrimitiveTypes" value="false"/>
+        </module>
+
         <!-- Javadoc -->
         <module name="JavadocMethod">
             <property name="allowMissingParamTags" value="true"/>

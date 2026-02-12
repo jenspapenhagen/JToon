@@ -28,8 +28,8 @@ public final class KeyDecoder {
      * @param parentDepth parent depth of keyed array line
      * @param context     decode an object to deal with lines, delimiter and options
      */
-    static void processKeyedArrayLine(Map<String, Object> result, String content, String originalKey,
-                                      int parentDepth, DecodeContext context) {
+    static void processKeyedArrayLine(final Map<String, Object> result, final String content, final String originalKey,
+                                      final int parentDepth, final DecodeContext context) {
         final String key = StringEscaper.unescape(originalKey);
         final String arrayHeader = content.substring(originalKey.length());
         final List<Object> arrayValue = ArrayDecoder.parseArray(arrayHeader, parentDepth + 1, context);
@@ -52,8 +52,8 @@ public final class KeyDecoder {
      * @param value     value
      * @param context   decode an object to deal with lines, delimiter and options
      */
-    static void expandPathIntoMap(Map<String, Object> current, String dottedKey, Object value,
-                                  DecodeContext context) {
+    static void expandPathIntoMap(final Map<String, Object> current, final String dottedKey, final Object value,
+                                  final DecodeContext context) {
         final String[] segments = dottedKey.split("\\.");
         Map<String, Object> currentMap = current;
 
@@ -107,7 +107,7 @@ public final class KeyDecoder {
      * @param depth   the depth of the value line
      * @param context decode an object to deal with lines, delimiter and options
      */
-    static void processKeyValueLine(Map<String, Object> result, String content, int depth, DecodeContext context) {
+    static void processKeyValueLine(final Map<String, Object> result, final String content, final int depth, final DecodeContext context) {
         final int colonIdx = DecodeHelper.findUnquotedColon(content);
 
         if (colonIdx > 0) {
@@ -133,8 +133,8 @@ public final class KeyDecoder {
      * @param depth   the depth of the value pair
      * @param context decode an object to deal with lines, delimiter and options
      */
-    static void parseKeyValuePairIntoMap(Map<String, Object> map, String key, String value,
-                                         int depth, DecodeContext context) {
+    static void parseKeyValuePairIntoMap(final Map<String, Object> map, final String key, final String value,
+                                         final int depth, final DecodeContext context) {
         final String unescapedKey = StringEscaper.unescape(key);
 
         final Object parsedValue = parseKeyValue(value, depth, context);
@@ -150,7 +150,7 @@ public final class KeyDecoder {
      * @param context decode an object to deal with lines, delimiter and options
      * @return true if a key should be expanded or false if not
      */
-    static boolean shouldExpandKey(String key, DecodeContext context) {
+    static boolean shouldExpandKey(final String key, final DecodeContext context) {
         if (context.options.expandPaths() != PathExpansion.SAFE) {
             return false;
         }
@@ -182,7 +182,7 @@ public final class KeyDecoder {
      * @param depth the depth at which the key-value pair is located
      * @return the parsed value (Map, List, or primitive)
      */
-    private static Object parseKeyValue(String value, int depth, DecodeContext context) {
+    private static Object parseKeyValue(final String value, final int depth, final DecodeContext context) {
         // Check if the next line is nested (deeper indentation)
         if (context.currentLine + 1 < context.lines.length) {
             final int nextDepth = DecodeHelper.getDepth(context.lines[context.currentLine + 1], context);
@@ -223,8 +223,8 @@ public final class KeyDecoder {
      * @param unescapedKey the unescaped key
      * @param value        the value to put
      */
-    private static void putKeyValueIntoMap(Map<String, Object> map, String originalKey, String unescapedKey,
-                                           Object value, DecodeContext context) {
+    private static void putKeyValueIntoMap(final Map<String, Object> map, final String originalKey, final String unescapedKey,
+                                           final Object value, final DecodeContext context) {
         // Handle path expansion
         if (shouldExpandKey(originalKey, context)) {
             expandPathIntoMap(map, unescapedKey, value, context);
@@ -244,8 +244,8 @@ public final class KeyDecoder {
      * @param context         decode an object to deal with lines, delimiter, and options
      * @return parsed a key-value pair
      */
-    static Object parseKeyValuePair(String key, String value, int depth, boolean parseRootFields,
-                                    DecodeContext context) {
+    static Object parseKeyValuePair(final String key, final String value, final int depth, final boolean parseRootFields,
+                                    final DecodeContext context) {
         final Map<String, Object> obj = new LinkedHashMap<>();
         parseKeyValuePairIntoMap(obj, key, value, depth, context);
 
@@ -264,7 +264,7 @@ public final class KeyDecoder {
      * @param context    decode an object to deal with lines, delimiter, and options
      * @return parsed keyed array value
      */
-    static Object parseKeyedArrayValue(Matcher keyedArray, String content, int depth, DecodeContext context) {
+    static Object parseKeyedArrayValue(final Matcher keyedArray, final String content, final int depth, final DecodeContext context) {
         final String originalKey = keyedArray.group(1).trim();
         final String key = StringEscaper.unescape(originalKey);
         final String arrayHeader = content.substring(keyedArray.group(1).length());
@@ -298,8 +298,8 @@ public final class KeyDecoder {
      * @param context      decode an object to deal with lines, delimiter and options
      * @return true if the field was processed as a keyed array, false otherwise
      */
-    static boolean parseKeyedArrayField(String fieldContent, Map<String, Object> item, int depth,
-                                        DecodeContext context) {
+    static boolean parseKeyedArrayField(final String fieldContent, final Map<String, Object> item, final int depth,
+                                        final DecodeContext context) {
         final Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(fieldContent);
         if (!keyedArray.matches()) {
             return false;
@@ -334,8 +334,8 @@ public final class KeyDecoder {
      * @param context      decode an object to deal with lines, delimiter and options
      * @return true if the field was processed as a key-value pair, false otherwise
      */
-    static boolean parseKeyValueField(String fieldContent, Map<String, Object> item, int depth,
-                                      DecodeContext context) {
+    static boolean parseKeyValueField(final String fieldContent, final Map<String, Object> item, final int depth,
+                                      final DecodeContext context) {
         final int colonIdx = DecodeHelper.findUnquotedColon(fieldContent);
         if (colonIdx <= 0) {
             return false;

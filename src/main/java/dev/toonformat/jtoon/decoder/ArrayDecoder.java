@@ -32,7 +32,7 @@ public final class ArrayDecoder {
      * @param context decode an object to deal with lines, delimiter and options
      * @return parsed array with delimiter
      */
-    static List<Object> parseArray(String header, int depth, DecodeContext context) {
+    static List<Object> parseArray(final String header, final int depth, final DecodeContext context) {
         final Delimiter arrayDelimiter = extractDelimiterFromHeader(header, context);
 
         return parseArrayWithDelimiter(header, depth, arrayDelimiter, context);
@@ -46,7 +46,7 @@ public final class ArrayDecoder {
      * @param context decode an object to deal with lines, delimiter and options
      * @return extracted delimiter from header
      */
-    static Delimiter extractDelimiterFromHeader(String header, DecodeContext context) {
+    static Delimiter extractDelimiterFromHeader(final String header, final DecodeContext context) {
         final Matcher matcher = ARRAY_HEADER_PATTERN.matcher(header);
         if (matcher.find()) {
             final String delimiter = matcher.group(DELIMITER_GROUP_INDEX);
@@ -74,8 +74,8 @@ public final class ArrayDecoder {
      * @param context        decode an object to deal with lines, delimiter and options
      * @return parsed array
      */
-    static List<Object> parseArrayWithDelimiter(String header, int depth, Delimiter arrayDelimiter,
-                                                DecodeContext context) {
+    static List<Object> parseArrayWithDelimiter(final String header, final int depth, final Delimiter arrayDelimiter,
+                                                final DecodeContext context) {
         final Matcher tabularMatcher = TABULAR_HEADER_PATTERN.matcher(header);
         final Matcher arrayMatcher = ARRAY_HEADER_PATTERN.matcher(header);
 
@@ -138,7 +138,7 @@ public final class ArrayDecoder {
      * @param header       header
      * @param actualLength actual length
      */
-    static void validateArrayLength(String header, int actualLength) {
+    static void validateArrayLength(final String header, final int actualLength) {
         final Integer declaredLength = extractLengthFromHeader(header);
         if (declaredLength != null && declaredLength != actualLength) {
             throw new IllegalArgumentException(
@@ -153,7 +153,7 @@ public final class ArrayDecoder {
      * @param header header string for length check
      * @return extracted length from header
      */
-    private static Integer extractLengthFromHeader(String header) {
+    private static Integer extractLengthFromHeader(final String header) {
         final Matcher matcher = ARRAY_HEADER_PATTERN.matcher(header);
         if (matcher.find()) {
             return Integer.parseInt(matcher.group(2));
@@ -168,7 +168,7 @@ public final class ArrayDecoder {
      * @param arrayDelimiter array delimiter
      * @return parsed array values
      */
-    static List<Object> parseArrayValues(String values, Delimiter arrayDelimiter) {
+    static List<Object> parseArrayValues(final String values, final Delimiter arrayDelimiter) {
         final List<Object> result = new ArrayList<>();
         final List<String> rawValues = parseDelimitedValues(values, arrayDelimiter);
         for (final String value : rawValues) {
@@ -185,7 +185,7 @@ public final class ArrayDecoder {
      * @param arrayDelimiter array delimiter
      * @return parsed delimited values
      */
-    static List<String> parseDelimitedValues(String input, Delimiter arrayDelimiter) {
+    static List<String> parseDelimitedValues(final String input, final Delimiter arrayDelimiter) {
         final List<String> result = new ArrayList<>();
         final StringBuilder stringBuilder = new StringBuilder();
         boolean inQuotes = false;
@@ -235,7 +235,7 @@ public final class ArrayDecoder {
      * Parses list an array format where items are prefixed with "- ".
      * Example: items[2]:\n - item1\n - item2
      */
-    private static List<Object> parseListArray(int depth, String header, DecodeContext context) {
+    private static List<Object> parseListArray(final int depth, final String header, final DecodeContext context) {
         final List<Object> result = new ArrayList<>();
         context.currentLine++;
 
@@ -271,7 +271,7 @@ public final class ArrayDecoder {
      * @param context decode an object to deal with lines, delimiter and options
      * @return true if an array should terminate, false if a line should be skipped
      */
-    private static boolean handleBlankLineInListArray(int depth, DecodeContext context) {
+    private static boolean handleBlankLineInListArray(final int depth, final DecodeContext context) {
         final int nextNonBlankLine = DecodeHelper.findNextNonBlankLine(context.currentLine + 1, context);
 
         if (nextNonBlankLine >= context.lines.length) {
@@ -300,7 +300,7 @@ public final class ArrayDecoder {
      * @param context   decode an object to deal with lines, delimiter and options
      * @return true if an array should terminate, false otherwise.
      */
-    private static boolean shouldTerminateListArray(int lineDepth, int depth, String line, DecodeContext context) {
+    private static boolean shouldTerminateListArray(final int lineDepth, final int depth, final String line, final DecodeContext context) {
         if (lineDepth < depth + 1) {
             return true; // Line depth is less than expected - terminate
         }

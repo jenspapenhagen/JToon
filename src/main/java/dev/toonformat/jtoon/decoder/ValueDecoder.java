@@ -45,7 +45,7 @@ public final class ValueDecoder {
      * @throws IllegalArgumentException if strict mode is enabled and input is
      *                                  invalid
      */
-    public static Object decode(String toon, DecodeOptions options) {
+    public static Object decode(final String toon, final DecodeOptions options) {
         if (toon == null || toon.isBlank()) {
             return new LinkedHashMap<>();
         }
@@ -116,7 +116,7 @@ public final class ValueDecoder {
      * @throws IllegalArgumentException if strict mode is enabled and input is
      *                                  invalid
      */
-    public static String decodeToJson(String toon, DecodeOptions options) {
+    public static String decodeToJson(final String toon, final DecodeOptions options) {
         try {
             final Object decoded = decode(toon, options);
             return MAPPER.writeValueAsString(decoded);

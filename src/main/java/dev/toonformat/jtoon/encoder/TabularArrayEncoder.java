@@ -25,7 +25,7 @@ public final class TabularArrayEncoder {
      * @param rows The array to analyze
      * @return List of field names for tabular header, or empty list if not tabular
      */
-    public static List<String> detectTabularHeader(ArrayNode rows) {
+    public static List<String> detectTabularHeader(final ArrayNode rows) {
         if (rows.isEmpty()) {
             return Collections.emptyList();
         }
@@ -52,7 +52,7 @@ public final class TabularArrayEncoder {
     /**
      * Checks if all rows in the array have the same keys with primitive values.
      */
-    private static boolean isTabularArray(ArrayNode rows, List<String> header) {
+    private static boolean isTabularArray(final ArrayNode rows, final List<String> header) {
         for (JsonNode row : rows) {
             if (!row.isObject()) {
                 return false;
@@ -90,8 +90,8 @@ public final class TabularArrayEncoder {
      * @param depth   Indentation depth
      * @param options Encoding options
      */
-    public static void encodeArrayOfObjectsAsTabular(String prefix, ArrayNode rows, List<String> header,
-                                                      LineWriter writer, int depth, EncodeOptions options) {
+    public static void encodeArrayOfObjectsAsTabular(final String prefix, final ArrayNode rows, final List<String> header,
+                                                      final LineWriter writer, final int depth, final EncodeOptions options) {
         final String headerStr = PrimitiveEncoder.formatHeader(rows.size(), prefix, header,
                 options.delimiter().toString(), options.lengthMarker());
         writer.push(depth, headerStr);
@@ -109,8 +109,8 @@ public final class TabularArrayEncoder {
      * @param depth   Indentation depth
      * @param options Encoding options
      */
-    public static void writeTabularRows(ArrayNode rows, List<String> header, LineWriter writer, int depth,
-                                        EncodeOptions options) {
+    public static void writeTabularRows(final ArrayNode rows, final List<String> header, final LineWriter writer, final int depth,
+                                        final EncodeOptions options) {
         for (JsonNode row : rows) {
             //skip non-object rows
             if (!row.isObject()) {

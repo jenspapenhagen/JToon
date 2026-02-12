@@ -24,7 +24,7 @@ public final class ValueEncoder {
      * @param options Encoding options (indent, delimiter, length marker)
      * @return The TOON-formatted string
      */
-    public static String encodeValue(JsonNode value, EncodeOptions options) {
+    public static String encodeValue(final JsonNode value, final EncodeOptions options) {
         // Handle primitive values directly
         if (value.isValueNode()) {
             return PrimitiveEncoder.encodePrimitive(value, options.delimiter().toString());

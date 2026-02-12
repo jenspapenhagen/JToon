@@ -45,7 +45,7 @@ public final class PrimitiveDecoder {
      * @return The parsed value as {@code Boolean}, {@code Long}, {@code Double},
      * {@code String}, or {@code null}
      */
-    static Object parse(String value) {
+    static Object parse(final String value) {
         if (value == null || value.isEmpty()) {
             return "";
         }

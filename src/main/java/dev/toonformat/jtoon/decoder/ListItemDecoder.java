@@ -28,8 +28,8 @@ public final class ListItemDecoder {
      * @param result    the stored result of each list item parse
      * @param context   decode an object to deal with lines, delimiter and options
      */
-    public static void processListArrayItem(String line, int lineDepth, int depth,
-                                            List<Object> result, DecodeContext context) {
+    public static void processListArrayItem(final String line, final int lineDepth, final int depth,
+                                            final List<Object> result, final DecodeContext context) {
         if (lineDepth == depth + 1) {
             final String content = line.substring((depth + 1) * context.options.indent());
 
@@ -52,7 +52,7 @@ public final class ListItemDecoder {
      * @param context decode an object to deal with lines, delimiter and options
      * @return parsed item (scalar value or object)
      */
-    public static Object parseListItem(String content, int depth, DecodeContext context) {
+    public static Object parseListItem(final String content, final int depth, final DecodeContext context) {
         // Handle empty item: just "-" or "- "
         final String itemContent;
         if (content.length() > 2) {
@@ -142,7 +142,7 @@ public final class ListItemDecoder {
      * @param depth   the depth of the item
      * @param context decode an object to deal with lines, delimiter and options     *
      */
-    private static void parseListItemFields(Map<String, Object> item, int depth, DecodeContext context) {
+    private static void parseListItemFields(final Map<String, Object> item, final int depth, final DecodeContext context) {
         while (context.currentLine < context.lines.length) {
             final String line = context.lines[context.currentLine];
             final int lineDepth = DecodeHelper.getDepth(line, context);

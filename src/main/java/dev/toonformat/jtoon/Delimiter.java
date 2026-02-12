@@ -21,7 +21,7 @@ public enum Delimiter {
 
     private final String value;
 
-    Delimiter(String delimiterValue) {
+    Delimiter(final String delimiterValue) {
         this.value = delimiterValue;
     }
 

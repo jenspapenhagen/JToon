@@ -30,7 +30,7 @@ public final class ArrayEncoder {
      * @param depth   Indentation depth
      * @param options Encoding options
      */
-    public static void encodeArray(String key, ArrayNode value, LineWriter writer, int depth, EncodeOptions options) {
+    public static void encodeArray(final String key, final ArrayNode value, final LineWriter writer, final int depth, final EncodeOptions options) {
         if (value.isEmpty()) {
             final String header = PrimitiveEncoder.formatHeader(0, key, null, options.delimiter().toString(),
                     options.lengthMarker());
@@ -77,7 +77,7 @@ public final class ArrayEncoder {
      * @param array for testing that all items are primitives
      * @return true if all items in the array are primitive values, false otherwise
      */
-    public static boolean isArrayOfPrimitives(JsonNode array) {
+    public static boolean isArrayOfPrimitives(final JsonNode array) {
         if (!array.isArray()) {
             return false;
         }
@@ -95,7 +95,7 @@ public final class ArrayEncoder {
      * @param array the array to check
      * @return true if all items in the array are arrays, false otherwise
      */
-    public static boolean isArrayOfArrays(JsonNode array) {
+    public static boolean isArrayOfArrays(final JsonNode array) {
         if (!array.isArray()) {
             return false;
         }
@@ -113,7 +113,7 @@ public final class ArrayEncoder {
      * @param array the array to check
      * @return true if all items in the array are objects, false otherwise
      */
-    public static boolean isArrayOfObjects(JsonNode array) {
+    public static boolean isArrayOfObjects(final JsonNode array) {
         if (!array.isArray()) {
             return false;
         }
@@ -128,8 +128,8 @@ public final class ArrayEncoder {
     /**
      * Encodes a primitive array inline: key[N]: v1,v2,v3.
      */
-    private static void encodeInlinePrimitiveArray(String prefix, ArrayNode values, LineWriter writer, int depth,
-                                                   EncodeOptions options) {
+    private static void encodeInlinePrimitiveArray(final String prefix, final ArrayNode values, final LineWriter writer, final int depth,
+                                                   final EncodeOptions options) {
         final String formatted = formatInlineArray(values, options.delimiter().toString(), prefix,
                                                    options.lengthMarker());
         writer.push(depth, formatted);
@@ -144,7 +144,7 @@ public final class ArrayEncoder {
      * @param lengthMarker whether to include the # marker before the length
      * @return the formatted inline array string
      */
-    public static String formatInlineArray(ArrayNode values, String delimiter, String prefix, boolean lengthMarker) {
+    public static String formatInlineArray(final ArrayNode values, final String delimiter, final String prefix, final boolean lengthMarker) {
         final List<JsonNode> valueList = new ArrayList<>();
         values.forEach(valueList::add);
 
@@ -161,8 +161,8 @@ public final class ArrayEncoder {
     /**
      * Encodes an array of primitive arrays as list items.
      */
-    private static void encodeArrayOfArraysAsListItems(String prefix, ArrayNode values, LineWriter writer, int depth,
-                                                       EncodeOptions options) {
+    private static void encodeArrayOfArraysAsListItems(final String prefix, final ArrayNode values, final LineWriter writer, final int depth,
+                                                       final EncodeOptions options) {
         final String header = PrimitiveEncoder.formatHeader(values.size(), prefix, null,
                                                             options.delimiter().toString(), options.lengthMarker());
         writer.push(depth, header);
@@ -179,11 +179,11 @@ public final class ArrayEncoder {
     /**
      * Encodes a mixed array (non-uniform) as list items.
      */
-    private static void encodeMixedArrayAsListItems(String prefix,
-                                                    ArrayNode items,
-                                                    LineWriter writer,
-                                                    int depth,
-                                                    EncodeOptions options) {
+    private static void encodeMixedArrayAsListItems(final String prefix,
+                                                    final ArrayNode items,
+                                                    final LineWriter writer,
+                                                    final int depth,
+                                                    final EncodeOptions options) {
         final String header = PrimitiveEncoder.formatHeader(items.size(), prefix, null,
                                                             options.delimiter().toString(), options.lengthMarker());
         writer.push(depth, header);
