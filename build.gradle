@@ -6,6 +6,7 @@ plugins {
     id 'com.github.spotbugs' version '6.0.15'
     id 'pmd'
     id 'checkstyle'
+    id 'info.solidsoft.pitest' version '1.19.0-rc.3'
 }
 
 group = 'dev.toonformat'
@@ -36,6 +37,15 @@ repositories {
 jacoco {
     toolVersion = "0.8.14"
     reportsDirectory = layout.buildDirectory.dir('customJacocoReportDir')
+}
+
+pitest {
+    pitestVersion = '1.17.4'
+    targetClasses = ['dev.toonformat.jtoon.*']
+    targetTests = ['dev.toonformat.jtoon.*']
+    outputFormats = ['XML', 'HTML']
+    mutationThreshold = 70
+    coverageThreshold = 70
 }
 
 spotbugs {
@@ -122,6 +132,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.awaitility:awaitility:4.2.1'
+    testImplementation 'org.pitest:pitest-junit5-plugin:1.2.3'
 }
 
 test {
