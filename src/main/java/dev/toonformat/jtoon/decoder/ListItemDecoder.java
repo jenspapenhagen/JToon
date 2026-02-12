@@ -122,7 +122,7 @@ public final class ListItemDecoder {
         Object parsedValue;
         // If no next line exists, handle a simple case
         if (context.currentLine >= context.lines.length) {
-            parsedValue = value.trim().isEmpty() ? new LinkedHashMap<>() : PrimitiveDecoder.parse(value);
+            parsedValue = value.isBlank() ? new LinkedHashMap<>() : PrimitiveDecoder.parse(value);
         } else {
             // List item is at depth + 1, so pass depth + 1 to parseObjectItemValue
             parsedValue = ObjectDecoder.parseObjectItemValue(value, depth + 1, context);

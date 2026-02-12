@@ -3,6 +3,7 @@ package dev.toonformat.jtoon.decoder;
 import dev.toonformat.jtoon.util.StringEscaper;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
@@ -124,7 +125,7 @@ public final class ObjectDecoder {
         String key = StringEscaper.unescape(originalKey);
         String arrayHeader = content.substring(originalKey.length());
 
-        var arrayValue = ArrayDecoder.parseArray(arrayHeader, depth, context);
+        List<Object> arrayValue = ArrayDecoder.parseArray(arrayHeader, depth, context);
 
         // Handle path expansion for array keys
         if (KeyDecoder.shouldExpandKey(originalKeyTrimmed, context)) {
@@ -174,7 +175,7 @@ public final class ObjectDecoder {
                 return parseNestedObject(fieldDepth, context);
             } else {
                 // If the value is empty, create an empty object; otherwise parse as primitive
-                if (fieldValue.trim().isEmpty()) {
+                if (fieldValue.isBlank()) {
                     context.currentLine++;
                     return new LinkedHashMap<>();
                 } else {
@@ -184,7 +185,7 @@ public final class ObjectDecoder {
             }
         } else {
             // If the value is empty, create an empty object; otherwise parse as primitive
-            if (fieldValue.trim().isEmpty()) {
+            if (fieldValue.isBlank()) {
                 context.currentLine++;
                 return new LinkedHashMap<>();
             } else {
@@ -205,7 +206,7 @@ public final class ObjectDecoder {
      * @return the parsed value (Map, List, or primitive)
      */
     static Object parseObjectItemValue(String value, int depth, DecodeContext context) {
-        boolean isEmpty = value.trim().isEmpty();
+        boolean isEmpty = value.isBlank();
 
         // Find the next non-blank line and its depth
         Integer nextDepth = DecodeHelper.findNextNonBlankLineDepth(context);

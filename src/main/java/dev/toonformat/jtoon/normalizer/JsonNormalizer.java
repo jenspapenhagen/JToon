@@ -1,7 +1,6 @@
 package dev.toonformat.jtoon.normalizer;
 
 import dev.toonformat.jtoon.util.ObjectMapperSingleton;
-import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
@@ -73,7 +72,7 @@ public final class JsonNormalizer {
      * @throws IllegalArgumentException if the input is blank or not valid JSON
      */
     public static JsonNode parse(String json) {
-        if (json == null || json.trim().isEmpty()) {
+        if (json == null || json.isBlank()) {
             throw new IllegalArgumentException("Invalid JSON");
         }
         try {

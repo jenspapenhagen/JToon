@@ -64,11 +64,7 @@ public final class StringValidator {
             return false;
         }
 
-        if (containsDelimiter(value, delimiter)) {
-            return false;
-        }
-
-        return !startsWithListMarker(value);
+        return !containsDelimiter(value, delimiter) && !startsWithListMarker(value);
     }
 
     /**
@@ -90,9 +86,9 @@ public final class StringValidator {
     }
 
     private static boolean looksLikeKeyword(String value) {
-        return value.equals(TRUE_LITERAL)
-            || value.equals(FALSE_LITERAL)
-            || value.equals(NULL_LITERAL);
+        return TRUE_LITERAL.equals(value)
+            || FALSE_LITERAL.equals(value)
+            || NULL_LITERAL.equals(value);
     }
 
     private static boolean looksLikeNumber(String value) {

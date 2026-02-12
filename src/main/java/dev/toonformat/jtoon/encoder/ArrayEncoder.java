@@ -60,7 +60,7 @@ public final class ArrayEncoder {
 
         // Array of objects
         if (isArrayOfObjects(value)) {
-            var header = TabularArrayEncoder.detectTabularHeader(value);
+            List<String> header = TabularArrayEncoder.detectTabularHeader(value);
             if (!header.isEmpty()) {
                 TabularArrayEncoder.encodeArrayOfObjectsAsTabular(key, value, header, writer, depth, options);
             } else {

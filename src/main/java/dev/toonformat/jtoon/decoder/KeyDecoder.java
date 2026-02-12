@@ -56,22 +56,23 @@ public final class KeyDecoder {
      */
     static void expandPathIntoMap(Map<String, Object> current, String dottedKey, Object value, DecodeContext context) {
         String[] segments = dottedKey.split("\\.");
+        Map<String, Object> currentMap = current;
 
         // Navigate/create nested structure
         for (int i = 0; i < segments.length - 1; i++) {
             String segment = segments[i];
-            Object existing = current.get(segment);
+            Object existing = currentMap.get(segment);
 
             if (existing == null) {
                 // Create a new nested object
                 Map<String, Object> nested = new LinkedHashMap<>();
-                current.put(segment, nested);
-                current = nested;
+                currentMap.put(segment, nested);
+                currentMap = nested;
             } else if (existing instanceof Map) {
                 // Use existing nested object
                 @SuppressWarnings("unchecked")
                 Map<String, Object> existingMap = (Map<String, Object>) existing;
-                current = existingMap;
+                currentMap = existingMap;
             } else {
                 // Conflict: existing is not a Map
                 if (context.options.strict()) {
@@ -81,21 +82,23 @@ public final class KeyDecoder {
                 }
                 // LWW: overwrite with new nested object
                 Map<String, Object> nested = new LinkedHashMap<>();
-                current.put(segment, nested);
-                current = nested;
+                currentMap.put(segment, nested);
+                currentMap = nested;
             }
         }
 
         // Set the final value
         String finalSegment = segments[segments.length - 1];
-        Object existing = current.get(finalSegment);
+        Object existing = currentMap.get(finalSegment);
 
         DecodeHelper.checkFinalValueConflict(finalSegment, existing, value, context);
 
         // LWW: last write wins (always overwrite in non-strict, or if types match in
         // strict)
-        current.put(finalSegment, value);
+        currentMap.put(finalSegment, value);
     }
+
+
 
     /**
      * Processes a key-value line (e.g., "key: value").
@@ -191,7 +194,7 @@ public final class KeyDecoder {
             } else {
                 // If the value is empty, create an empty object; otherwise parse as primitive
                 Object parsedValue;
-                if (value.trim().isEmpty()) {
+                if (value.isBlank()) {
                     parsedValue = new LinkedHashMap<>();
                 } else {
                     parsedValue = PrimitiveDecoder.parse(value);
@@ -202,7 +205,7 @@ public final class KeyDecoder {
         } else {
             // If the value is empty, create an empty object; otherwise parse as primitive
             Object parsedValue;
-            if (value.trim().isEmpty()) {
+            if (value.isBlank()) {
                 parsedValue = new LinkedHashMap<>();
             } else {
                 parsedValue = PrimitiveDecoder.parse(value);
@@ -267,7 +270,7 @@ public final class KeyDecoder {
         String key = StringEscaper.unescape(originalKey);
         String arrayHeader = content.substring(keyedArray.group(1).length());
 
-        var arrayValue = ArrayDecoder.parseArray(arrayHeader, depth, context);
+        List<Object> arrayValue = ArrayDecoder.parseArray(arrayHeader, depth, context);
         Map<String, Object> obj = new LinkedHashMap<>();
 
         // Handle path expansion for array keys
@@ -308,7 +311,7 @@ public final class KeyDecoder {
 
         // For nested arrays in list items, default to comma delimiter if not specified
         Delimiter nestedArrayDelimiter = ArrayDecoder.extractDelimiterFromHeader(arrayHeader, context);
-        var arrayValue = ArrayDecoder.parseArrayWithDelimiter(arrayHeader, depth + 2, nestedArrayDelimiter, context);
+        List<Object> arrayValue = ArrayDecoder.parseArrayWithDelimiter(arrayHeader, depth + 2, nestedArrayDelimiter, context);
 
         // Handle path expansion for array keys
         if (shouldExpandKey(originalKey, context)) {

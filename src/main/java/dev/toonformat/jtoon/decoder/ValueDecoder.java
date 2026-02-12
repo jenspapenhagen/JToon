@@ -48,7 +48,7 @@ public final class ValueDecoder {
      *                                  invalid
      */
     public static Object decode(String toon, DecodeOptions options) {
-        if (toon == null || toon.trim().isEmpty()) {
+        if (toon == null || toon.isBlank()) {
             return new LinkedHashMap<>();
         }
 

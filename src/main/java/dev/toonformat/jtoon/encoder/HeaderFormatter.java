@@ -96,7 +96,7 @@ public final class HeaderFormatter {
     }
 
     private static void appendDelimiterIfNotDefault(StringBuilder header, String delimiter) {
-        if (!delimiter.equals(COMMA)) {
+        if (!COMMA.equals(delimiter)) {
             header.append(delimiter);
         }
     }
@@ -110,8 +110,7 @@ public final class HeaderFormatter {
         }
 
         header.append(OPEN_BRACE);
-        String quotedFields = formatFields(fields, delimiter);
-        header.append(quotedFields);
+        header.append(formatFields(fields, delimiter));
         header.append(CLOSE_BRACE);
     }
 

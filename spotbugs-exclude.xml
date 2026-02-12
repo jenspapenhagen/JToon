@@ -24,4 +24,32 @@
         <Method name="~.*log.*|.*info.*|.*debug.*|.*error.*" />
         <Bug pattern="SBSC_USE_STRINGBUFFER_CONCATENATION" />
     </Match>
+    
+    <!-- Floating point equality is intentional in PrimitiveDecoder and JsonNormalizer for -0 handling -->
+    <Match>
+        <Class name="dev.toonformat.jtoon.decoder.PrimitiveDecoder" />
+        <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
+    </Match>
+    <Match>
+        <Class name="dev.toonformat.jtoon.normalizer.JsonNormalizer" />
+        <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
+    </Match>
+    
+    <!-- Unchecked casts are intentional and checked via isArray() and isObject() -->
+    <Match>
+        <Class name="dev.toonformat.jtoon.encoder.ObjectEncoder" />
+        <Bug pattern="BC_UNCONFIRMED_CAST" />
+    </Match>
+    
+    <!-- Unchecked cast in KeyDecoder is intentional and checked -->
+    <Match>
+        <Class name="dev.toonformat.jtoon.decoder.KeyDecoder" />
+        <Bug pattern="BC_UNCONFIRMED_CAST" />
+    </Match>
+    
+    <!-- Unchecked cast in ValueEncoder is intentional and checked -->
+    <Match>
+        <Class name="dev.toonformat.jtoon.encoder.ValueEncoder" />
+        <Bug pattern="BC_UNCONFIRMED_CAST" />
+    </Match>
 </FindBugsFilter>

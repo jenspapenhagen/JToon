@@ -23,7 +23,7 @@ public class DecodeContext {
     /**
      * Current line being decoded.
      */
-    protected int currentLine = 0;
+    protected int currentLine;
 
     /**
      * Default constructor

@@ -17,11 +17,11 @@ import static dev.toonformat.jtoon.util.Constants.DOT;
  */
 public final class Flatten {
 
+    private static final Pattern SAFE_IDENTIFIER = Pattern.compile("(?i)^[A-Z_]\\w*$");
+
     private Flatten() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
-
-    private static final Pattern SAFE_IDENTIFIER = Pattern.compile("(?i)^[A-Z_]\\w*$");
 
     /**
      * Represents the result of a key-folding operation.

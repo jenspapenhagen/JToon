@@ -84,7 +84,7 @@ public final class DecodeHelper {
      * @return true or false depending on if the line is blank or not
      */
     static boolean isBlankLine(String line) {
-        return line.trim().isEmpty();
+        return line.isBlank();
     }
 
     /**

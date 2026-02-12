@@ -76,15 +76,15 @@ public final class ObjectEncoder {
      * @param blockedKeys     contains only keys that have undergone a successful flattening
      */
     public static void encodeKeyValuePair(String key,
-                                          JsonNode value,
-                                          LineWriter writer,
-                                          int depth,
-                                          EncodeOptions options,
-                                          Set<String> siblings,
-                                          Set<String> rootLiteralKeys,
-                                          String pathPrefix,
-                                          Integer flattenDepth,
-                                          Set<String> blockedKeys
+                                           JsonNode value,
+                                           LineWriter writer,
+                                           int depth,
+                                           EncodeOptions options,
+                                           Set<String> siblings,
+                                           Set<String> rootLiteralKeys,
+                                           String pathPrefix,
+                                           Integer flattenDepth,
+                                           Set<String> blockedKeys
     ) {
         if (key == null) {
             return;
@@ -93,33 +93,34 @@ public final class ObjectEncoder {
         String currentPath = pathPrefix != null ? pathPrefix + DOT + key : key;
         int effectiveFlattenDepth = flattenDepth != null && flattenDepth > 0 ? flattenDepth : options.flattenDepth();
         int remainingDepth = effectiveFlattenDepth - depth;
+        EncodeOptions currentOptions = options;
 
         // Attempt key folding when enabled
-        if (KeyFolding.SAFE.equals(options.flatten())
+        if (KeyFolding.SAFE.equals(currentOptions.flatten())
             && !siblings.isEmpty()
             && remainingDepth > 0
             && blockedKeys != null
             && !blockedKeys.contains(key)) {
             Flatten.FoldResult foldResult = Flatten.tryFoldKeyChain(key, value, siblings, rootLiteralKeys, pathPrefix, remainingDepth);
             if (foldResult != null) {
-                options = flatten(key, foldResult, writer, depth, options, rootLiteralKeys, pathPrefix, blockedKeys, remainingDepth);
-                if (options == null) {
+                currentOptions = flatten(key, foldResult, writer, depth, currentOptions, rootLiteralKeys, pathPrefix, blockedKeys, remainingDepth);
+                if (currentOptions == null) {
                     return;
                 }
             }
         }
 
         if (value.isValueNode()) {
-            writer.push(depth, encodedKey + COLON + SPACE + PrimitiveEncoder.encodePrimitive(value, options.delimiter().toString()));
+            writer.push(depth, encodedKey + COLON + SPACE + PrimitiveEncoder.encodePrimitive(value, currentOptions.delimiter().toString()));
         }
         if (value.isArray()) {
-            ArrayEncoder.encodeArray(key, (ArrayNode) value, writer, depth, options);
+            ArrayEncoder.encodeArray(key, (ArrayNode) value, writer, depth, currentOptions);
         }
         if (value.isObject()) {
             ObjectNode objValue = (ObjectNode) value;
             writer.push(depth, encodedKey + COLON);
             if (!objValue.isEmpty()) {
-                encodeObject(objValue, writer, depth + 1, options, rootLiteralKeys, currentPath, effectiveFlattenDepth, blockedKeys);
+                encodeObject(objValue, writer, depth + 1, currentOptions, rootLiteralKeys, currentPath, effectiveFlattenDepth, blockedKeys);
             }
         }
     }
@@ -141,6 +142,7 @@ public final class ObjectEncoder {
     private static EncodeOptions flatten(String key, Flatten.FoldResult foldResult, LineWriter writer, int depth, EncodeOptions options, Set<String> rootLiteralKeys, String pathPrefix, Set<String> blockedKeys,
                                          int remainingDepth) {
         String foldedKey = foldResult.foldedKey();
+        EncodeOptions currentOptions = options;
 
         // prevent second folding pass
         blockedKeys.add(key);
@@ -151,13 +153,13 @@ public final class ObjectEncoder {
 
         // Case 1: Fully folded to a leaf value
         if (remainder == null) {
-            handleFullyFoldedLeaf(foldResult, writer, depth, options, encodedFoldedKey);
+            handleFullyFoldedLeaf(foldResult, writer, depth, currentOptions, encodedFoldedKey);
             return null;
         }
 
         // Case 2: Partially folded with a tail object
         if (remainder.isObject()) {
-            writer.push(depth, indentedLine(depth, encodedFoldedKey + COLON, options.indent()));
+            writer.push(depth, indentedLine(depth, encodedFoldedKey + COLON, currentOptions.indent()));
 
             String foldedPath = pathPrefix != null ? String.join(DOT, pathPrefix, foldedKey) : foldedKey;
             int newRemainingDepth = remainingDepth - foldResult.segmentCount();
@@ -166,14 +168,14 @@ public final class ObjectEncoder {
                 // Pass "-1" if remainingDepth is exhausted and set the encoding in the option to false.
                 // to encode normally without flattening
                 newRemainingDepth = -1;
-                options = new EncodeOptions(options.indent(), options.delimiter(), options.lengthMarker(), KeyFolding.OFF, options.flattenDepth());
+                currentOptions = new EncodeOptions(currentOptions.indent(), currentOptions.delimiter(), currentOptions.lengthMarker(), KeyFolding.OFF, currentOptions.flattenDepth());
             }
 
-            encodeObject((ObjectNode) remainder, writer, depth + 1, options, rootLiteralKeys, foldedPath, newRemainingDepth, blockedKeys);
+            encodeObject((ObjectNode) remainder, writer, depth + 1, currentOptions, rootLiteralKeys, foldedPath, newRemainingDepth, blockedKeys);
             return null;
         }
 
-        return options;
+        return currentOptions;
     }
 
     private static void handleFullyFoldedLeaf(Flatten.FoldResult foldResult, LineWriter writer, int depth, EncodeOptions options, String encodedFoldedKey) {
