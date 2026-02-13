@@ -3,7 +3,6 @@ package dev.toonformat.jtoon.decoder;
 import dev.toonformat.jtoon.Delimiter;
 import dev.toonformat.jtoon.util.StringEscaper;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -74,7 +73,8 @@ public final class TabularArrayDecoder {
      * @param context        decode an object to deal with lines, delimiter and options
      * @return list of keys
      */
-    private static List<String> parseTabularKeys(final String keysStr, final Delimiter arrayDelimiter, final DecodeContext context) {
+    private static List<String> parseTabularKeys(final String keysStr, final Delimiter arrayDelimiter,
+            final DecodeContext context) {
         // Validate delimiter mismatch between bracket and brace fields
         if (context.options.strict()) {
             validateKeysDelimiter(keysStr, arrayDelimiter);
@@ -121,15 +121,15 @@ public final class TabularArrayDecoder {
      */
     private static void checkDelimiterMismatch(final char expectedChar, final char actualChar) {
         if (expectedChar == Delimiter.TAB.getValue() && actualChar == Delimiter.COMMA.getValue()) {
-            throw new IllegalArgumentException(
-                "Delimiter mismatch: bracket declares tab (expected='" + expectedChar + "', actual='" + actualChar + "')");
+            throw new IllegalArgumentException("Delimiter mismatch: bracket declares tab (expected='"
+                    + expectedChar + "', actual='" + actualChar + "')");
         }
         if (expectedChar == Delimiter.PIPE.getValue() && actualChar == Delimiter.COMMA.getValue()) {
-            throw new IllegalArgumentException(
-                "Delimiter mismatch: bracket declares pipe (expected='" + expectedChar + "', actual='" + actualChar + "')");
+            throw new IllegalArgumentException("Delimiter mismatch: bracket declares pipe (expected='"
+                    + expectedChar + "', actual='" + actualChar + "')");
         }
-        if (expectedChar == Delimiter.COMMA.getValue() &&
-            (actualChar == Delimiter.TAB.getValue() || actualChar == Delimiter.PIPE.getValue())) {
+        if (expectedChar == Delimiter.COMMA.getValue()
+                && (actualChar == Delimiter.TAB.getValue() || actualChar == Delimiter.PIPE.getValue())) {
             throw new IllegalArgumentException(
                 "Delimiter mismatch: bracket declares comma, brace fields use different delimiter");
         }
@@ -145,8 +145,9 @@ public final class TabularArrayDecoder {
      * @param context          decode an object to deal with lines, delimiter and options
      * @return true if parsing should continue, false if an array should terminate
      */
-    private static boolean processTabularArrayLine(final int expectedRowDepth, final List<String> keys, final Delimiter arrayDelimiter,
-                                                   final List<Object> result, final DecodeContext context) {
+    private static boolean processTabularArrayLine(final int expectedRowDepth, final List<String> keys,
+            final Delimiter arrayDelimiter, final List<Object> result,
+            final DecodeContext context) {
         final String line = context.lines[context.currentLine];
 
         if (DecodeHelper.isBlankLine(line)) {
@@ -202,8 +203,8 @@ public final class TabularArrayDecoder {
      * @param context          decode an object to deal with lines, delimiter and options
      * @return true if an array should terminate, false otherwise.
      */
-    private static boolean shouldTerminateTabularArray(final String line, final int lineDepth, final int expectedRowDepth,
-                                                       final DecodeContext context) {
+    private static boolean shouldTerminateTabularArray(final String line, final int lineDepth,
+            final int expectedRowDepth, final DecodeContext context) {
         // Header depth is one level above the expected row depth
         final int headerDepth = expectedRowDepth - 1;
 
@@ -240,8 +241,9 @@ public final class TabularArrayDecoder {
      * @param context          decode an object to deal with lines, delimiter and options
      * @return true if a line was processed and the currentLine should be incremented, false otherwise.
      */
-    private static boolean processTabularRow(final String line, final int lineDepth, final int expectedRowDepth, final List<String> keys,
-                                             final Delimiter arrayDelimiter, final List<Object> result, final DecodeContext context) {
+    private static boolean processTabularRow(final String line, final int lineDepth,
+            final int expectedRowDepth, final List<String> keys, final Delimiter arrayDelimiter,
+            final List<Object> result, final DecodeContext context) {
         if (lineDepth == expectedRowDepth) {
             final String rowContent = line.substring(expectedRowDepth * context.options.indent());
             final Map<String, Object> row = parseTabularRow(rowContent, keys, arrayDelimiter, context);

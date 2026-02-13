@@ -118,8 +118,9 @@ public final class ObjectDecoder {
      * @param depth       the depth of the object field
      * @param context     decode an object to deal with lines, delimiter and options
      */
-    private static void processRootKeyedArrayLine(final Map<String, Object> objectMap, final String content, final String originalKey,
-                                                  final int depth, final DecodeContext context) {
+    private static void processRootKeyedArrayLine(final Map<String, Object> objectMap,
+            final String content, final String originalKey, final int depth,
+            final DecodeContext context) {
         final String originalKeyTrimmed = originalKey.trim();
         final String key = StringEscaper.unescape(originalKey);
         final String arrayHeader = content.substring(originalKey.length());

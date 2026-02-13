@@ -30,7 +30,8 @@ public final class ArrayEncoder {
      * @param depth   Indentation depth
      * @param options Encoding options
      */
-    public static void encodeArray(final String key, final ArrayNode value, final LineWriter writer, final int depth, final EncodeOptions options) {
+    public static void encodeArray(final String key, final ArrayNode value,
+            final LineWriter writer, final int depth, final EncodeOptions options) {
         if (value.isEmpty()) {
             final String header = PrimitiveEncoder.formatHeader(0, key, null, options.delimiter().toString(),
                     options.lengthMarker());

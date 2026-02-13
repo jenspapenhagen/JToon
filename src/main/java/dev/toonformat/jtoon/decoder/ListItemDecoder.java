@@ -141,9 +141,10 @@ public final class ListItemDecoder {
      *
      * @param item    the item to parse
      * @param depth   the depth of the item
-     * @param context decode an object to deal with lines, delimiter and options     *
+     * @param context decode an object to deal with lines, delimiter and options
      */
-    private static void parseListItemFields(final Map<String, Object> item, final int depth, final DecodeContext context) {
+    private static void parseListItemFields(final Map<String, Object> item,
+            final int depth, final DecodeContext context) {
         while (context.currentLine < context.lines.length) {
             final String line = context.lines[context.currentLine];
             final int lineDepth = DecodeHelper.getDepth(line, context);

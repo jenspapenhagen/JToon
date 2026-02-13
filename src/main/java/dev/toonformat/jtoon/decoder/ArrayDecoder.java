@@ -300,7 +300,8 @@ public final class ArrayDecoder {
      * @param context   decode an object to deal with lines, delimiter and options
      * @return true if an array should terminate, false otherwise.
      */
-    private static boolean shouldTerminateListArray(final int lineDepth, final int depth, final String line, final DecodeContext context) {
+    private static boolean shouldTerminateListArray(final int lineDepth, final int depth,
+            final String line, final DecodeContext context) {
         if (lineDepth < depth + 1) {
             return true; // Line depth is less than expected - terminate
         }
