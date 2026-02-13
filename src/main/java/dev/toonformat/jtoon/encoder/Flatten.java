@@ -136,7 +136,9 @@ public final class Flatten {
      * @param maxDepth   maximum number of allowed segments
      * @return a {@link ChainResult} containing segments, tail, and leafValue
      */
-    private static ChainResult collectSingleKeyChain(final String startKey, final JsonNode startValue, final int maxDepth) {
+    private static ChainResult collectSingleKeyChain(final String startKey,
+                                                     final JsonNode startValue,
+                                                     final int maxDepth) {
         // normalize absolute key to its local segment
         final String localStartKey = startKey.contains(DOT)
                 ? startKey.substring(startKey.lastIndexOf(DOT.charAt(0)) + 1)

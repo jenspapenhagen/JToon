@@ -36,9 +36,14 @@ public final class ObjectEncoder {
      * @param remainingDepth  optional override for the remaining depth
      * @param blockedKeys     contains only keys that have undergone a successful flattening
      */
-    public static void encodeObject(final ObjectNode value, final LineWriter writer, final int depth, final EncodeOptions options,
-                                     final Set<String> rootLiteralKeys, final String pathPrefix, final Integer remainingDepth,
-                                     final Set<String> blockedKeys) {
+    public static void encodeObject(final ObjectNode value,
+                                    final LineWriter writer,
+                                    final int depth,
+                                    final EncodeOptions options,
+                                    final Set<String> rootLiteralKeys,
+                                    final String pathPrefix,
+                                    final Integer remainingDepth,
+                                    final Set<String> blockedKeys) {
         final List<Map.Entry<String, JsonNode>> fields = value.properties().stream().toList();
 
         // At root level (depth 0), collect all literal dotted keys for collision checking
@@ -146,9 +151,15 @@ public final class ObjectEncoder {
      * @param remainingDepth  the depth that remind to the limit
      * @return EncodeOptions changes for Case 2
      */
-    private static EncodeOptions flatten(final String key, final Flatten.FoldResult foldResult, final LineWriter writer, final int depth,
-                                         final EncodeOptions options, final Set<String> rootLiteralKeys, final String pathPrefix,
-                                         final Set<String> blockedKeys, final int remainingDepth) {
+    private static EncodeOptions flatten(final String key,
+                                         final Flatten.FoldResult foldResult,
+                                         final LineWriter writer,
+                                         final int depth,
+                                         final EncodeOptions options,
+                                         final Set<String> rootLiteralKeys,
+                                         final String pathPrefix,
+                                         final Set<String> blockedKeys,
+                                         final int remainingDepth) {
         final String foldedKey = foldResult.foldedKey();
         EncodeOptions currentOptions = options;
 
@@ -189,8 +200,11 @@ public final class ObjectEncoder {
         return currentOptions;
     }
 
-    private static void handleFullyFoldedLeaf(final Flatten.FoldResult foldResult, final LineWriter writer, final int depth,
-                                              final EncodeOptions options, final String encodedFoldedKey) {
+    private static void handleFullyFoldedLeaf(final Flatten.FoldResult foldResult,
+                                              final LineWriter writer,
+                                              final int depth,
+                                              final EncodeOptions options,
+                                              final String encodedFoldedKey) {
         final JsonNode leaf = foldResult.leafValue();
 
         // Primitive
