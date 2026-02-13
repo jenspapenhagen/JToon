@@ -17,6 +17,7 @@
         <exclude name="JUnitUseExpected" />
         <exclude name="LiteralsFirstInComparisons" />
         <exclude name="JUnit5TestShouldBePackagePrivate" />
+        <exclude name="LooseCoupling" />
     </rule>
 
     <!-- Code Style -->
