@@ -2,6 +2,7 @@ package dev.toonformat.jtoon.decoder;
 
 import dev.toonformat.jtoon.Delimiter;
 import dev.toonformat.jtoon.util.StringEscaper;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,7 @@ public final class ListItemDecoder {
      * @param context   decode an object to deal with lines, delimiter and options
      */
     public static void processListArrayItem(final String line, final int lineDepth, final int depth,
-                                            final List<Object> result, final DecodeContext context) {
+                                            final Collection<Object> result, final DecodeContext context) {
         if (lineDepth == depth + 1) {
             final String content = line.substring((depth + 1) * context.options.indent());
 
@@ -52,7 +53,7 @@ public final class ListItemDecoder {
      * @param context decode an object to deal with lines, delimiter and options
      * @return parsed item (scalar value or object)
      */
-    public static Object parseListItem(final String content, final int depth, final DecodeContext context) {
+    static Object parseListItem(final String content, final int depth, final DecodeContext context) {
         // Handle empty item: just "-" or "- "
         final String itemContent;
         if (content.length() > 2) {

@@ -149,7 +149,7 @@ public final class Flatten {
         // track depth of folding
         int depthCounter = 1;
 
-        while (currentValue.isObject() && depthCounter < maxDepth) {
+        while (depthCounter < maxDepth && currentValue.isObject()) {
             final ObjectNode obj = (ObjectNode) currentValue;
             final Iterator<Map.Entry<String, JsonNode>> it = obj.properties().iterator();
 

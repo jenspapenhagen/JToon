@@ -56,8 +56,8 @@ public final class ObjectDecoder {
      * Returns true if the line was processed, false if it was a blank line that was
      * skipped.
      */
-    private static void processDirectChildLine(final Map<String, Object> result, final String line, final int parentDepth, final int depth,
-                                               final DecodeContext context) {
+    private static void processDirectChildLine(final Map<String, Object> result, final String line,
+            final int parentDepth, final int depth, final DecodeContext context) {
         final String content = line.substring((parentDepth + 1) * context.options.indent());
         final Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(content);
 
@@ -149,7 +149,7 @@ public final class ObjectDecoder {
         context.currentLine++;
 
         // In strict mode, check if there are more primitives at the root level
-        if (context.options.strict() && depth == 0) {
+        if (depth == 0 && context.options.strict()) {
             DecodeHelper.validateNoMultiplePrimitivesAtRoot(context);
         }
 

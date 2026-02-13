@@ -111,7 +111,7 @@ public final class JsonNormalizer {
             .map(normalizer -> normalizer.apply(value))
             .filter(Objects::nonNull)
             .findFirst()
-            .orElse(NullNode.getInstance());
+            .orElseGet(NullNode::getInstance);
     }
 
     /**
@@ -151,7 +151,7 @@ public final class JsonNormalizer {
             return IntNode.valueOf(0);
         }
         return tryConvertToLong(value)
-            .orElse(DoubleNode.valueOf(value));
+            .orElseGet(() -> DoubleNode.valueOf(value));
     }
 
     /**

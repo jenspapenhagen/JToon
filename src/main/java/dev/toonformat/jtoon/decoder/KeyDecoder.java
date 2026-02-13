@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
+import java.util.regex.MatchResult;
 import static dev.toonformat.jtoon.util.Constants.DOT;
 import static dev.toonformat.jtoon.util.Headers.KEYED_ARRAY_PATTERN;
 
@@ -107,7 +108,8 @@ public final class KeyDecoder {
      * @param depth   the depth of the value line
      * @param context decode an object to deal with lines, delimiter and options
      */
-    static void processKeyValueLine(final Map<String, Object> result, final String content, final int depth, final DecodeContext context) {
+    static void processKeyValueLine(final Map<String, Object> result, final String content,
+            final int depth, final DecodeContext context) {
         final int colonIdx = DecodeHelper.findUnquotedColon(content);
 
         if (colonIdx > 0) {
@@ -223,8 +225,8 @@ public final class KeyDecoder {
      * @param unescapedKey the unescaped key
      * @param value        the value to put
      */
-    private static void putKeyValueIntoMap(final Map<String, Object> map, final String originalKey, final String unescapedKey,
-                                           final Object value, final DecodeContext context) {
+    private static void putKeyValueIntoMap(final Map<String, Object> map, final String originalKey,
+            final String unescapedKey, final Object value, final DecodeContext context) {
         // Handle path expansion
         if (shouldExpandKey(originalKey, context)) {
             expandPathIntoMap(map, unescapedKey, value, context);
@@ -244,8 +246,8 @@ public final class KeyDecoder {
      * @param context         decode an object to deal with lines, delimiter, and options
      * @return parsed a key-value pair
      */
-    static Object parseKeyValuePair(final String key, final String value, final int depth, final boolean parseRootFields,
-                                    final DecodeContext context) {
+    static Object parseKeyValuePair(final String key, final String value, final int depth,
+            final boolean parseRootFields, final DecodeContext context) {
         final Map<String, Object> obj = new LinkedHashMap<>();
         parseKeyValuePairIntoMap(obj, key, value, depth, context);
 
@@ -264,10 +266,12 @@ public final class KeyDecoder {
      * @param context    decode an object to deal with lines, delimiter, and options
      * @return parsed keyed array value
      */
-    static Object parseKeyedArrayValue(final Matcher keyedArray, final String content, final int depth, final DecodeContext context) {
-        final String originalKey = keyedArray.group(1).trim();
+    static Object parseKeyedArrayValue(final MatchResult keyedArray, final String content,
+            final int depth, final DecodeContext context) {
+        final String group1 = keyedArray.group(1);
+        final String originalKey = group1.trim();
         final String key = StringEscaper.unescape(originalKey);
-        final String arrayHeader = content.substring(keyedArray.group(1).length());
+        final String arrayHeader = content.substring(group1.length());
 
         final List<Object> arrayValue = ArrayDecoder.parseArray(arrayHeader, depth, context);
         final Map<String, Object> obj = new LinkedHashMap<>();
@@ -305,9 +309,10 @@ public final class KeyDecoder {
             return false;
         }
 
-        final String originalKey = keyedArray.group(1).trim();
+        final String group1 = keyedArray.group(1);
+        final String originalKey = group1.trim();
         final String key = StringEscaper.unescape(originalKey);
-        final String arrayHeader = fieldContent.substring(keyedArray.group(1).length());
+        final String arrayHeader = fieldContent.substring(group1.length());
 
         // For nested arrays in list items, default to comma delimiter if not specified
         final Delimiter nestedArrayDelimiter = ArrayDecoder.extractDelimiterFromHeader(arrayHeader, context);

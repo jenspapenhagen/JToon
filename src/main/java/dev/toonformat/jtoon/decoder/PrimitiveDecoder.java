@@ -82,17 +82,17 @@ public final class PrimitiveDecoder {
         // Try parsing as number
         try {
             // Check if it contains exponent notation or decimal point
-            if (value.contains(DOT) || value.contains("e") || value.contains("E")) {
+            if (value.contains("e") || value.contains("E") || value.contains(DOT)) {
                 final double parsed = Double.parseDouble(value);
                 // Handle negative zero - Java doesn't distinguish, but spec says it should be 0
                 if (parsed == 0.0) {
                     return 0L;
                 }
                 // Check if the result is a whole number - if so, return as Long
-                if (parsed == Math.floor(parsed)
-                    && !Double.isInfinite(parsed)
+                if (!Double.isInfinite(parsed)
                     && parsed >= Long.MIN_VALUE
-                    && parsed <= Long.MAX_VALUE) {
+                    && parsed <= Long.MAX_VALUE
+                    && parsed == Math.floor(parsed)) {
                     return (long) parsed;
                 }
 

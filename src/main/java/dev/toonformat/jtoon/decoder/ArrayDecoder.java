@@ -151,12 +151,12 @@ public final class ArrayDecoder {
      * Returns the number specified in [n] or null if not found.
      *
      * @param header header string for length check
-     * @return extracted length from header
+     * @return extracted length from header, or null if not found
      */
     private static Integer extractLengthFromHeader(final String header) {
         final Matcher matcher = ARRAY_HEADER_PATTERN.matcher(header);
         if (matcher.find()) {
-            return Integer.parseInt(matcher.group(2));
+            return Integer.valueOf(matcher.group(2));
         }
         return null;
     }
@@ -169,8 +169,8 @@ public final class ArrayDecoder {
      * @return parsed array values
      */
     static List<Object> parseArrayValues(final String values, final Delimiter arrayDelimiter) {
-        final List<Object> result = new ArrayList<>();
         final List<String> rawValues = parseDelimitedValues(values, arrayDelimiter);
+        final List<Object> result = new ArrayList<>(rawValues.size());
         for (final String value : rawValues) {
             result.add(PrimitiveDecoder.parse(value));
         }

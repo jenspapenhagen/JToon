@@ -52,7 +52,12 @@ public final class TabularArrayEncoder {
     /**
      * Checks if all rows in the array have the same keys with primitive values.
      */
-    private static boolean isTabularArray(final ArrayNode rows, final List<String> header) {
+    private static boolean isTabularArray(final Iterable<JsonNode> rows, final Iterable<String> header) {
+        final List<String> headerList = new ArrayList<>();
+        for (String h : header) {
+            headerList.add(h);
+        }
+
         for (JsonNode row : rows) {
             if (!row.isObject()) {
                 return false;
@@ -62,12 +67,12 @@ public final class TabularArrayEncoder {
             final List<String> keys = new ArrayList<>(obj.propertyNames());
 
             // All objects must have the same keys (but order can differ)
-            if (keys.size() != header.size()) {
+            if (keys.size() != headerList.size()) {
                 return false;
             }
 
             // Check that all header keys exist in the row and all values are primitives
-            for (String key : header) {
+            for (String key : headerList) {
                 if (!obj.has(key)) {
                     return false;
                 }
@@ -90,8 +95,9 @@ public final class TabularArrayEncoder {
      * @param depth   Indentation depth
      * @param options Encoding options
      */
-    public static void encodeArrayOfObjectsAsTabular(final String prefix, final ArrayNode rows, final List<String> header,
-                                                      final LineWriter writer, final int depth, final EncodeOptions options) {
+    public static void encodeArrayOfObjectsAsTabular(final String prefix, final ArrayNode rows,
+            final List<String> header, final LineWriter writer, final int depth,
+            final EncodeOptions options) {
         final String headerStr = PrimitiveEncoder.formatHeader(rows.size(), prefix, header,
                 options.delimiter().toString(), options.lengthMarker());
         writer.push(depth, headerStr);
@@ -109,16 +115,22 @@ public final class TabularArrayEncoder {
      * @param depth   Indentation depth
      * @param options Encoding options
      */
-    public static void writeTabularRows(final ArrayNode rows, final List<String> header, final LineWriter writer, final int depth,
-                                        final EncodeOptions options) {
+    public static void writeTabularRows(final Iterable<JsonNode> rows, final Iterable<String> header,
+            final LineWriter writer, final int depth, final EncodeOptions options) {
+        final List<String> headerList = new ArrayList<>();
+        for (String h : header) {
+            headerList.add(h);
+        }
+        final int headerSize = headerList.size();
+
         for (JsonNode row : rows) {
             //skip non-object rows
             if (!row.isObject()) {
                 continue;
             }
             final ObjectNode obj = (ObjectNode) row;
-            final List<JsonNode> values = new ArrayList<>();
-            for (String key : header) {
+            final List<JsonNode> values = new ArrayList<>(headerSize);
+            for (String key : headerList) {
                 values.add(obj.get(key));
             }
             final String joinedValue = PrimitiveEncoder.joinEncodedValues(values, options.delimiter().toString());

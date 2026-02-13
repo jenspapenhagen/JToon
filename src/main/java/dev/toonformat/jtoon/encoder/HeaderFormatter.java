@@ -1,5 +1,6 @@
 package dev.toonformat.jtoon.encoder;
 
+import java.util.Collection;
 import java.util.List;
 import static dev.toonformat.jtoon.util.Constants.COLON;
 import static dev.toonformat.jtoon.util.Constants.OPEN_BRACKET;
@@ -41,7 +42,7 @@ public final class HeaderFormatter {
      * @param config Header configuration
      * @return Formatted header string
      */
-    public static String format(final HeaderConfig config) {
+    static String format(final HeaderConfig config) {
         final StringBuilder header = new StringBuilder();
 
         appendKeyIfPresent(header, config.key());
@@ -102,7 +103,7 @@ public final class HeaderFormatter {
 
     private static void appendFieldsIfPresent(
             final StringBuilder header,
-            final List<String> fields,
+            final Collection<String> fields,
             final String delimiter) {
         if (fields == null || fields.isEmpty()) {
             return;
@@ -113,7 +114,7 @@ public final class HeaderFormatter {
         header.append(CLOSE_BRACE);
     }
 
-    private static String formatFields(final List<String> fields, final String delimiter) {
+    private static String formatFields(final Collection<String> fields, final String delimiter) {
         return fields.stream()
                 .map(PrimitiveEncoder::encodeKey)
                 .reduce((a, b) -> a + delimiter + b)

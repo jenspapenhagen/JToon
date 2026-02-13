@@ -65,7 +65,7 @@ public final class DecodeHelper {
             i++;
         }
 
-        if (context.options.strict() && leadingSpaces > 0 && indentSize > 0 && leadingSpaces % indentSize != 0) {
+        if (indentSize > 0 && leadingSpaces > 0 && leadingSpaces % indentSize != 0 && context.options.strict()) {
             throw new IllegalArgumentException(
                 String.format("Non-multiple indentation: %d leadingSpaces with indent=%d at line %d",
                     leadingSpaces, indentSize, context.currentLine + 1));
@@ -99,14 +99,14 @@ public final class DecodeHelper {
         for (int i = 0; i < content.length(); i++) {
             final char c = content.charAt(i);
 
-            if (escaped) {
+            if (c == COLON.charAt(0) && !inQuotes) {
+                return i;
+            } else if (escaped) {
                 escaped = false;
             } else if (c == BACKSLASH) {
                 escaped = true;
             } else if (c == DOUBLE_QUOTE) {
                 inQuotes = !inQuotes;
-            } else if (c == COLON.charAt(0) && !inQuotes) {
-                return i;
             }
         }
 
@@ -137,7 +137,8 @@ public final class DecodeHelper {
      * @param context      decode an object to deal with lines, delimiter, and options
      * @throws IllegalArgumentException in case there's a expansion conflict
      */
-    static void checkFinalValueConflict(final String finalSegment, final Object existing, final Object value, final DecodeContext context) {
+    static void checkFinalValueConflict(final String finalSegment, final Object existing,
+            final Object value, final DecodeContext context) {
         if (existing != null && context.options.strict()) {
             // Check for conflicts in strict mode
             if (existing instanceof Map && !(value instanceof Map)) {
@@ -162,7 +163,8 @@ public final class DecodeHelper {
      * @param value   present value in a map
      * @param context decode an object to deal with lines, delimiter, and options
      */
-    static void checkPathExpansionConflict(final Map<String, Object> map, final String key, final Object value, final DecodeContext context) {
+    static void checkPathExpansionConflict(final Map<String, Object> map, final String key,
+            final Object value, final DecodeContext context) {
         if (!context.options.strict()) {
             return;
         }

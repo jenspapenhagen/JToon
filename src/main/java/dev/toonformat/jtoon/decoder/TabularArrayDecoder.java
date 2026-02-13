@@ -3,6 +3,7 @@ package dev.toonformat.jtoon.decoder;
 import dev.toonformat.jtoon.Delimiter;
 import dev.toonformat.jtoon.util.StringEscaper;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -79,8 +80,8 @@ public final class TabularArrayDecoder {
             validateKeysDelimiter(keysStr, arrayDelimiter);
         }
 
-        final List<String> result = new ArrayList<>();
         final List<String> rawValues = ArrayDecoder.parseDelimitedValues(keysStr, arrayDelimiter);
+        final List<String> result = new ArrayList<>(rawValues.size());
         for (final String key : rawValues) {
             result.add(StringEscaper.unescape(key));
         }
@@ -121,11 +122,11 @@ public final class TabularArrayDecoder {
     private static void checkDelimiterMismatch(final char expectedChar, final char actualChar) {
         if (expectedChar == Delimiter.TAB.getValue() && actualChar == Delimiter.COMMA.getValue()) {
             throw new IllegalArgumentException(
-                "Delimiter mismatch: bracket declares tab, brace fields use comma");
+                "Delimiter mismatch: bracket declares tab (expected='" + expectedChar + "', actual='" + actualChar + "')");
         }
         if (expectedChar == Delimiter.PIPE.getValue() && actualChar == Delimiter.COMMA.getValue()) {
             throw new IllegalArgumentException(
-                "Delimiter mismatch: bracket declares pipe, brace fields use comma");
+                "Delimiter mismatch: bracket declares pipe (expected='" + expectedChar + "', actual='" + actualChar + "')");
         }
         if (expectedChar == Delimiter.COMMA.getValue() &&
             (actualChar == Delimiter.TAB.getValue() || actualChar == Delimiter.PIPE.getValue())) {

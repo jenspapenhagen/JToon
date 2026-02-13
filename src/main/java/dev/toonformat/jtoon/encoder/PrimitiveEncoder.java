@@ -4,6 +4,7 @@ import dev.toonformat.jtoon.util.StringEscaper;
 import dev.toonformat.jtoon.util.StringValidator;
 import tools.jackson.databind.JsonNode;
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 import static dev.toonformat.jtoon.util.Constants.NULL_LITERAL;
 import static dev.toonformat.jtoon.util.Constants.DOUBLE_QUOTE;
@@ -85,7 +86,7 @@ public final class PrimitiveEncoder {
      * @param delimiter the delimiter to use (for validation)
      * @return the encoded string, quoted if necessary
      */
-    public static String encodeStringLiteral(final String value, final String delimiter) {
+    static String encodeStringLiteral(final String value, final String delimiter) {
         if (StringValidator.isSafeUnquoted(value, delimiter)) {
             return value;
         }
@@ -115,7 +116,7 @@ public final class PrimitiveEncoder {
      * @param delimiter the delimiter to use between values
      * @return the joined string of encoded values
      */
-    public static String joinEncodedValues(final List<JsonNode> values, final String delimiter) {
+    public static String joinEncodedValues(final Collection<JsonNode> values, final String delimiter) {
         if (values == null || values.isEmpty()) {
             return "";
         }

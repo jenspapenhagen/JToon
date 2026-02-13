@@ -1,7 +1,13 @@
 package dev.toonformat.jtoon.util;
 
 import java.util.regex.Pattern;
-import static dev.toonformat.jtoon.util.Constants.*;
+import static dev.toonformat.jtoon.util.Constants.BACKSLASH;
+import static dev.toonformat.jtoon.util.Constants.COLON;
+import static dev.toonformat.jtoon.util.Constants.DOUBLE_QUOTE;
+import static dev.toonformat.jtoon.util.Constants.FALSE_LITERAL;
+import static dev.toonformat.jtoon.util.Constants.LIST_ITEM_MARKER;
+import static dev.toonformat.jtoon.util.Constants.NULL_LITERAL;
+import static dev.toonformat.jtoon.util.Constants.TRUE_LITERAL;
 
 /**
  * Validates strings for safe unquoted usage in TOON format.
