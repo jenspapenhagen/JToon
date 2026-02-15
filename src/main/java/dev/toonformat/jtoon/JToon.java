@@ -4,6 +4,7 @@ import dev.toonformat.jtoon.decoder.ValueDecoder;
 import dev.toonformat.jtoon.encoder.ValueEncoder;
 import dev.toonformat.jtoon.normalizer.JsonNormalizer;
 import tools.jackson.databind.JsonNode;
+import java.util.Objects;
 
 /**
  * Main entry point for encoding and decoding TOON (Token-Oriented Object Notation) format.
@@ -41,8 +42,10 @@ public final class JToon {
      * @param input   The object to encode (can be null)
      * @param options Encoding options (indent, delimiter, length marker)
      * @return The JToon-formatted string
+     * @throws NullPointerException if options is null
      */
     public static String encode(final Object input, final EncodeOptions options) {
+        Objects.requireNonNull(options, "EncodeOptions cannot be null");
         final JsonNode normalizedValue = JsonNormalizer.normalize(input);
         return ValueEncoder.encodeValue(normalizedValue, options);
     }
@@ -75,8 +78,10 @@ public final class JToon {
      * @param options Encoding options (indent, delimiter, length marker)
      * @return The TOON-formatted string
      * @throws IllegalArgumentException if the input is not valid JSON
+     * @throws NullPointerException if options is null
      */
     public static String encodeJson(final String json, final EncodeOptions options) {
+        Objects.requireNonNull(options, "EncodeOptions cannot be null");
         final JsonNode parsed = JsonNormalizer.parse(json);
         return ValueEncoder.encodeValue(parsed, options);
     }
@@ -111,8 +116,10 @@ public final class JToon {
      * @return Parsed object (Map, List, primitive, or null)
      * @throws IllegalArgumentException if strict mode is enabled and input is
      *                                  invalid
+     * @throws NullPointerException if options is null
      */
     public static Object decode(final String toon, final DecodeOptions options) {
+        Objects.requireNonNull(options, "DecodeOptions cannot be null");
         return ValueDecoder.decode(toon, options);
     }
 
@@ -148,8 +155,10 @@ public final class JToon {
      * @return JSON string representation
      * @throws IllegalArgumentException if strict mode is enabled and input is
      *                                  invalid
+     * @throws NullPointerException if options is null
      */
     public static String decodeToJson(final String toon, final DecodeOptions options) {
+        Objects.requireNonNull(options, "DecodeOptions cannot be null");
         return ValueDecoder.decodeToJson(toon, options);
     }
 }

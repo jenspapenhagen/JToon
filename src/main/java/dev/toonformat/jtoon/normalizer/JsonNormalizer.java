@@ -70,13 +70,16 @@ public final class JsonNormalizer {
      * @throws IllegalArgumentException if the input is blank or not valid JSON
      */
     public static JsonNode parse(final String json) {
-        if (json == null || json.isBlank()) {
-            throw new IllegalArgumentException("Invalid JSON");
+        if (json == null) {
+            throw new IllegalArgumentException("JSON string cannot be null");
+        }
+        if (json.isBlank()) {
+            throw new IllegalArgumentException("JSON string cannot be blank");
         }
         try {
             return MAPPER.readTree(json);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid JSON", e);
+            throw new IllegalArgumentException("Invalid JSON: " + e.getMessage(), e);
         }
     }
 
