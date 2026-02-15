@@ -448,4 +448,134 @@ class FlattenTest {
         assertNotNull(result);
     }
 
+    @Test
+    @DisplayName("given valid object but remainingDepth is 1 when tryFold then returns null")
+    void givenValidObjectButRemainingDepthIsOne_whenTryFold_thenReturnsNull() {
+        // Given - valid object chain but remainingDepth <= 1
+        ObjectNode a = MAPPER.createObjectNode();
+        ObjectNode b = a.putObject("b");
+        b.put("c", 123);
+
+        // When - remainingDepth is 1 (not enough to fold)
+        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+            "a", a, Set.of(), Set.of(), null, 1
+        );
+
+        // Then - should return null because remainingDepth <= 1
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("given simple key without dots when collectChain then uses key directly")
+    void givenSimpleKeyWithoutDots_whenCollectChain_thenUsesKeyDirectly() {
+        // Given - simple key without dots
+        ObjectNode a = MAPPER.createObjectNode();
+        ObjectNode b = a.putObject("b");
+        b.put("c", 123);
+
+        // When - call collectSingleKeyChain directly with simple key
+        Flatten.ChainResult result = Flatten.collectSingleKeyChain("simpleKey", a, 10);
+
+        // Then - first segment should be the key as-is (no dot processing)
+        assertNotNull(result);
+        assertEquals("simpleKey", result.segments().get(0));
+        assertEquals(3, result.segments().size()); // simpleKey, b, c
+    }
+
+    @Test
+    @DisplayName("given single key object at max depth when collectChain then treats as leaf")
+    void givenSingleKeyObjectAtMaxDepth_whenCollectChain_thenTreatsAsLeaf() {
+        // Given - single-key object at exact max depth
+        ObjectNode a = MAPPER.createObjectNode();
+        ObjectNode b = a.putObject("b");
+        b.put("c", 123);
+
+        // When - depth limit of 2 means we can collect "a" and "b", but "b" has 1 key "c"
+        // At depthCounter == maxDepth, single-key object should be treated as leaf
+        Flatten.ChainResult result = Flatten.collectSingleKeyChain("a", a, 2);
+
+        // Then - should stop at "b" with single key and treat as leaf
+        assertNotNull(result);
+        assertEquals(2, result.segments().size()); // Only "a" and "b"
+        assertNotNull(result.leafValue()); // b is treated as leaf (single key, but at max depth)
+        assertNull(result.tail());
+    }
+
+    @Test
+    @DisplayName("given max depth reached with single key chain when collectChain then returns tail")
+    void givenMaxDepthReachedWithSingleKeyChain_whenCollectChain_thenReturnsTail() {
+        // Given - chain deeper than max depth
+        ObjectNode a = MAPPER.createObjectNode();
+        ObjectNode b = a.putObject("b");
+        ObjectNode c = b.putObject("c");
+        ObjectNode d = c.putObject("d");
+        d.put("value", 42);
+
+        // When - maxDepth of 3 means we stop at "c" which has 1 key "d"
+        Flatten.ChainResult result = Flatten.collectSingleKeyChain("a", a, 3);
+
+        // Then - should have a, b, c as segments, and c (single key object) is the leaf
+        assertNotNull(result);
+        assertEquals(3, result.segments().size());
+        assertEquals("c", result.segments().get(2));
+        assertNotNull(result.leafValue());
+    }
+
+    @Test
+    @DisplayName("given empty path prefix when tryFold then uses folded key directly")
+    void givenEmptyPathPrefix_whenTryFold_thenUsesFoldedKeyDirectly() {
+        // Given - empty string pathPrefix (not null, but empty)
+        ObjectNode a = MAPPER.createObjectNode();
+        ObjectNode b = a.putObject("b");
+        b.put("c", 123);
+
+        // When - pathPrefix is empty string (tests line 109 branch)
+        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+            "a", a, Set.of(), Set.of(), "", 10
+        );
+
+        // Then - should still work, using folded key directly
+        assertNotNull(result);
+        assertEquals("a.b.c", result.foldedKey());
+    }
+
+    @Test
+    @DisplayName("given empty object at depth when collectChain then returns leaf")
+    void givenEmptyObjectAtDepth_whenCollectChain_thenReturnsLeaf() {
+        // Given - empty object encountered during chain collection
+        ObjectNode a = MAPPER.createObjectNode();
+        ObjectNode b = a.putObject("b");
+        b.putObject("c"); // empty object as leaf
+
+        // When - collect chain that ends with empty object (tests line 180)
+        Flatten.ChainResult result = Flatten.collectSingleKeyChain("a", a, 10);
+
+        // Then - empty object should be treated as leaf
+        assertNotNull(result);
+        assertEquals("c", result.segments().get(2));
+        assertNotNull(result.leafValue());
+        assertTrue(result.leafValue().isObject());
+        assertTrue(result.leafValue().isEmpty());
+    }
+
+    @Test
+    @DisplayName("given multi key object at max depth when collectChain then returns tail")
+    void givenMultiKeyObjectAtMaxDepth_whenCollectChain_thenReturnsTail() {
+        // Given - chain where intermediate object becomes multi-key after depth reached
+        ObjectNode a = MAPPER.createObjectNode();
+        ObjectNode b = a.putObject("b");
+        b.put("x", 1);
+        b.put("y", 2); // b has 2 keys - should be tail when maxDepth reached
+
+        // When - maxDepth of 2 allows processing "a" then stops, b has 2 keys (tests line 192)
+        Flatten.ChainResult result = Flatten.collectSingleKeyChain("a", a, 2);
+
+        // Then - should have a, b as segments, b is tail with 2 keys
+        assertNotNull(result);
+        assertEquals(2, result.segments().size());
+        assertEquals("b", result.segments().get(1));
+        assertNotNull(result.tail());
+        assertEquals(2, result.tail().size());
+    }
+
 }
