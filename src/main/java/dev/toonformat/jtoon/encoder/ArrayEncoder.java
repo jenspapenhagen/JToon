@@ -4,7 +4,7 @@ import dev.toonformat.jtoon.EncodeOptions;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
-import java.util.ArrayList;
+
 import java.util.List;
 import java.util.stream.StreamSupport;
 import static dev.toonformat.jtoon.util.Constants.LIST_ITEM_PREFIX;
@@ -147,17 +147,25 @@ public final class ArrayEncoder {
      */
     public static String formatInlineArray(final ArrayNode values, final String delimiter,
             final String prefix, final boolean lengthMarker) {
-        final List<JsonNode> valueList = new ArrayList<>();
-        values.forEach(valueList::add);
-
         final String header = PrimitiveEncoder.formatHeader(values.size(), prefix, null, delimiter, lengthMarker);
-        final String joinedValue = PrimitiveEncoder.joinEncodedValues(valueList, delimiter);
 
-        // Only add space if there are values
+        // Early return for empty arrays
         if (values.isEmpty()) {
             return header;
         }
-        return header + SPACE + joinedValue;
+
+        // Build joined values directly without intermediate collection
+        final StringBuilder joinedValues = new StringBuilder(128);
+        boolean first = true;
+        for (final JsonNode value : values) {
+            if (!first) {
+                joinedValues.append(delimiter);
+            }
+            first = false;
+            joinedValues.append(PrimitiveEncoder.encodePrimitive(value, delimiter));
+        }
+
+        return header + SPACE + joinedValues.toString();
     }
 
     /**

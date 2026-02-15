@@ -51,8 +51,8 @@ pitest {
 spotbugs {
     toolVersion = '4.9.8'
     excludeFilter = file('spotbugs-exclude.xml')
-    effort = "max"
-    reportLevel = "low"
+    effort = 'MAX'
+    reportLevel = 'LOW'
     reportsDir = layout.buildDirectory.dir('spotbugs')
 }
 
@@ -128,7 +128,7 @@ tasks.checkstyleTest {
 
 dependencies {
     implementation 'tools.jackson.core:jackson-databind:3.0.4'
-    implementation 'tools.jackson.module:jackson-module-afterburner:3.0.4'
+    implementation 'tools.jackson.module:jackson-module-blackbird:3.0.4'
     compileOnly 'com.github.spotbugs:spotbugs-annotations:4.9.8'
     testImplementation platform('org.junit:junit-bom:6.0.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -140,11 +140,25 @@ dependencies {
     testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 }
 
+// Check if running in CI or coverage is explicitly requested
+boolean isCi = System.getenv('CI') == 'true'
+boolean withCoverage = project.hasProperty('withCoverage') || isCi
+
 test {
     useJUnitPlatform()
-    finalizedBy jacocoTestReport // report is always generated after tests run
+    // Only run jacoco coverage in CI or when explicitly requested
+    if (withCoverage) {
+        finalizedBy jacocoTestReport
+        jacoco {
+            enabled = true
+        }
+    } else {
+        // Completely disable jacoco for local development
+        jacoco {
+            enabled = false
+        }
+    }
 }
-
 
 jacocoTestReport {
     dependsOn test
@@ -156,6 +170,8 @@ jacocoTestReport {
 }
 
 jacocoTestCoverageVerification {
+    // Only enforce coverage thresholds in CI
+    onlyIf { isCi }
     violationRules {
         rule {
             enabled = true
@@ -173,6 +189,11 @@ jacocoTestCoverageVerification {
             }
         }
     }
+}
+
+// Only add coverage verification to check task in CI
+if (isCi) {
+    check.dependsOn jacocoTestCoverageVerification
 }
 check.dependsOn jacocoTestReport
 check.dependsOn spotbugsMain
@@ -203,7 +224,7 @@ tasks.register('jmh', JavaExec) {
     group = 'verification'
     description = 'Run JMH benchmarks'
     classpath = configurations.testRuntimeClasspath + sourceSets.test.runtimeClasspath
-    mainClass = 'dev.toonformat.jtoon.JToonBenchmark'
+    mainClass = findProperty('benchmarkClass') ?: 'dev.toonformat.jtoon.JToonBenchmark'
     workingDir = projectDir
     doFirst {
         file('build/jmh-results').mkdirs()

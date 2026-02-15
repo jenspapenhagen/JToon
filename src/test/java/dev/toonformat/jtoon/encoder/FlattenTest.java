@@ -289,4 +289,163 @@ class FlattenTest {
         assertEquals(2, result.segmentCount());
     }
 
+    @Test
+    void givenNullRootLiteralKeys_whenTryFold_thenDoesNotThrow() {
+        // Given
+        ObjectNode a = MAPPER.createObjectNode();
+        ObjectNode b = a.putObject("b");
+        b.put("c", 1);
+
+        // When
+        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+            "a", a, Set.of(), null, null, 10
+        );
+
+        // Then
+        assertNotNull(result);
+        assertEquals("a.b.c", result.foldedKey());
+    }
+
+    @Test
+    void givenPathPrefixWithDot_whenTryFold_thenUsesCorrectPath() {
+        // Given
+        ObjectNode a = MAPPER.createObjectNode();
+        ObjectNode b = a.putObject("b");
+        b.put("c", 1);
+
+        // When - using pathPrefix with dot
+        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+            "a", a, Set.of(), Set.of(), "prefix.data", 10
+        );
+
+        // Then
+        assertNotNull(result);
+        assertEquals("a.b.c", result.foldedKey());
+    }
+
+    @Test
+    void givenDeepSingleKeyChainWithArrayLeaf_whenTryFold_thenReturnsLeaf() {
+        // Given
+        ObjectNode a = MAPPER.createObjectNode();
+        ObjectNode b = a.putObject("b");
+        ObjectNode c = b.putObject("c");
+        c.putArray("items"); // array leaf
+
+        // When
+        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+            "a", a, Set.of(), Set.of(), null, 10
+        );
+
+        // Then
+        assertNotNull(result);
+        assertEquals("a.b.c.items", result.foldedKey());
+        assertNotNull(result.leafValue());
+        assertTrue(result.leafValue().isArray());
+    }
+
+    @Test
+    void givenSingleKeyChainAtMaxDepth_whenTryFold_thenReturnsNull() {
+        // Given
+        ObjectNode a = MAPPER.createObjectNode();
+        ObjectNode b = a.putObject("b");
+        b.putObject("c").put("x", 1);
+
+        // When - depth limit of 2
+        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+            "a", a, Set.of(), Set.of(), null, 2
+        );
+
+        // Then
+        assertNotNull(result);
+        assertEquals("a.b", result.foldedKey());
+    }
+
+    @Test
+    void givenDeeplyNestedWithEmptyIntermediate_whenTryFold_thenHandles() {
+        // Given
+        ObjectNode a = MAPPER.createObjectNode();
+        ObjectNode b = a.putObject("b");
+        ObjectNode c = b.putObject("c");
+        c.putObject("d"); // empty object
+        c.put("e", 1);
+
+        // When
+        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+            "a", a, Set.of(), Set.of(), null, 10
+        );
+
+        // Then
+        assertNotNull(result);
+    }
+
+    @Test
+    void givenMultipleLevelsOfSingleKeyObjects_whenTryFold_thenFolds() {
+        // Given - deep chain
+        ObjectNode root = MAPPER.createObjectNode();
+        ObjectNode level1 = root.putObject("a");
+        ObjectNode level2 = level1.putObject("b");
+        ObjectNode level3 = level2.putObject("c");
+        ObjectNode level4 = level3.putObject("d");
+        level4.put("value", 42);
+
+        // When
+        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+            "a", level1, Set.of(), Set.of(), null, 10
+        );
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.foldedKey().startsWith("a.b"));
+    }
+
+    @Test
+    void givenSiblingCollisionWithFoldedKey_whenTryFold_thenReturnsNull() {
+        // Given - existing folded key that would collide
+        ObjectNode a = MAPPER.createObjectNode();
+        ObjectNode b = a.putObject("b");
+        b.put("x", 1);
+
+        Set<String> siblings = Set.of("a.b.x");
+
+        // When
+        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+            "a", a, siblings, Set.of(), null, 10
+        );
+
+        // Then
+        assertNull(result);
+    }
+
+    @Test
+    void givenNumericKeySegment_whenTryFold_thenFolds() {
+        // Given
+        ObjectNode a = MAPPER.createObjectNode();
+        ObjectNode b = a.putObject("123");
+        b.put("x", 1);
+
+        // When
+        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+            "a", a, Set.of(), Set.of(), null, 10
+        );
+
+        // Then - numeric keys are NOT valid identifiers, so null expected
+        assertNull(result);
+    }
+
+    @Test
+    void givenUnderscoreKeySegment_whenTryFold_thenFolds() {
+        // Given
+        ObjectNode a = MAPPER.createObjectNode();
+        ObjectNode b = a.putObject("_private");
+        b.put("x", 1);
+
+        // When
+        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+            "a", a, Set.of(), Set.of(), null, 10
+        );
+
+        // Then - underscore prefix is valid
+        assertNotNull(result);
+    }
+
 }

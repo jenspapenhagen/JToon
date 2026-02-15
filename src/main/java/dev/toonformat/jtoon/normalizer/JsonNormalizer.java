@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
 /**
@@ -260,7 +259,9 @@ public final class JsonNormalizer {
      */
     private static ArrayNode normalizeCollection(final Collection<?> collection) {
         final ArrayNode arrayNode = MAPPER.createArrayNode();
-        collection.forEach(item -> arrayNode.add(normalize(item)));
+        for (Object item : collection) {
+            arrayNode.add(normalize(item));
+        }
         return arrayNode;
     }
 
@@ -269,7 +270,9 @@ public final class JsonNormalizer {
      */
     private static ObjectNode normalizeMap(final Map<?, ?> map) {
         final ObjectNode objectNode = MAPPER.createObjectNode();
-        map.forEach((key, value) -> objectNode.set(String.valueOf(key), normalize(value)));
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            objectNode.set(String.valueOf(entry.getKey()), normalize(entry.getValue()));
+        }
         return objectNode;
     }
 
@@ -286,58 +289,68 @@ public final class JsonNormalizer {
     }
 
     /**
-     * Normalizes arrays to ArrayNode.
+     * Normalizes primitive arrays to ArrayNode without auto-boxing overhead.
+     * Uses direct array population to avoid IntFunction lambda allocations.
      */
     private static JsonNode normalizeArray(final Object array) {
         if (array instanceof int[] intArr) {
-            return buildArrayNode(intArr.length, i -> IntNode.valueOf(intArr[i]));
+            final ArrayNode node = MAPPER.createArrayNode();
+            for (int i = 0; i < intArr.length; i++) {
+                node.add(IntNode.valueOf(intArr[i]));
+            }
+            return node;
         } else if (array instanceof long[] longArr) {
-            return buildArrayNode(longArr.length, i -> LongNode.valueOf(longArr[i]));
+            final ArrayNode node = MAPPER.createArrayNode();
+            for (int i = 0; i < longArr.length; i++) {
+                node.add(LongNode.valueOf(longArr[i]));
+            }
+            return node;
         } else if (array instanceof double[] doubleArr) {
-            return buildArrayNode(doubleArr.length, i -> normalizeDoubleElement(doubleArr[i]));
+            final ArrayNode node = MAPPER.createArrayNode();
+            for (int i = 0; i < doubleArr.length; i++) {
+                final double val = doubleArr[i];
+                node.add(Double.isFinite(val) ? DoubleNode.valueOf(val) : NullNode.getInstance());
+            }
+            return node;
         } else if (array instanceof float[] floatArr) {
-            return buildArrayNode(floatArr.length, i -> normalizeFloatElement(floatArr[i]));
+            final ArrayNode node = MAPPER.createArrayNode();
+            for (int i = 0; i < floatArr.length; i++) {
+                final float val = floatArr[i];
+                node.add(Float.isFinite(val) ? FloatNode.valueOf(val) : NullNode.getInstance());
+            }
+            return node;
         } else if (array instanceof boolean[] boolArr) {
-            return buildArrayNode(boolArr.length, i -> BooleanNode.valueOf(boolArr[i]));
+            final ArrayNode node = MAPPER.createArrayNode();
+            for (int i = 0; i < boolArr.length; i++) {
+                node.add(BooleanNode.valueOf(boolArr[i]));
+            }
+            return node;
         } else if (array instanceof byte[] byteArr) {
-            return buildArrayNode(byteArr.length, i -> IntNode.valueOf(byteArr[i]));
+            final ArrayNode node = MAPPER.createArrayNode();
+            for (int i = 0; i < byteArr.length; i++) {
+                node.add(IntNode.valueOf(byteArr[i]));
+            }
+            return node;
         } else if (array instanceof short[] shortArr) {
-            return buildArrayNode(shortArr.length, i -> ShortNode.valueOf(shortArr[i]));
+            final ArrayNode node = MAPPER.createArrayNode();
+            for (int i = 0; i < shortArr.length; i++) {
+                node.add(ShortNode.valueOf(shortArr[i]));
+            }
+            return node;
         } else if (array instanceof char[] charArr) {
-            return buildArrayNode(charArr.length, i -> StringNode.valueOf(String.valueOf(charArr[i])));
+            final ArrayNode node = MAPPER.createArrayNode();
+            for (int i = 0; i < charArr.length; i++) {
+                node.add(StringNode.valueOf(String.valueOf(charArr[i])));
+            }
+            return node;
         } else if (array instanceof Object[] objArr) {
-            return buildArrayNode(objArr.length, i -> normalize(objArr[i]));
+            final ArrayNode node = MAPPER.createArrayNode();
+            for (int i = 0; i < objArr.length; i++) {
+                node.add(normalize(objArr[i]));
+            }
+            return node;
         } else {
             return MAPPER.createArrayNode();
         }
-    }
-
-    /**
-     * Builds an ArrayNode using a functional approach.
-     */
-    private static ArrayNode buildArrayNode(final int length, final IntFunction<JsonNode> mapper) {
-        final ArrayNode arrayNode = MAPPER.createArrayNode();
-        for (int i = 0; i < length; i++) {
-            arrayNode.add(mapper.apply(i));
-        }
-        return arrayNode;
-    }
-
-    /**
-     * Normalizes a single double element from an array.
-     */
-    private static JsonNode normalizeDoubleElement(final double value) {
-        return Double.isFinite(value)
-            ? DoubleNode.valueOf(value)
-            : NullNode.getInstance();
-    }
-
-    /**
-     * Normalizes a single float element from an array.
-     */
-    private static JsonNode normalizeFloatElement(final float value) {
-        return Float.isFinite(value)
-            ? FloatNode.valueOf(value)
-            : NullNode.getInstance();
     }
 }

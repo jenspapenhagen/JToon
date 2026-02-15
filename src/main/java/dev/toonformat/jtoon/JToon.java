@@ -68,9 +68,7 @@ public final class JToon {
      * Encodes a plain JSON string to TOON format using custom options.
      *
      * <p>
-     * Parsing is delegated to
-     * {@link JsonNormalizer#parse(String)}
-     * to maintain separation of concerns.
+     * Parses the JSON string to a tree structure, then encodes to TOON format.
      * </p>
      *
      * @param json    The JSON string to encode (must be valid JSON)

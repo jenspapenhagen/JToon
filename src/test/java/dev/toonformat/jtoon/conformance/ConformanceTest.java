@@ -135,7 +135,7 @@ public class ConformanceTest {
         @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
         private DecodeTestFile parseFixture(File file) {
             try {
-                var fixture = mapper.readValue(file, DecodeTestFixture.class);
+                DecodeTestFixture fixture = mapper.readValue(file, DecodeTestFixture.class);
                 return new DecodeTestFile(file, fixture);
             } catch (Exception exception) {
                 throw new RuntimeException("Failed to parse test fixture: " + file.getName(), exception);
@@ -152,7 +152,7 @@ public class ConformanceTest {
         }
 
         private Stream<DynamicTest> createTestsFromFixture(DecodeTestFile decodeFile) {
-            var fixture = decodeFile.fixture();
+            DecodeTestFixture fixture = decodeFile.fixture();
             return fixture.tests().stream()
                 .map(this::createDynamicTest);
         }
@@ -162,7 +162,7 @@ public class ConformanceTest {
         }
 
         private void executeTestCase(JsonDecodeTestCase testCase) {
-            var options = parseOptions(testCase.options());
+            DecodeOptions options = parseOptions(testCase.options());
             String toonInput = testCase.input().asString();
 
             if (Boolean.TRUE.equals(testCase.shouldError())) {

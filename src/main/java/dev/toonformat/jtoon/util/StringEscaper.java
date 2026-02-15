@@ -74,6 +74,39 @@ public final class StringEscaper {
     }
 
     /**
+     * Escapes special characters in a string and wraps it in quotes.
+     * Convenience method that combines escape() with quote wrapping.
+     *
+     * @param value The string to escape and quote
+     * @return The escaped and quoted string
+     */
+    public static String escapeAndQuote(final String value) {
+        if (value == null) {
+            return "\"null\"";
+        }
+
+        final StringBuilder sb = new StringBuilder(value.length() + 2);
+        sb.append('"');
+
+        for (int i = 0; i < value.length(); i++) {
+            final char c = value.charAt(i);
+            switch (c) {
+                case '"' -> sb.append("\\\"");
+                case '\\' -> sb.append("\\\\");
+                case '\b' -> sb.append("\\b");
+                case '\f' -> sb.append("\\f");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case '\t' -> sb.append("\\t");
+                default -> sb.append(c);
+            }
+        }
+
+        sb.append('"');
+        return sb.toString();
+    }
+
+    /**
      * Unescapes a string and removes surrounding quotes if present.
      * Reverses the escaping applied by {@link #escape(String)}.
      *

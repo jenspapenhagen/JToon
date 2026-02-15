@@ -126,4 +126,93 @@ public final class StringValidator {
     private static boolean startsWithListMarker(final String value) {
         return value.startsWith(LIST_ITEM_MARKER);
     }
+
+    /**
+     * Checks if a value needs quotes based on delimiter-aware validation.
+     * More comprehensive than isSafeUnquoted, handles additional edge cases.
+     *
+     * @param value the string value to check
+     * @param delimiterChar the delimiter character being used
+     * @return true if the value needs quotes, false otherwise
+     */
+    public static boolean needsQuotes(final String value, final char delimiterChar) {
+        if (value == null) {
+            return true;
+        }
+
+        if (value.isEmpty()) {
+            return true;
+        }
+
+        // Check for leading/trailing whitespace
+        if (value.charAt(0) <= ' ' || value.charAt(value.length() - 1) <= ' ') {
+            return true;
+        }
+
+        // Check for special keyword values
+        final String trimmed = value.trim();
+        if (trimmed.equals(TRUE_LITERAL) || trimmed.equals(FALSE_LITERAL)
+            || trimmed.equals(NULL_LITERAL) || looksLikeNumber(trimmed)) {
+            return true;
+        }
+
+        // Check for structural characters and delimiter
+        for (int i = 0; i < value.length(); i++) {
+            final char c = value.charAt(i);
+
+            // Control characters and structural chars
+            if (c < ' ' || c == ':' || c == '#' || c == '{' || c == '}'
+                || c == '[' || c == ']' || c == '"' || c == '\'' || c == '-') {
+                return true;
+            }
+
+            // Current delimiter
+            if (c == delimiterChar) {
+                return true;
+            }
+
+            // Comma when comma is the delimiter
+            if (delimiterChar == ',' && c == ',') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if a key consists only of numeric characters.
+     * Numeric keys must be quoted to avoid ambiguity.
+     *
+     * @param key the key to check
+     * @return true if the key is purely numeric
+     */
+    public static boolean isNumericKey(final String key) {
+        if (key == null || key.isEmpty()) {
+            return false;
+        }
+
+        for (int i = 0; i < key.length(); i++) {
+            if (!Character.isDigit(key.charAt(i))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks if a string contains a hyphen character.
+     * Hyphens often need special handling (e.g., "-" alone must be quoted).
+     *
+     * @param value the string to check
+     * @return true if the string contains a hyphen
+     */
+    public static boolean containsHyphen(final String value) {
+        if (value == null) {
+            return false;
+        }
+
+        return value.indexOf('-') >= 0;
+    }
 }
