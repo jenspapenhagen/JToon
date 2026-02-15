@@ -20,22 +20,13 @@ class DecodeContextRaceConditionTest {
 
     @Test
     @DisplayName("Should be thread-safe when decoding multiple inputs concurrently")
+    @SuppressWarnings("unchecked")
     void concurrentDecoding() throws InterruptedException, ExecutionException {
         int threadCount = 20;
         int iterationsPerThread = 100;
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 
-        String toonInput = new StringBuilder()
-            .append("name: JToon\n")
-            .append("version: 1.0.0\n")
-            .append("tags[3]:\n")
-            .append("  - java\n")
-            .append("  - json\n")
-            .append("  - toon\n")
-            .append("metadata:\n")
-            .append("  author: dev\n")
-            .append("  active: true")
-            .toString();
+        String toonInput = "name: JToon\nversion: 1.0.0\ntags[3]:\n  - java\n  - json\n  - toon\nmetadata:\n  author: dev\n  active: true".formatted();
 
         final List<Future<Object>> futures = new ArrayList<>();
 
@@ -62,6 +53,7 @@ class DecodeContextRaceConditionTest {
 
     @Test
     @DisplayName("Should handle different inputs concurrently without interference")
+    @SuppressWarnings("unchecked")
     void concurrentDifferentInputs() throws InterruptedException, ExecutionException {
         int threadCount = 10;
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);

@@ -5,7 +5,6 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 import java.util.List;
-import java.util.stream.StreamSupport;
 import static dev.toonformat.jtoon.util.Constants.LIST_ITEM_PREFIX;
 import static dev.toonformat.jtoon.util.Constants.SPACE;
 
@@ -38,26 +37,47 @@ public final class ArrayEncoder {
             return;
         }
 
-        // Primitive array
-        if (isArrayOfPrimitives(value)) {
+        final int size = value.size();
+        boolean allPrimitives = true;
+        boolean allArrays = true;
+        boolean allObjects = true;
+
+        for (int i = 0; i < size; i++) {
+            final JsonNode item = value.get(i);
+            if (!item.isValueNode()) {
+                allPrimitives = false;
+            }
+            if (!item.isArray()) {
+                allArrays = false;
+            }
+            if (!item.isObject()) {
+                allObjects = false;
+            }
+            if (!allPrimitives && !allArrays && !allObjects) {
+                break;
+            }
+        }
+
+        if (allPrimitives) {
             encodeInlinePrimitiveArray(key, value, writer, depth, options);
             return;
         }
 
-        // Array of arrays (all primitives)
-        if (isArrayOfArrays(value)) {
-            final boolean allPrimitiveArrays = StreamSupport.stream(value.spliterator(), false)
-                    .filter(JsonNode::isArray)
-                    .allMatch(ArrayEncoder::isArrayOfPrimitives);
-
+        if (allArrays) {
+            boolean allPrimitiveArrays = true;
+            for (int i = 0; i < size; i++) {
+                if (!isArrayOfPrimitives(value.get(i))) {
+                    allPrimitiveArrays = false;
+                    break;
+                }
+            }
             if (allPrimitiveArrays) {
                 encodeArrayOfArraysAsListItems(key, value, writer, depth, options);
                 return;
             }
         }
 
-        // Array of objects
-        if (isArrayOfObjects(value)) {
+        if (allObjects) {
             final List<String> header = TabularArrayEncoder.detectTabularHeader(value);
             if (!header.isEmpty()) {
                 TabularArrayEncoder.encodeArrayOfObjectsAsTabular(key, value, header, writer, depth, options);
@@ -67,7 +87,6 @@ public final class ArrayEncoder {
             return;
         }
 
-        // Mixed array: fallback to expanded format
         encodeMixedArrayAsListItems(key, value, writer, depth, options);
     }
 
@@ -164,7 +183,7 @@ public final class ArrayEncoder {
             joinedValues.append(PrimitiveEncoder.encodePrimitive(value, delimiter));
         }
 
-        return header + SPACE + joinedValues.toString();
+        return header + SPACE + joinedValues;
     }
 
     /**

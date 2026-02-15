@@ -18,12 +18,26 @@ public final class StringEscaper {
      * @return The escaped string
      */
     public static String escape(final String value) {
-        return value
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+
+        final int len = value.length();
+        final StringBuilder sb = new StringBuilder(len + 16);
+
+        for (int i = 0; i < len; i++) {
+            final char c = value.charAt(i);
+            switch (c) {
+                case '\\' -> sb.append("\\\\");
+                case '"' -> sb.append("\\\"");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case '\t' -> sb.append("\\t");
+                default -> sb.append(c);
+            }
+        }
+
+        return sb.toString();
     }
 
     /**
@@ -71,39 +85,6 @@ public final class StringEscaper {
      */
     private static boolean isValidEscapeChar(final char c) {
         return c == 'n' || c == 'r' || c == 't' || c == '"' || c == '\\';
-    }
-
-    /**
-     * Escapes special characters in a string and wraps it in quotes.
-     * Convenience method that combines escape() with quote wrapping.
-     *
-     * @param value The string to escape and quote
-     * @return The escaped and quoted string
-     */
-    public static String escapeAndQuote(final String value) {
-        if (value == null) {
-            return "\"null\"";
-        }
-
-        final StringBuilder sb = new StringBuilder(value.length() + 2);
-        sb.append('"');
-
-        for (int i = 0; i < value.length(); i++) {
-            final char c = value.charAt(i);
-            switch (c) {
-                case '"' -> sb.append("\\\"");
-                case '\\' -> sb.append("\\\\");
-                case '\b' -> sb.append("\\b");
-                case '\f' -> sb.append("\\f");
-                case '\n' -> sb.append("\\n");
-                case '\r' -> sb.append("\\r");
-                case '\t' -> sb.append("\\t");
-                default -> sb.append(c);
-            }
-        }
-
-        sb.append('"');
-        return sb.toString();
     }
 
     /**

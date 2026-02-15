@@ -11,6 +11,17 @@
         <Class name="~.*JToonBenchmark.*" />
     </Match>
     
+    <!-- Exclude JMH generated classes -->
+    <Match>
+        <Class name="~.*jmh_generated.*" />
+    </Match>
+
+    <!-- Exclude NM_CONFUSING for JMH benchmark methods -->
+    <Match>
+        <Class name="~.*Benchmark.*" />
+        <Bug pattern="NM_CONFUSING" />
+    </Match>
+        
     <!-- Exclude generated classes -->
     <Match>
         <Class name="~.*\.generated\..*" />

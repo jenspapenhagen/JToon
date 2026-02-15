@@ -115,10 +115,20 @@ public final class HeaderFormatter {
     }
 
     private static String formatFields(final Collection<String> fields, final String delimiter) {
-        return fields.stream()
-                .map(PrimitiveEncoder::encodeKey)
-                .reduce((a, b) -> a + delimiter + b)
-                .orElse("");
+        if (fields.isEmpty()) {
+            return "";
+        }
+
+        final StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (final String field : fields) {
+            if (!first) {
+                sb.append(delimiter);
+            }
+            first = false;
+            sb.append(PrimitiveEncoder.encodeKey(field));
+        }
+        return sb.toString();
     }
 }
 
