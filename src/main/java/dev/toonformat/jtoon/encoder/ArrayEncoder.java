@@ -4,9 +4,7 @@ import dev.toonformat.jtoon.EncodeOptions;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
-
 import java.util.List;
-
 import static dev.toonformat.jtoon.util.Constants.LIST_ITEM_PREFIX;
 import static dev.toonformat.jtoon.util.Constants.SPACE;
 
