@@ -11,6 +11,9 @@
     <!-- Best Practices -->
     <rule ref="category/java/bestpractices.xml">
         <exclude name="GuardLogStatement" />
+        <exclude name="ForLoopCanBeForeach" />
+        <exclude name="UnnecessaryImport" />
+        <exclude name="UnusedPrivateMethod" />
         <exclude name="JUnitAssertionsShouldIncludeMessage" />
         <exclude name="JUnitTestContainsTooManyAsserts" />
         <exclude name="JUnitTestsShouldIncludeAssert" />

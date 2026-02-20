@@ -1,7 +1,6 @@
 package dev.toonformat.jtoon.util;
 
 import static dev.toonformat.jtoon.util.Constants.BACKSLASH;
-import static dev.toonformat.jtoon.util.Constants.COLON;
 import static dev.toonformat.jtoon.util.Constants.DOUBLE_QUOTE;
 import static dev.toonformat.jtoon.util.Constants.FALSE_LITERAL;
 import static dev.toonformat.jtoon.util.Constants.LIST_ITEM_MARKER;
