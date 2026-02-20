@@ -12,11 +12,7 @@
     <rule ref="category/java/bestpractices.xml">
         <exclude name="GuardLogStatement" />
         <exclude name="ForLoopCanBeForeach" />
-        <exclude name="UnnecessaryImport" />
         <exclude name="UnusedPrivateMethod" />
-        <exclude name="JUnitAssertionsShouldIncludeMessage" />
-        <exclude name="JUnitTestContainsTooManyAsserts" />
-        <exclude name="JUnitTestsShouldIncludeAssert" />
         <exclude name="JUnitUseExpected" />
     </rule>
 
@@ -43,13 +39,13 @@
     <!-- Design -->
     <rule ref="category/java/design.xml">
         <exclude name="AbstractClassWithoutAnyMethod" />
-        <exclude name="AvoidCatchingGenericException" />
         <exclude name="AvoidDeeplyNestedIfStmts" />
         <exclude name="CognitiveComplexity" />
         <exclude name="CollapsibleIfStatements" />
         <exclude name="CyclomaticComplexity" />
         <exclude name="DataClass" />
         <exclude name="ExcessiveImports" />
+        <exclude name="ExcessiveParameterList" />
         <exclude name="ExcessivePublicCount" />
         <exclude name="GodClass" />
         <exclude name="ImmutableField" />
@@ -67,6 +63,7 @@
 
     <!-- Error Prone -->
     <rule ref="category/java/errorprone.xml">
+        <exclude name="AvoidCatchingGenericException" />
         <exclude name="AvoidLiteralsInIfCondition" />
         <exclude name="AvoidMultipleUnaryOperators" />
         <exclude name="CheckSkipResult" />

@@ -105,11 +105,13 @@ public final class ObjectEncoder {
         EncodeOptions currentOptions = options;
 
         // Attempt key folding when enabled
+        final KeyFolding flattenMode = currentOptions.flatten();
         if (remainingDepth > 0
             && !siblings.isEmpty()
             && blockedKeys != null
             && !blockedKeys.contains(key)
-            && KeyFolding.SAFE.equals(currentOptions.flatten())) {
+            && flattenMode != null
+            && flattenMode == KeyFolding.SAFE) {
             final Flatten.FoldResult foldResult = Flatten.tryFoldKeyChain(key, value, siblings, rootLiteralKeys,
                                                                           pathPrefix, remainingDepth);
             if (foldResult != null) {
