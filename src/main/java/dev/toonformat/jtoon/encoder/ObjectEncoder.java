@@ -108,7 +108,7 @@ public final class ObjectEncoder {
             && !siblings.isEmpty()
             && blockedKeys != null
             && !blockedKeys.contains(key)
-            && KeyFolding.SAFE.equals(currentOptions.flatten())) {
+            && KeyFolding.SAFE == currentOptions.flatten()) {
             final Flatten.FoldResult foldResult = Flatten.tryFoldKeyChain(key, value, siblings, rootLiteralKeys,
                                                                           pathPrefix, remainingDepth);
             if (foldResult != null) {

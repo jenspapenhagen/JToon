@@ -31,12 +31,13 @@ public final class ObjectMapperSingleton {
             synchronized (ObjectMapperSingleton.class) {
                 result = instance;
                 if (result == null) {
-                    instance = result = JsonMapper.builder()
+                    result = JsonMapper.builder()
                         .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.ALWAYS))
                         .addModule(new AfterburnerModule()) // Speeds up Jackson by 20–40% in most real-world cases
                         .defaultTimeZone(TimeZone.getTimeZone("UTC")) // set a default timezone for dates
                         .disable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
                         .build();
+                    instance = result;
                 }
             }
         }
