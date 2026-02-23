@@ -26,7 +26,8 @@ public final class Headers {
      * Captures: group(1)=key (quoted or unquoted), group(2)=#marker, group(3)=delimiter,
      * group(4)=optional field spec
      */
-    public static final Pattern KEYED_ARRAY_PATTERN = Pattern.compile("^(\"[^\"]+\"|[^\\[\\]]+)\\[(#?)\\d+([\\t|])?](\\{[^}]+})?:.*$");
+    public static final Pattern KEYED_ARRAY_PATTERN = Pattern.compile(
+        "^(\"[^\"]+\"|[^\\[\\]]+)\\[(#?)\\d+([\\t|])?](\\{[^}]+})?:.*$");
 
     private Headers() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
