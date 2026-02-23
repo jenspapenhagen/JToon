@@ -84,7 +84,7 @@ tasks.spotbugsTest {
 }
 
 pmd {
-    toolVersion = '7.0.0'
+    toolVersion = '7.21.0'
     ruleSetFiles = files('pmd-rules.xml')
     ruleSets = [] // Disable default rulesets, use custom file only
     consoleOutput = true
