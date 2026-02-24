@@ -104,8 +104,6 @@ public final class ObjectEncoder {
         final int remainingDepth = effectiveFlattenDepth - depth;
         EncodeOptions currentOptions = options;
 
-        // Attempt key folding when enabled
-        final KeyFolding flattenMode = currentOptions.flatten();
         if (remainingDepth > 0
             && !siblings.isEmpty()
             && blockedKeys != null
