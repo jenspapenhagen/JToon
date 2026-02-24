@@ -1920,7 +1920,7 @@ class JsonNormalizerTest {
 
 
             // Then
-            assertEquals("Invalid JSON", thrown.getMessage());
+            assertEquals("JSON string cannot be null", thrown.getMessage());
         }
 
 
@@ -1935,7 +1935,7 @@ class JsonNormalizerTest {
 
 
             // Then
-            assertEquals("Invalid JSON", thrown.getMessage());
+            assertEquals("JSON string cannot be blank", thrown.getMessage());
         }
 
     }

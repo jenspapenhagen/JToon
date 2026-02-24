@@ -4,6 +4,7 @@ import dev.toonformat.jtoon.EncodeOptions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.NumericNode;
 import tools.jackson.databind.node.ObjectNode;
 import tools.jackson.databind.node.ArrayNode;
 
@@ -37,8 +38,8 @@ class ValueEncoderTest {
     @DisplayName("given primitive JsonNode when encodeValue then returns encoded primitive")
     void givenPrimitive_whenEncodeValue_thenReturnsEncodedPrimitive() {
         // Given
-        var number = jsonNodeFactory.numberNode(42);
-        var options = EncodeOptions.DEFAULT;
+        NumericNode number = jsonNodeFactory.numberNode(42);
+        EncodeOptions options = EncodeOptions.DEFAULT;
 
         // When
         String result = ValueEncoder.encodeValue(number, options);
@@ -52,7 +53,7 @@ class ValueEncoderTest {
     void givenPrimitiveArray_whenEncodeValue_thenWritesInlineArray() {
         // Given
         ArrayNode array = jsonNodeFactory.arrayNode().add(1).add(2).add(3);
-        var options = EncodeOptions.DEFAULT;
+        EncodeOptions options = EncodeOptions.DEFAULT;
 
         // When
         String result = ValueEncoder.encodeValue(array, options);
@@ -68,7 +69,7 @@ class ValueEncoderTest {
         ObjectNode obj = jsonNodeFactory.objectNode();
         obj.put("a", 1);
         obj.put("b", "x");
-        var options = EncodeOptions.DEFAULT;
+        EncodeOptions options = EncodeOptions.DEFAULT;
 
         // When
         String result = ValueEncoder.encodeValue(obj, options);
