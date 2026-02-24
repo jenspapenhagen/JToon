@@ -42,7 +42,7 @@ public final class Flatten {
      * @param tail      the tail node (if any)
      * @param leafValue the leaf JsonValue
      */
-    private record ChainResult(List<String> segments, JsonNode tail, JsonNode leafValue) {
+    record ChainResult(List<String> segments, JsonNode tail, JsonNode leafValue) {
     }
 
     /**
@@ -136,7 +136,7 @@ public final class Flatten {
      * @param maxDepth   maximum number of allowed segments
      * @return a {@link ChainResult} containing segments, tail, and leafValue
      */
-    private static ChainResult collectSingleKeyChain(final String startKey,
+    static ChainResult collectSingleKeyChain(final String startKey,
                                                      final JsonNode startValue,
                                                      final int maxDepth) {
         // normalize absolute key to its local segment

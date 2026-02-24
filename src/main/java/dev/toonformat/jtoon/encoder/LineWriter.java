@@ -51,7 +51,9 @@ public final class LineWriter {
             if (depth < indentCache.length) {
                 stringBuilder.append(indentCache[depth]);
             } else {
-                stringBuilder.append(String.valueOf(indentationString).repeat(depth));
+                for (int i = 0; i < depth; i++) {
+                    stringBuilder.append(indentationString);
+                }
             }
         }
         stringBuilder.append(content);

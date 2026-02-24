@@ -15,6 +15,7 @@ class JToonRaceConditionTest {
 
     @Test
     @DisplayName("Should be thread-safe when encoding and decoding concurrently")
+    @SuppressWarnings("unchecked")
     void concurrentEncodeDecode() throws InterruptedException, ExecutionException {
         int threadCount = 20;
         int iterationsPerThread = 100;
@@ -66,6 +67,7 @@ class JToonRaceConditionTest {
 
     @Test
     @DisplayName("Should handle different objects concurrently without interference")
+    @SuppressWarnings("unchecked")
     void concurrentDifferentObjects() throws InterruptedException, ExecutionException {
         int threadCount = 10;
         int iterations = 1000;

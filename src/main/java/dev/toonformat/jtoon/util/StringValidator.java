@@ -1,8 +1,6 @@
 package dev.toonformat.jtoon.util;
 
-import java.util.regex.Pattern;
 import static dev.toonformat.jtoon.util.Constants.BACKSLASH;
-import static dev.toonformat.jtoon.util.Constants.COLON;
 import static dev.toonformat.jtoon.util.Constants.DOUBLE_QUOTE;
 import static dev.toonformat.jtoon.util.Constants.FALSE_LITERAL;
 import static dev.toonformat.jtoon.util.Constants.LIST_ITEM_MARKER;
@@ -11,18 +9,9 @@ import static dev.toonformat.jtoon.util.Constants.TRUE_LITERAL;
 
 /**
  * Validates strings for safe unquoted usage in TOON format.
- * Follows Object Calisthenics principles with guard clauses and single-level
- * indentation.
+ * Uses char-by-char validation for performance instead of regex.
  */
 public final class StringValidator {
-    private static final Pattern NUMERIC_PATTERN = Pattern.compile("^-?\\d+(?:\\.\\d+)?(?:e[+-]?\\d+)?$",
-        Pattern.CASE_INSENSITIVE);
-
-    private static final Pattern OCTAL_PATTERN = Pattern.compile("^0[0-7]+$");
-    private static final Pattern LEADING_ZERO_PATTERN = Pattern.compile("^0\\d+$");
-    private static final Pattern UNQUOTED_KEY_PATTERN = Pattern.compile("^[A-Z_][\\w.]*$", Pattern.CASE_INSENSITIVE);
-    private static final Pattern STRUCTURAL_CHARS = Pattern.compile("[\\[\\]{}]");
-    private static final Pattern CONTROL_CHARS = Pattern.compile("[\\n\\r\\t]");
 
     private StringValidator() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
@@ -30,46 +19,53 @@ public final class StringValidator {
 
     /**
      * Checks if a string can be safely written without quotes.
-     * Uses guard clauses and early returns for clarity.
+     * Uses char-by-char validation for performance.
      *
      * @param value     the string value to check
      * @param delimiter the delimiter being used (for validation)
      * @return true if the string can be safely written without quotes, false otherwise
      */
     public static boolean isSafeUnquoted(final String value, final String delimiter) {
-        if (isNullOrEmpty(value)) {
+        if (value == null || value.isEmpty()) {
             return false;
         }
 
-        if (isPaddedWithWhitespace(value)) {
+        final int len = value.length();
+
+        if (value.charAt(0) == ' ' || value.charAt(len - 1) == ' ') {
             return false;
         }
 
-        if (looksLikeKeyword(value)) {
+        if (isKeyword(value)) {
             return false;
         }
 
-        if (looksLikeNumber(value)) {
+        if (isNumericLike(value)) {
             return false;
         }
 
-        if (containsColon(value)) {
-            return false;
+        for (int i = 0; i < len; i++) {
+            final char c = value.charAt(i);
+            switch (c) {
+                case ':':
+                case '"':
+                case '\\':
+                case '[':
+                case ']':
+                case '{':
+                case '}':
+                case '\n':
+                case '\r':
+                case '\t':
+                    return false;
+                default:
+                    if (delimiter.length() == 1 && c == delimiter.charAt(0)) {
+                        return false;
+                    }
+            }
         }
 
-        if (containsQuotesOrBackslash(value)) {
-            return false;
-        }
-
-        if (containsStructuralCharacters(value)) {
-            return false;
-        }
-
-        if (containsControlCharacters(value)) {
-            return false;
-        }
-
-        return !containsDelimiter(value, delimiter) && !startsWithListMarker(value);
+        return !value.startsWith(LIST_ITEM_MARKER);
     }
 
     /**
@@ -79,51 +75,86 @@ public final class StringValidator {
      * @return true if the key can be used without quotes, false otherwise
      */
     public static boolean isValidUnquotedKey(final String key) {
-        return UNQUOTED_KEY_PATTERN.matcher(key).matches();
+        if (key == null || key.isEmpty()) {
+            return false;
+        }
+
+        final int len = key.length();
+        final char first = key.charAt(0);
+
+        if (!Character.isJavaIdentifierStart(first) && first != '_') {
+            return false;
+        }
+
+        for (int i = 1; i < len; i++) {
+            final char c = key.charAt(i);
+            if (!Character.isJavaIdentifierPart(c) && c != '.') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
-    private static boolean isNullOrEmpty(final String value) {
-        return value == null || value.isEmpty();
-    }
-
-    private static boolean isPaddedWithWhitespace(final String value) {
-        return !value.equals(value.trim());
-    }
-
-    private static boolean looksLikeKeyword(final String value) {
+    private static boolean isKeyword(final String value) {
         return TRUE_LITERAL.equals(value)
             || FALSE_LITERAL.equals(value)
             || NULL_LITERAL.equals(value);
     }
 
-    private static boolean looksLikeNumber(final String value) {
-        return OCTAL_PATTERN.matcher(value).matches()
-            || LEADING_ZERO_PATTERN.matcher(value).matches()
-            || NUMERIC_PATTERN.matcher(value).matches();
-    }
+    private static boolean isNumericLike(final String value) {
+        if (value.isEmpty()) {
+            return false;
+        }
 
-    private static boolean containsColon(final String value) {
-        return value.contains(COLON);
+        final int len = value.length();
+        int i = 0;
+
+        if (value.charAt(0) == '-') {
+            if (len < 2) {
+                return false;
+            }
+            i = 1;
+        }
+
+        boolean hasDigit = false;
+        boolean hasDot = false;
+        boolean hasExponent = false;
+
+        while (i < len) {
+            final char c = value.charAt(i);
+
+            if (c >= '0' && c <= '9') {
+                hasDigit = true;
+            } else if (c == '.') {
+                if (hasDot || hasExponent || !hasDigit) {
+                    return false;
+                }
+                hasDot = true;
+                hasDigit = false;
+            } else if (c == 'e' || c == 'E') {
+                if (!hasDigit || hasExponent) {
+                    return false;
+                }
+                hasExponent = true;
+                hasDigit = false;
+                if (i + 1 < len) {
+                    final char next = value.charAt(i + 1);
+                    if (next == '+' || next == '-') {
+                        i++;
+                    }
+                }
+            } else {
+                return false;
+            }
+            i++;
+        }
+
+        return hasDigit;
     }
 
     static boolean containsQuotesOrBackslash(final String value) {
         return value.indexOf(DOUBLE_QUOTE) >= 0
             || value.indexOf(BACKSLASH) >= 0;
-    }
-
-    private static boolean containsStructuralCharacters(final String value) {
-        return STRUCTURAL_CHARS.matcher(value).find();
-    }
-
-    private static boolean containsControlCharacters(final String value) {
-        return CONTROL_CHARS.matcher(value).find();
-    }
-
-    private static boolean containsDelimiter(final String value, final String delimiter) {
-        return value.contains(delimiter);
-    }
-
-    private static boolean startsWithListMarker(final String value) {
-        return value.startsWith(LIST_ITEM_MARKER);
     }
 }

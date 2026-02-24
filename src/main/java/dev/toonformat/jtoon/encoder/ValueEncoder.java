@@ -20,11 +20,16 @@ public final class ValueEncoder {
     /**
      * Encodes a normalized JsonNode value to TOON format.
      * 
-     * @param value   The JsonNode to encode
+     * @param value   The JsonNode to encode (can be null)
      * @param options Encoding options (indent, delimiter, length marker)
      * @return The TOON-formatted string
      */
     public static String encodeValue(final JsonNode value, final EncodeOptions options) {
+        // Handle null values
+        if (value == null || value.isNull()) {
+            return "null";
+        }
+
         // Handle primitive values directly
         if (value.isValueNode()) {
             return PrimitiveEncoder.encodePrimitive(value, options.delimiter().toString());

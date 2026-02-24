@@ -18,12 +18,26 @@ public final class StringEscaper {
      * @return The escaped string
      */
     public static String escape(final String value) {
-        return value
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+
+        final int len = value.length();
+        final StringBuilder sb = new StringBuilder(len + 16);
+
+        for (int i = 0; i < len; i++) {
+            final char c = value.charAt(i);
+            switch (c) {
+                case '\\' -> sb.append("\\\\");
+                case '"' -> sb.append("\\\"");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case '\t' -> sb.append("\\t");
+                default -> sb.append(c);
+            }
+        }
+
+        return sb.toString();
     }
 
     /**

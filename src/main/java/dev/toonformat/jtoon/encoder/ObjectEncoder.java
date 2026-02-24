@@ -6,10 +6,8 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import static dev.toonformat.jtoon.util.Constants.DOT;
 import static dev.toonformat.jtoon.util.Constants.COLON;
 import static dev.toonformat.jtoon.util.Constants.SPACE;
@@ -44,24 +42,27 @@ public final class ObjectEncoder {
                                     final String pathPrefix,
                                     final Integer remainingDepth,
                                     final Set<String> blockedKeys) {
-        final List<Map.Entry<String, JsonNode>> fields = value.properties().stream().toList();
-
-        // At root level (depth 0), collect all literal dotted keys for collision checking
-        if (depth == 0 && rootLiteralKeys != null) {
-            rootLiteralKeys.clear();
-            fields.stream()
-                .filter(e -> e.getKey().contains(DOT))
-                .map(Map.Entry::getKey)
-                .forEach(rootLiteralKeys::add);
-        }
         final int effectiveFlattenDepth = remainingDepth != null ? remainingDepth : options.flattenDepth();
 
-        //the siblings collision do not need the absolute path
-        final Set<String> siblings = fields.stream()
-            .map(Map.Entry::getKey)
-            .collect(Collectors.toCollection(LinkedHashSet::new));
+        // Single-pass collection: gather sibling keys and optionally dotted keys at root level
+        final Set<String> siblings = new LinkedHashSet<>();
+        if (depth == 0 && rootLiteralKeys != null) {
+            rootLiteralKeys.clear();
+            for (final Map.Entry<String, JsonNode> entry : value.properties()) {
+                final String key = entry.getKey();
+                siblings.add(key);
+                if (key.contains(DOT)) {
+                    rootLiteralKeys.add(key);
+                }
+            }
+        } else {
+            for (final Map.Entry<String, JsonNode> entry : value.properties()) {
+                siblings.add(entry.getKey());
+            }
+        }
 
-        for (Map.Entry<String, JsonNode> entry : fields) {
+        // Encode each field
+        for (final Map.Entry<String, JsonNode> entry : value.properties()) {
             encodeKeyValuePair(entry.getKey(), entry.getValue(), writer, depth, options, siblings, rootLiteralKeys,
                                pathPrefix, effectiveFlattenDepth, blockedKeys);
         }
@@ -104,11 +105,13 @@ public final class ObjectEncoder {
         EncodeOptions currentOptions = options;
 
         // Attempt key folding when enabled
+        final KeyFolding flattenMode = currentOptions.flatten();
         if (remainingDepth > 0
             && !siblings.isEmpty()
             && blockedKeys != null
             && !blockedKeys.contains(key)
-            && KeyFolding.SAFE.equals(currentOptions.flatten())) {
+            && flattenMode != null
+            && flattenMode == KeyFolding.SAFE) {
             final Flatten.FoldResult foldResult = Flatten.tryFoldKeyChain(key, value, siblings, rootLiteralKeys,
                                                                           pathPrefix, remainingDepth);
             if (foldResult != null) {
