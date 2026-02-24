@@ -22,10 +22,12 @@ public final class Headers {
 
     /**
      * Matches keyed array headers: items[2]{id,name}: or tags[3]: or data[4]{id}:.
-     * Captures: group(1)=key, group(2)=#marker, group(3)=delimiter,
+     * Also matches quoted keys with brackets: "key[test]"[3]:.
+     * Captures: group(1)=key (quoted or unquoted), group(2)=#marker, group(3)=delimiter,
      * group(4)=optional field spec
      */
-    public static final Pattern KEYED_ARRAY_PATTERN = Pattern.compile("^(.+?)\\[(#?)\\d+([\\t|])?](\\{[^}]+})?:.*$");
+    public static final Pattern KEYED_ARRAY_PATTERN = Pattern.compile(
+        "^(\"[^\"]+\"|[^\\[\\]]+)\\[(#?)\\d+([\\t|])?](\\{[^}]+})?:.*$");
 
     private Headers() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
