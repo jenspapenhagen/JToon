@@ -134,7 +134,7 @@ public final class StringEscaper {
             case 't' -> '\t';
             case '"' -> '"';
             case '\\' -> '\\';
-            default -> c;
+            default -> throw new IllegalArgumentException("Invalid escape sequence: \\" + c);
         };
     }
 }

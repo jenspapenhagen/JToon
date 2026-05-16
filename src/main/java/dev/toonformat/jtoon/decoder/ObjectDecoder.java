@@ -58,7 +58,15 @@ public final class ObjectDecoder {
      */
     private static void processDirectChildLine(final Map<String, Object> result, final String line,
             final int parentDepth, final int depth, final DecodeContext context) {
-        final String content = line.substring((parentDepth + 1) * context.options.indent());
+        int indent = context.options.indent();
+        if (indent <= 0) {
+            indent = 1;
+        }
+        final int startPos = (parentDepth + 1) * indent;
+        if (startPos > line.length()) {
+            throw new IllegalArgumentException("Invalid indentation in input");
+        }
+        final String content = line.substring(startPos);
         final Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(content);
 
         if (keyedArray.find()) {
@@ -84,13 +92,20 @@ public final class ObjectDecoder {
                 return;
             }
 
-            // Skip blank lines
             if (DecodeHelper.isBlankLine(line)) {
                 context.currentLine++;
                 continue;
             }
 
-            final String content = line.substring(depth * context.options.indent());
+            int indent = context.options.indent();
+            if (indent <= 0) {
+                indent = 1;
+            }
+            final int startPos = depth * indent;
+            if (startPos > line.length()) {
+                throw new IllegalArgumentException("Invalid indentation in input");
+            }
+            final String content = line.substring(startPos);
 
             final Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(content);
             if (keyedArray.matches()) {

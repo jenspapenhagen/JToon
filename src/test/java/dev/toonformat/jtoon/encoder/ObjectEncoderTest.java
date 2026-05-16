@@ -45,7 +45,7 @@ class ObjectEncoderTest {
         LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ObjectEncoder.encodeObject(objectNode, writer, 0, options, new HashSet<>(), null, null, new HashSet<>());
+        ObjectEncoder.encodeObject(objectNode, writer, 0, options, new HashSet<>(), null, null, new HashSet<>(), 0);
 
         // Then
         assertEquals("x: 10", writer.toString());
@@ -61,7 +61,7 @@ class ObjectEncoderTest {
         LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ObjectEncoder.encodeObject(objectNode, writer, 0, options, null, null, null, new HashSet<>());
+        ObjectEncoder.encodeObject(objectNode, writer, 0, options, null, null, null, new HashSet<>(), 0);
 
         // Then
         assertEquals("x: 10", writer.toString());
@@ -77,7 +77,7 @@ class ObjectEncoderTest {
         LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ObjectEncoder.encodeObject(objectNode, writer, 25, options, new HashSet<>(), null, null, new HashSet<>());
+        ObjectEncoder.encodeObject(objectNode, writer, 25, options, new HashSet<>(), null, null, new HashSet<>(), 0);
 
         // Then
         assertEquals("                                                  x: 10", writer.toString());
@@ -307,7 +307,7 @@ class ObjectEncoderTest {
         LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ObjectEncoder.encodeObject(root, writer, 0, options, new HashSet<>(), null, null, new HashSet<>());
+        ObjectEncoder.encodeObject(root, writer, 0, options, new HashSet<>(), null, null, new HashSet<>(), 0);
 
         // Then
         assertEquals("""
@@ -326,7 +326,7 @@ class ObjectEncoderTest {
         LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ObjectEncoder.encodeObject(root, writer, 0, options, new HashSet<>(), null, null, new HashSet<>());
+        ObjectEncoder.encodeObject(root, writer, 0, options, new HashSet<>(), null, null, new HashSet<>(), 0);
 
         // Then
         assertEquals("x.y: 5", writer.toString());
@@ -346,7 +346,7 @@ class ObjectEncoderTest {
         LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ObjectEncoder.encodeObject(root, writer, 0, options, new HashSet<>(), null, 0, new HashSet<>());
+        ObjectEncoder.encodeObject(root, writer, 0, options, new HashSet<>(), null, 0, new HashSet<>(), 0);
 
         // Then
         assertEquals("""
@@ -367,7 +367,7 @@ class ObjectEncoderTest {
         LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ObjectEncoder.encodeObject(obj, writer, 0, options, rootLiteralKeys, null, null, new HashSet<>());
+        ObjectEncoder.encodeObject(obj, writer, 0, options, rootLiteralKeys, null, null, new HashSet<>(), 0);
 
         // Then
         assertTrue(rootLiteralKeys.contains("a.b"));
@@ -387,7 +387,7 @@ class ObjectEncoderTest {
         LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ObjectEncoder.encodeObject(objectNode, writer, 0, options, new HashSet<>(), null, null, new HashSet<>());
+        ObjectEncoder.encodeObject(objectNode, writer, 0, options, new HashSet<>(), null, null, new HashSet<>(), 0);
 
         // Then
         assertEquals("items[2]: a,b", writer.toString());
@@ -404,7 +404,7 @@ class ObjectEncoderTest {
         LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ObjectEncoder.encodeObject(obj, writer, 0, options, new HashSet<>(), null, null, new HashSet<>());
+        ObjectEncoder.encodeObject(obj, writer, 0, options, new HashSet<>(), null, null, new HashSet<>(), 0);
 
         // Then
         assertEquals("x:", writer.toString());
@@ -426,7 +426,7 @@ class ObjectEncoderTest {
         LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ObjectEncoder.encodeObject(x, writer, 0, options, new HashSet<>(), null, null, new HashSet<>());
+        ObjectEncoder.encodeObject(x, writer, 0, options, new HashSet<>(), null, null, new HashSet<>(), 0);
 
         // Then
         assertEquals("x.y.z: 3", writer.toString());
@@ -443,7 +443,7 @@ class ObjectEncoderTest {
         Set<String> rootKeys = new HashSet<>();
 
         // When
-        ObjectEncoder.encodeObject(node, writer, 0, options, rootKeys, null, null, new HashSet<>());
+        ObjectEncoder.encodeObject(node, writer, 0, options, rootKeys, null, null, new HashSet<>(), 0);
 
         // Then
         assertEquals("""
@@ -601,7 +601,7 @@ class ObjectEncoderTest {
         Set<String> siblings = new HashSet<>();
 
         // When
-        ObjectEncoder.encodeObject(node, writer, 0, options, siblings, null, null, new HashSet<>());
+        ObjectEncoder.encodeObject(node, writer, 0, options, siblings, null, null, new HashSet<>(), 0);
 
         // Then
         String expected = String.join("\n",
@@ -628,7 +628,7 @@ class ObjectEncoderTest {
         Set<String> siblings = new HashSet<>();
 
         // When
-        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options, siblings, null, null, 10, new HashSet<>());
+        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options, siblings, null, null, 10, new HashSet<>(), 0);
 
         // Then
         String expected = String.join("\n",
@@ -656,7 +656,7 @@ class ObjectEncoderTest {
         Set<String> siblings = new HashSet<>();
 
         // When
-        ObjectEncoder.encodeKeyValuePair(null, node, writer, 0, options, siblings, null, null, 10, new HashSet<>());
+        ObjectEncoder.encodeKeyValuePair(null, node, writer, 0, options, siblings, null, null, 10, new HashSet<>(), 0);
 
         // Then
         String expected = "";
@@ -678,7 +678,7 @@ class ObjectEncoderTest {
         Set<String> siblings = new HashSet<>();
 
         // When
-        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options, siblings, null, null, null, new HashSet<>());
+        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options, siblings, null, null, null, new HashSet<>(), 0);
 
         // Then
         String expected = String.join("\n",
@@ -706,7 +706,7 @@ class ObjectEncoderTest {
         Set<String> siblings = new HashSet<>();
 
         // When
-        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options, siblings, null, null, 0, new HashSet<>());
+        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options, siblings, null, null, 0, new HashSet<>(), 0);
 
         // Then
         String expected = String.join("\n",
@@ -731,7 +731,7 @@ class ObjectEncoderTest {
         siblings.add("world");
 
         // When
-        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options, siblings, null, null, null, new HashSet<>());
+        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options, siblings, null, null, null, new HashSet<>(), 0);
 
         // Then
         assertFalse(writer.toString().trim().isEmpty());
@@ -754,7 +754,7 @@ class ObjectEncoderTest {
         Set<String> blockedKeys = Set.of("items");
 
         // When
-        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options, siblings, null, null, 10, blockedKeys);
+        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options, siblings, null, null, 10, blockedKeys, 0);
 
         // Then
         String expected = String.join("\n",
@@ -782,7 +782,7 @@ class ObjectEncoderTest {
         Set<String> siblings = new HashSet<>();
 
         // When
-        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options, siblings, null, null, 10, new HashSet<>());
+        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options, siblings, null, null, 10, new HashSet<>(), 0);
 
         // Then
         String expected = String.join("\n",

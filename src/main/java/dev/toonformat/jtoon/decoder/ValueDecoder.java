@@ -120,8 +120,12 @@ public final class ValueDecoder {
         try {
             final Object decoded = decode(toon, options);
             return MAPPER.writeValueAsString(decoded);
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             throw new IllegalArgumentException("Failed to convert decoded value to JSON: " + e.getMessage(), e);
+        } catch (Throwable t) {
+            throw new IllegalArgumentException("Failed to decode input: " + t.getMessage(), t);
         }
     }
 }

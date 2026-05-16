@@ -8,28 +8,20 @@ import java.util.List;
 import static dev.toonformat.jtoon.util.Constants.LIST_ITEM_PREFIX;
 import static dev.toonformat.jtoon.util.Constants.SPACE;
 
-/**
- * Handles encoding of JSON arrays to TOON format.
- * Orchestrates array encoding by detecting array types and delegating to specialized encoders.
- */
 public final class ArrayEncoder {
+
+    private static final int MAX_ENCODE_DEPTH = 1024;
 
     private ArrayEncoder() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
-    /**
-     * Main entry point for array encoding.
-     * Detects array type and delegates to appropriate encoding method.
-     *
-     * @param key     Optional key prefix
-     * @param value   ArrayNode to encode
-     * @param writer  LineWriter for output
-     * @param depth   Indentation depth
-     * @param options Encoding options
-     */
     public static void encodeArray(final String key, final ArrayNode value,
-            final LineWriter writer, final int depth, final EncodeOptions options) {
+            final LineWriter writer, final int depth, final EncodeOptions options, final int currentDepth) {
+        if (currentDepth > MAX_ENCODE_DEPTH) {
+            throw new IllegalArgumentException("Maximum encoding depth exceeded: " + MAX_ENCODE_DEPTH);
+        }
+
         if (value.isEmpty()) {
             final String header = PrimitiveEncoder.formatHeader(0, key, null, options.delimiter().toString(),
                     options.lengthMarker());
@@ -72,7 +64,7 @@ public final class ArrayEncoder {
                 }
             }
             if (allPrimitiveArrays) {
-                encodeArrayOfArraysAsListItems(key, value, writer, depth, options);
+                encodeArrayOfArraysAsListItems(key, value, writer, depth, options, currentDepth);
                 return;
             }
         }
@@ -82,12 +74,12 @@ public final class ArrayEncoder {
             if (!header.isEmpty()) {
                 TabularArrayEncoder.encodeArrayOfObjectsAsTabular(key, value, header, writer, depth, options);
             } else {
-                encodeMixedArrayAsListItems(key, value, writer, depth, options);
+                encodeMixedArrayAsListItems(key, value, writer, depth, options, currentDepth);
             }
             return;
         }
 
-        encodeMixedArrayAsListItems(key, value, writer, depth, options);
+        encodeMixedArrayAsListItems(key, value, writer, depth, options, currentDepth);
     }
 
     /**
@@ -186,11 +178,8 @@ public final class ArrayEncoder {
         return header + SPACE + joinedValues;
     }
 
-    /**
-     * Encodes an array of primitive arrays as list items.
-     */
     private static void encodeArrayOfArraysAsListItems(final String prefix, final ArrayNode values,
-            final LineWriter writer, final int depth, final EncodeOptions options) {
+            final LineWriter writer, final int depth, final EncodeOptions options, final int currentDepth) {
         final String header = PrimitiveEncoder.formatHeader(values.size(), prefix, null,
                                                             options.delimiter().toString(), options.lengthMarker());
         writer.push(depth, header);
@@ -204,31 +193,33 @@ public final class ArrayEncoder {
         }
     }
 
-    /**
-     * Encodes a mixed array (non-uniform) as list items.
-     */
     private static void encodeMixedArrayAsListItems(final String prefix,
                                                     final ArrayNode items,
                                                     final LineWriter writer,
                                                     final int depth,
-                                                    final EncodeOptions options) {
-        final String header = PrimitiveEncoder.formatHeader(items.size(), prefix, null,
-                                                            options.delimiter().toString(), options.lengthMarker());
-        writer.push(depth, header);
+                                                    final EncodeOptions options,
+                                                    final int currentDepth) {
+        int count = 0;
+        for (JsonNode item : items) {
+            if (item.isValueNode() || (item.isArray() && (isArrayOfPrimitives(item) || isArrayOfObjects(item))) || item.isObject()) {
+                count++;
+            }
+        }
 
+        writer.push(depth, PrimitiveEncoder.formatHeader(count, prefix, null,
+                                                            options.delimiter().toString(), options.lengthMarker()));
+
+        final int nextDepth = currentDepth + 1;
         for (JsonNode item : items) {
             if (item.isValueNode()) {
-                // Direct primitive as list item
                 writer.push(depth + 1,
                         LIST_ITEM_PREFIX + PrimitiveEncoder.encodePrimitive(item, options.delimiter().toString()));
             } else if (item.isArray()) {
-                // Direct array as list item
                 if (isArrayOfPrimitives(item)) {
                     final String inline = formatInlineArray((ArrayNode) item, options.delimiter().toString(), null,
                                                             options.lengthMarker());
                     writer.push(depth + 1, LIST_ITEM_PREFIX + inline);
-                }
-                if (isArrayOfObjects(item)) {
+                } else if (isArrayOfObjects(item)) {
                     final ArrayNode arrayItems = (ArrayNode) item;
                     final String nestedHeader = PrimitiveEncoder.formatHeader(arrayItems.size(), null, null,
                                                                               options.delimiter().toString(),
@@ -236,11 +227,10 @@ public final class ArrayEncoder {
                     writer.push(depth + 1, LIST_ITEM_PREFIX + nestedHeader);
 
                     arrayItems.elements().forEach(e -> ListItemEncoder.encodeObjectAsListItem((ObjectNode) e, writer,
-                                                                                               depth + 2, options));
+                                                                                               depth + 2, options, nextDepth));
                 }
             } else if (item.isObject()) {
-                // Object as list item - delegate to ListItemEncoder
-                ListItemEncoder.encodeObjectAsListItem((ObjectNode) item, writer, depth + 1, options);
+                ListItemEncoder.encodeObjectAsListItem((ObjectNode) item, writer, depth + 1, options, nextDepth);
             }
         }
     }

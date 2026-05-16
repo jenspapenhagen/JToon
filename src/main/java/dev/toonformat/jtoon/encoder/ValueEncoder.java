@@ -7,42 +7,30 @@ import tools.jackson.databind.node.ObjectNode;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Core encoding orchestrator for converting JsonNode values to TOON format.
- * Delegates to specialized encoders based on node type.
- */
 public final class ValueEncoder {
+
+    private static final int MAX_ENCODE_DEPTH = 1024;
 
     private ValueEncoder() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
-    /**
-     * Encodes a normalized JsonNode value to TOON format.
-     * 
-     * @param value   The JsonNode to encode (can be null)
-     * @param options Encoding options (indent, delimiter, length marker)
-     * @return The TOON-formatted string
-     */
     public static String encodeValue(final JsonNode value, final EncodeOptions options) {
-        // Handle null values
         if (value == null || value.isNull()) {
             return "null";
         }
 
-        // Handle primitive values directly
         if (value.isValueNode()) {
             return PrimitiveEncoder.encodePrimitive(value, options.delimiter().toString());
         }
 
-        // Complex values need a LineWriter for indentation
         final LineWriter writer = new LineWriter(options.indent());
 
         if (value.isArray()) {
-            ArrayEncoder.encodeArray(null, (ArrayNode) value, writer, 0, options);
+            ArrayEncoder.encodeArray(null, (ArrayNode) value, writer, 0, options, 0);
         } else if (value.isObject()) {
             final Set<String> jsonNodes = new HashSet<>(value.propertyNames());
-            ObjectEncoder.encodeObject((ObjectNode) value, writer, 0, options, jsonNodes, null, null, new HashSet<>());
+            ObjectEncoder.encodeObject((ObjectNode) value, writer, 0, options, jsonNodes, null, null, new HashSet<>(), 0);
         }
 
         return writer.toString();
