@@ -241,10 +241,9 @@ public class StringEscaperTest {
         }
 
         @Test
-        @DisplayName("should handle unknown escape sequences as literals")
+        @DisplayName("should reject invalid escape sequences")
         void testUnknownEscapeSequences() {
-            // Then
-            assertEquals("ax", StringEscaper.unescape("\\ax"));
+            assertThrows(IllegalArgumentException.class, () -> StringEscaper.unescape("\\ax"));
         }
 
         @Test

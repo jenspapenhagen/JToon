@@ -1,5 +1,7 @@
 package dev.toonformat.jtoon;
 
+import java.util.Objects;
+
 /**
  * Configuration options for decoding TOON format to Java objects.
  *
@@ -23,10 +25,28 @@ public record DecodeOptions(
     public static final DecodeOptions DEFAULT = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF);
 
     /**
+     * Maximum allowed indent to prevent memory exhaustion attacks.
+     */
+    public static final int MAX_ALLOWED_INDENT = 100;
+
+    /**
      * Creates DecodeOptions with default values.
      */
     public DecodeOptions() {
         this(2, Delimiter.COMMA, true, PathExpansion.OFF);
+    }
+
+    /**
+     * Compact constructor with validation.
+     */
+    public DecodeOptions {
+        if (indent < 0) {
+            throw new IllegalArgumentException("indent must be non-negative, got: " + indent);
+        }
+        if (indent > MAX_ALLOWED_INDENT) {
+            throw new IllegalArgumentException("indent must be <= " + MAX_ALLOWED_INDENT + ", got: " + indent);
+        }
+        delimiter = Objects.requireNonNull(delimiter, "delimiter cannot be null");
     }
 
     /**
