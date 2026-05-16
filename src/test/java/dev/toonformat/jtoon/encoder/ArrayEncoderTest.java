@@ -102,7 +102,7 @@ class ArrayEncoderTest {
         LineWriter lineWriter = new LineWriter(options.indent());
 
         // When
-        ArrayEncoder.encodeArray("", arrayNode, lineWriter, 1, options, 0);
+        ArrayEncoder.encodeArray("", arrayNode, lineWriter, 1, options);
 
         // Then
         assertFalse(lineWriter.toString().isBlank());
@@ -124,7 +124,7 @@ class ArrayEncoderTest {
         LineWriter lineWriter = new LineWriter(options.indent());
 
         // When
-        ArrayEncoder.encodeArray("", arrayNode, lineWriter, 1, options, 0);
+        ArrayEncoder.encodeArray("", arrayNode, lineWriter, 1, options);
 
         // Then
         assertFalse(lineWriter.toString().isBlank());

@@ -38,27 +38,21 @@ public final class PrimitiveEncoder {
         };
     }
 
+    /**
+     * Encodes a number JsonNode to plain decimal format (no scientific notation).
+     * Ensures LLM-safe output by converting all numbers to plain decimal
+     * representation.
+     */
     private static String encodeNumber(final JsonNode value) {
         if (value.isIntegralNumber()) {
             return value.asString();
         }
 
-        if (value.isFloatingPointNumber()) {
-            String stringValue = value.asString();
-            try {
-                BigDecimal bd = new BigDecimal(stringValue);
-                return stripTrailingZeros(bd.toPlainString());
-            } catch (NumberFormatException e) {
-                double doubleValue = value.asDouble();
-                if (Double.isInfinite(doubleValue)) {
-                    throw new IllegalArgumentException("Number too large: " + stringValue);
-                }
-                BigDecimal decimal = BigDecimal.valueOf(doubleValue);
-                return stripTrailingZeros(decimal.toPlainString());
-            }
-        }
+        final double doubleValue = value.asDouble();
+        final BigDecimal decimal = BigDecimal.valueOf(doubleValue);
+        final String plainString = decimal.toPlainString();
 
-        return value.asText();
+        return stripTrailingZeros(plainString);
     }
 
     /**
@@ -100,16 +94,19 @@ public final class PrimitiveEncoder {
         return DOUBLE_QUOTE + StringEscaper.escape(value) + DOUBLE_QUOTE;
     }
 
+    /**
+     * Encodes an object key, quoting if necessary.
+     * Delegates validation to StringValidator and escaping to StringEscaper.
+     *
+     * @param key the key to encode
+     * @return the encoded key, quoted if necessary
+     */
     public static String encodeKey(final String key) {
         if (StringValidator.isValidUnquotedKey(key)) {
             return key;
         }
 
         return DOUBLE_QUOTE + StringEscaper.escape(key) + DOUBLE_QUOTE;
-    }
-
-    public static boolean needsQuotingForPathExpansion(final String key) {
-        return key != null && key.contains(".");
     }
 
     /**

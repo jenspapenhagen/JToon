@@ -3,30 +3,32 @@ package dev.toonformat.jtoon.decoder;
 import dev.toonformat.jtoon.DecodeOptions;
 import dev.toonformat.jtoon.Delimiter;
 
+/**
+ * Deals with the main attributes used to decode TOON to JSON format.
+ */
 public class DecodeContext {
 
+    /**
+     * Lines of the TOON file.
+     */
     protected String[] lines;
+    /**
+     * Options used to decode the TOON file.
+     */
     protected DecodeOptions options;
+    /**
+     * Delimiter used to split array elements.
+     */
     protected Delimiter delimiter;
+    /**
+     * Current line being decoded.
+     */
     protected int currentLine;
-    protected int depth;
 
-    public static final int MAX_DECODE_DEPTH = 1024;
-
+    /**
+     * Default constructor.
+     */
     public DecodeContext() {
-        this.depth = 0;
     }
 
-    public void incrementDepth() {
-        this.depth++;
-        if (this.depth > MAX_DECODE_DEPTH) {
-            throw new IllegalArgumentException("Maximum nesting depth exceeded: " + MAX_DECODE_DEPTH);
-        }
-    }
-
-    public void decrementDepth() {
-        if (this.depth > 0) {
-            this.depth--;
-        }
-    }
 }

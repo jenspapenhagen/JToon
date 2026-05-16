@@ -35,14 +35,25 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static java.util.Collections.newSetFromMap;
-
+/**
+ * Normalizes Java objects to Jackson JsonNode representation.
+ * Handles Java-specific types like LocalDateTime, Optional, Stream, etc.
+ */
 public final class JsonNormalizer {
 
+    /**
+     * Shared ObjectMapper instance configured for JSON normalization.
+     */
     public static final ObjectMapper MAPPER = ObjectMapperSingleton.getInstance();
 
-    private static final int MAX_DEPTH = 512;
-    private static final int MAX_STREAM_ELEMENTS = 10000;
+    /**
+     * maximal allowed nesting depth of list.
+     */
+    public static final int MAX_ALLOWED_NESTING_DEPTH = 512;
+
+    private static final ThreadLocal<Integer> DEPTH_COUNTER = ThreadLocal.withInitial(() -> 0);
+    private static final ThreadLocal<Map<Object, Boolean>> VISITED =
+        ThreadLocal.withInitial(IdentityHashMap::new);
 
     private static final List<Function<Object, JsonNode>> NORMALIZERS = List.of(
         JsonNormalizer::tryNormalizePrimitive,
@@ -55,6 +66,19 @@ public final class JsonNormalizer {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
+
+    /**
+     * Parses a JSON string into a JsonNode using the shared ObjectMapper.
+     * <p>
+     * This centralizes JSON parsing concerns to keep the public API thin and
+     * maintain separation of responsibilities between parsing, normalization,
+     * and encoding.
+     * </p>
+     *
+     * @param json The JSON string to parse (must be non-blank)
+     * @return Parsed JsonNode
+     * @throws IllegalArgumentException if the input is blank or not valid JSON
+     */
     public static JsonNode parse(final String json) {
         if (json == null) {
             throw new IllegalArgumentException("JSON string cannot be null");
@@ -69,35 +93,57 @@ public final class JsonNormalizer {
         }
     }
 
+    /**
+     * Normalizes any Java object to a JsonNode.
+     *
+     * @param value The value to normalize
+     * @return The normalized JsonNode
+     * @throws IllegalArgumentException if nesting depth exceeds MAX_DEPTH or circular reference detected
+     */
     public static JsonNode normalize(final Object value) {
-        return normalizeInternal(value, 0, new IdentityHashMap<>());
+        final int currentDepth = DEPTH_COUNTER.get();
+        if (currentDepth > MAX_ALLOWED_NESTING_DEPTH) {
+            DEPTH_COUNTER.remove();
+            throw new IllegalArgumentException("Maximum nesting depth exceeded: " + MAX_ALLOWED_NESTING_DEPTH);
+        }
+        DEPTH_COUNTER.set(currentDepth + 1);
+        try {
+            return normalizeInternal(value);
+        } finally {
+            DEPTH_COUNTER.set(currentDepth);
+        }
     }
 
-    private static JsonNode normalizeInternal(final Object value, final int depth, final IdentityHashMap<Object, Boolean> visited) {
-        if (depth > MAX_DEPTH) {
-            throw new IllegalArgumentException("Maximum nesting depth exceeded: " + MAX_DEPTH);
-        }
+    private static JsonNode normalizeInternal(final Object value) {
         if (value == null) {
             return NullNode.getInstance();
         } else if (value instanceof JsonNode jsonNode) {
             return jsonNode;
-        } else if (value instanceof Optional<?>) {
-            return normalizeInternal(((Optional<?>) value).orElse(null), depth, visited);
-        } else if (value instanceof Stream<?>) {
-            Stream<?> stream = (Stream<?>) value;
-            List<?> list = stream.limit(MAX_STREAM_ELEMENTS + 1).toList();
-            if (list.size() > MAX_STREAM_ELEMENTS) {
-                throw new IllegalArgumentException("Stream has more than " + MAX_STREAM_ELEMENTS + " elements");
+        }
+        final Map<Object, Boolean> visited = VISITED.get();
+        if (visited.containsKey(value)) {
+            throw new IllegalArgumentException("Circular reference detected");
+        }
+        visited.put(value, Boolean.TRUE);
+        try {
+            if (value instanceof Optional<?>) {
+                return normalize(((Optional<?>) value).orElse(null));
+            } else if (value instanceof Stream<?>) {
+                return normalize(((Stream<?>) value).toList());
+            } else if (value.getClass().isArray()) {
+                return normalizeArray(value);
+            } else {
+                return normalizeWithStrategy(value);
             }
-            return normalizeInternal(list, depth, visited);
-        } else if (value.getClass().isArray()) {
-            return normalizeArray(value, depth, visited);
-        } else {
-            return normalizeWithStrategy(value, depth, visited);
+        } finally {
+            visited.remove(value);
         }
     }
 
-    private static JsonNode normalizeWithStrategy(final Object value, final int depth, final IdentityHashMap<Object, Boolean> visited) {
+    /**
+     * Attempts normalization using chain of responsibility pattern.
+     */
+    private static JsonNode normalizeWithStrategy(final Object value) {
         return NORMALIZERS.stream()
             .map(normalizer -> normalizer.apply(value))
             .filter(Objects::nonNull)
@@ -105,6 +151,10 @@ public final class JsonNormalizer {
             .orElseGet(NullNode::getInstance);
     }
 
+    /**
+     * Attempts to normalize primitive types and their wrappers.
+     * Returns null if the value is not a primitive type.
+     */
     private static JsonNode tryNormalizePrimitive(final Object value) {
         if (value instanceof String stringValue) {
             return StringNode.valueOf(stringValue);
@@ -127,6 +177,9 @@ public final class JsonNormalizer {
         }
     }
 
+    /**
+     * Normalizes Double values handling special cases.
+     */
     private static JsonNode normalizeDouble(final Double value) {
         if (!Double.isFinite(value)) {
             return NullNode.getInstance();
@@ -138,12 +191,18 @@ public final class JsonNormalizer {
             .orElseGet(() -> DoubleNode.valueOf(value));
     }
 
+    /**
+     * Normalizes Float values handling special cases.
+     */
     private static JsonNode normalizeFloat(final Float value) {
         return Float.isFinite(value)
             ? FloatNode.valueOf(value)
             : NullNode.getInstance();
     }
 
+    /**
+     * Attempts to convert a double to a long if it's a whole number.
+     */
     private static Optional<JsonNode> tryConvertToLong(final Double value) {
         if (value != Math.floor(value)) {
             return Optional.empty();
@@ -155,6 +214,10 @@ public final class JsonNormalizer {
         return Optional.of(LongNode.valueOf(longVal));
     }
 
+    /**
+     * Attempts to normalize BigInteger and BigDecimal.
+     * Returns null if the value is not a big number type.
+     */
     private static JsonNode tryNormalizeBigNumber(final Object value) {
         if (value instanceof BigInteger bigInteger) {
             return normalizeBigInteger(bigInteger);
@@ -165,6 +228,9 @@ public final class JsonNormalizer {
         }
     }
 
+    /**
+     * Normalizes BigInteger, converting to long if within range.
+     */
     private static JsonNode normalizeBigInteger(final BigInteger value) {
         final boolean fitsInLong = value.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0
             && value.compareTo(BigInteger.valueOf(Long.MIN_VALUE)) >= 0;
@@ -173,6 +239,10 @@ public final class JsonNormalizer {
             : StringNode.valueOf(value.toString());
     }
 
+    /**
+     * Attempts to normalize temporal types (date/time) to ISO strings.
+     * Returns null if the value is not a temporal type.
+     */
     private static JsonNode tryNormalizeTemporal(final Object value) {
         if (value instanceof LocalDateTime ldt) {
             return formatTemporal(ldt, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
@@ -201,50 +271,53 @@ public final class JsonNormalizer {
         }
     }
 
+    /**
+     * Helper method to format temporal values consistently.
+     */
     private static <T> JsonNode formatTemporal(final T temporal, final DateTimeFormatter formatter) {
         return StringNode.valueOf(formatter.format((java.time.temporal.TemporalAccessor) temporal));
     }
 
+    /**
+     * Attempts to normalize collections (Collection and Map).
+     * Returns null if the value is not a collection type.
+     */
     private static JsonNode tryNormalizeCollection(final Object value) {
         if (value instanceof Collection<?>) {
-            return normalizeCollection((Collection<?>) value, 0, new IdentityHashMap<>());
+            return normalizeCollection((Collection<?>) value);
         } else if (value instanceof Map<?, ?>) {
-            return normalizeMap((Map<?, ?>) value, 0, new IdentityHashMap<>());
+            return normalizeMap((Map<?, ?>) value);
         } else {
             return null;
         }
     }
 
-    private static ArrayNode normalizeCollection(final Collection<?> collection, final int depth, final IdentityHashMap<Object, Boolean> visited) {
-        if (depth > MAX_DEPTH) {
-            throw new IllegalArgumentException("Maximum nesting depth exceeded: " + MAX_DEPTH);
-        }
-        if (visited.containsKey(collection)) {
-            throw new IllegalArgumentException("Circular reference detected in collection");
-        }
-        visited.put(collection, Boolean.TRUE);
+    /**
+     * Normalizes a Collection to an ArrayNode.
+     */
+    private static ArrayNode normalizeCollection(final Collection<?> collection) {
         final ArrayNode arrayNode = MAPPER.createArrayNode();
         for (Object item : collection) {
-            arrayNode.add(normalizeInternal(item, depth + 1, visited));
+            arrayNode.add(normalize(item));
         }
         return arrayNode;
     }
 
-    private static ObjectNode normalizeMap(final Map<?, ?> map, final int depth, final IdentityHashMap<Object, Boolean> visited) {
-        if (depth > MAX_DEPTH) {
-            throw new IllegalArgumentException("Maximum nesting depth exceeded: " + MAX_DEPTH);
-        }
-        if (visited.containsKey(map)) {
-            throw new IllegalArgumentException("Circular reference detected in map");
-        }
-        visited.put(map, Boolean.TRUE);
+    /**
+     * Normalizes a Map to an ObjectNode.
+     */
+    private static ObjectNode normalizeMap(final Map<?, ?> map) {
         final ObjectNode objectNode = MAPPER.createObjectNode();
         for (Map.Entry<?, ?> entry : map.entrySet()) {
-            objectNode.set(String.valueOf(entry.getKey()), normalizeInternal(entry.getValue(), depth + 1, visited));
+            objectNode.set(String.valueOf(entry.getKey()), normalize(entry.getValue()));
         }
         return objectNode;
     }
 
+    /**
+     * Attempts to normalize POJOs using Jackson's default conversion.
+     * Returns null for non-serializable objects.
+     */
     private static JsonNode tryNormalizePojo(final Object value) {
         try {
             return MAPPER.valueToTree(value);
@@ -253,68 +326,63 @@ public final class JsonNormalizer {
         }
     }
 
-    private static JsonNode normalizeArray(final Object array, final int depth, final IdentityHashMap<Object, Boolean> visited) {
-        if (depth > MAX_DEPTH) {
-            throw new IllegalArgumentException("Maximum nesting depth exceeded: " + MAX_DEPTH);
-        }
-        if (array instanceof int[] intArr) {
+    /**
+     * Normalizes primitive arrays to ArrayNode without auto-boxing overhead.
+     * Uses direct array population to avoid IntFunction lambda allocations.
+     */
+    private static JsonNode normalizeArray(final Object array) {
+        if (array instanceof int[] intArray) {
             final ArrayNode node = MAPPER.createArrayNode();
-            for (int i = 0; i < intArr.length; i++) {
-                node.add(IntNode.valueOf(intArr[i]));
+            for (int i : intArray) {
+                node.add(IntNode.valueOf(i));
             }
             return node;
-        } else if (array instanceof long[] longArr) {
+        } else if (array instanceof long[] longArray) {
             final ArrayNode node = MAPPER.createArrayNode();
-            for (int i = 0; i < longArr.length; i++) {
-                node.add(LongNode.valueOf(longArr[i]));
+            for (long l : longArray) {
+                node.add(LongNode.valueOf(l));
             }
             return node;
-        } else if (array instanceof double[] doubleArr) {
+        } else if (array instanceof double[] doubleArray) {
             final ArrayNode node = MAPPER.createArrayNode();
-            for (int i = 0; i < doubleArr.length; i++) {
-                final double val = doubleArr[i];
-                node.add(Double.isFinite(val) ? DoubleNode.valueOf(val) : NullNode.getInstance());
+            for (final double d : doubleArray) {
+                node.add(Double.isFinite(d) ? DoubleNode.valueOf(d) : NullNode.getInstance());
             }
             return node;
-        } else if (array instanceof float[] floatArr) {
+        } else if (array instanceof float[] floatArray) {
             final ArrayNode node = MAPPER.createArrayNode();
-            for (int i = 0; i < floatArr.length; i++) {
-                final float val = floatArr[i];
-                node.add(Float.isFinite(val) ? FloatNode.valueOf(val) : NullNode.getInstance());
+            for (final float f : floatArray) {
+                node.add(Float.isFinite(f) ? FloatNode.valueOf(f) : NullNode.getInstance());
             }
             return node;
-        } else if (array instanceof boolean[] boolArr) {
+        } else if (array instanceof boolean[] boolArray) {
             final ArrayNode node = MAPPER.createArrayNode();
-            for (int i = 0; i < boolArr.length; i++) {
-                node.add(BooleanNode.valueOf(boolArr[i]));
+            for (boolean b : boolArray) {
+                node.add(BooleanNode.valueOf(b));
             }
             return node;
-        } else if (array instanceof byte[] byteArr) {
+        } else if (array instanceof byte[] byteArray) {
             final ArrayNode node = MAPPER.createArrayNode();
-            for (int i = 0; i < byteArr.length; i++) {
-                node.add(IntNode.valueOf(byteArr[i]));
+            for (byte by : byteArray) {
+                node.add(IntNode.valueOf(by));
             }
             return node;
-        } else if (array instanceof short[] shortArr) {
+        } else if (array instanceof short[] shortArray) {
             final ArrayNode node = MAPPER.createArrayNode();
-            for (int i = 0; i < shortArr.length; i++) {
-                node.add(ShortNode.valueOf(shortArr[i]));
+            for (short s : shortArray) {
+                node.add(ShortNode.valueOf(s));
             }
             return node;
-        } else if (array instanceof char[] charArr) {
+        } else if (array instanceof char[] charArray) {
             final ArrayNode node = MAPPER.createArrayNode();
-            for (int i = 0; i < charArr.length; i++) {
-                node.add(StringNode.valueOf(String.valueOf(charArr[i])));
+            for (char c : charArray) {
+                node.add(StringNode.valueOf(String.valueOf(c)));
             }
             return node;
-        } else if (array instanceof Object[] objArr) {
-            if (visited.containsKey(array)) {
-                throw new IllegalArgumentException("Circular reference detected in array");
-            }
-            visited.put(array, Boolean.TRUE);
+        } else if (array instanceof Object[] objArray) {
             final ArrayNode node = MAPPER.createArrayNode();
-            for (int i = 0; i < objArr.length; i++) {
-                node.add(normalizeInternal(objArr[i], depth + 1, visited));
+            for (Object o : objArray) {
+                node.add(normalize(o));
             }
             return node;
         } else {

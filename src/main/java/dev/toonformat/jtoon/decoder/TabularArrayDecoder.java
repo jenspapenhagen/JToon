@@ -82,14 +82,8 @@ public final class TabularArrayDecoder {
 
         final List<String> rawValues = ArrayDecoder.parseDelimitedValues(keysStr, arrayDelimiter);
         final List<String> result = new ArrayList<>(rawValues.size());
-        final java.util.Set<String> seenKeys = new java.util.HashSet<>();
         for (final String key : rawValues) {
-            final String unescaped = StringEscaper.unescape(key);
-            if (context.options.strict() && seenKeys.contains(unescaped)) {
-                throw new IllegalArgumentException("Duplicate column name in tabular header: " + unescaped);
-            }
-            seenKeys.add(unescaped);
-            result.add(unescaped);
+            result.add(StringEscaper.unescape(key));
         }
         return result;
     }

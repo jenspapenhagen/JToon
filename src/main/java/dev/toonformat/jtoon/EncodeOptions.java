@@ -31,7 +31,7 @@ public record EncodeOptions(
     /**
      * Maximum allowed indent to prevent memory exhaustion attacks.
      */
-    public static final int MAX_INDENT = 100;
+    public static final int MAX_ALLOWED_INDENT = 100;
 
     /**
      * Creates EncodeOptions with default values.
@@ -41,21 +41,14 @@ public record EncodeOptions(
     }
 
     /**
-     * Creates EncodeOptions with custom settings.
-     *
-     * @param indent the number of spaces per indentation level (must be >= 0 and <= MAX_INDENT)
-     * @param delimiter the delimiter to use (must not be null)
-     * @param lengthMarker whether to include the # marker before array lengths
-     * @param flatten key folding mode
-     * @param flattenDepth maximum depth for flattening (must be >= 0)
-     * @throws IllegalArgumentException if indent is negative, too large, or delimiter is null
+     * Compact constructor with validation.
      */
     public EncodeOptions {
         if (indent < 0) {
             throw new IllegalArgumentException("indent must be non-negative, got: " + indent);
         }
-        if (indent > MAX_INDENT) {
-            throw new IllegalArgumentException("indent must be <= " + MAX_INDENT + ", got: " + indent);
+        if (indent > MAX_ALLOWED_INDENT) {
+            throw new IllegalArgumentException("indent must be <= " + MAX_ALLOWED_INDENT + ", got: " + indent);
         }
         delimiter = Objects.requireNonNull(delimiter, "delimiter cannot be null");
         if (flattenDepth < 0) {
@@ -67,9 +60,8 @@ public record EncodeOptions(
      * Creates EncodeOptions with custom indent, using default delimiter and length
      * marker.
      *
-     * @param indent number of spaces per indentation level (must be >= 0 and <= MAX_INDENT)
+     * @param indent number of spaces per indentation level
      * @return a new EncodeOptions instance with the specified indent
-     * @throws IllegalArgumentException if indent is negative or too large
      */
     public static EncodeOptions withIndent(final int indent) {
         return new EncodeOptions(indent, Delimiter.COMMA, false, KeyFolding.OFF, Integer.MAX_VALUE);
@@ -79,9 +71,8 @@ public record EncodeOptions(
      * Creates EncodeOptions with custom delimiter, using default indent and length
      * marker.
      *
-     * @param delimiter the delimiter to use for tabular arrays and inline primitive arrays (must not be null)
+     * @param delimiter the delimiter to use for tabular arrays and inline primitive arrays
      * @return a new EncodeOptions instance with the specified delimiter
-     * @throws NullPointerException if delimiter is null
      */
     public static EncodeOptions withDelimiter(final Delimiter delimiter) {
         return new EncodeOptions(2, delimiter, false, KeyFolding.OFF, Integer.MAX_VALUE);
@@ -114,9 +105,8 @@ public record EncodeOptions(
      * Creates EncodeOptions with custom flatten flag and the depth of to flatten
      * the nested objects, using default indent and delimiter.
      *
-     * @param flattenDepth optional maximum depth to flatten nested objects (must be >= 0)
+     * @param flattenDepth optional maximum depth to flatten nested objects.
      * @return a new EncodeOptions instance with the flatten setting and the depth of to flatten the nested objects.
-     * @throws IllegalArgumentException if flattenDepth is negative
      */
     public static EncodeOptions withFlattenDepth(final int flattenDepth) {
         return new EncodeOptions(2, Delimiter.COMMA, false, KeyFolding.SAFE, flattenDepth);

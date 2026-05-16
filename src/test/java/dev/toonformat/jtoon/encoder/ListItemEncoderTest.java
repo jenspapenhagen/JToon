@@ -43,7 +43,7 @@ class ListItemEncoderTest {
         LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ListItemEncoder.encodeObjectAsListItem(objectNode, writer, 1, options, 0);
+        ListItemEncoder.encodeObjectAsListItem(objectNode, writer, 1, options);
 
         // Then
         assertEquals("  -", writer.toString());
@@ -59,7 +59,7 @@ class ListItemEncoderTest {
         LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ListItemEncoder.encodeObjectAsListItem(objectNode, writer, 0, options, 0);
+        ListItemEncoder.encodeObjectAsListItem(objectNode, writer, 0, options);
 
         // Then
         assertEquals("- name: John", writer.toString());
@@ -75,7 +75,7 @@ class ListItemEncoderTest {
         LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ListItemEncoder.encodeObjectAsListItem(objectNode, writer, 0, options, 0);
+        ListItemEncoder.encodeObjectAsListItem(objectNode, writer, 0, options);
 
         // Then
         assertEquals("- nums[3]: 1,2,3", writer.toString());
@@ -93,7 +93,7 @@ class ListItemEncoderTest {
 
 
         // When
-        ListItemEncoder.encodeObjectAsListItem(objectNode, writer, 1, options, 0);
+        ListItemEncoder.encodeObjectAsListItem(objectNode, writer, 1, options);
 
         // Then
         assertEquals("  - person:\n" +
@@ -111,7 +111,7 @@ class ListItemEncoderTest {
 
 
         // When
-        ListItemEncoder.encodeObjectAsListItem(objectNode, writer, 0, options, 0);
+        ListItemEncoder.encodeObjectAsListItem(objectNode, writer, 0, options);
 
         // Then
         assertEquals("- a: 1\n" +
@@ -130,7 +130,7 @@ class ListItemEncoderTest {
         LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ArrayEncoder.encodeArray("items",node, writer, 0, options, 0);
+        ArrayEncoder.encodeArray("items",node, writer, 0, options);
 
         // Then
         String expected = String.join("\n",
@@ -154,7 +154,7 @@ class ListItemEncoderTest {
         LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ArrayEncoder.encodeArray("items", node, writer, 0, options, 0);
+        ArrayEncoder.encodeArray("items", node, writer, 0, options);
 
 
         // Then
@@ -187,7 +187,7 @@ class ListItemEncoderTest {
         LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ListItemEncoder.encodeObjectAsListItem(obj, writer, 0, options, 0);
+        ListItemEncoder.encodeObjectAsListItem(obj, writer, 0, options);
 
         // Then
         String expected = String.join("\n",

@@ -115,15 +115,6 @@ public final class Flatten {
         if (rootLiteralKeys != null && rootLiteralKeys.contains(absolutePath)) {
             return null;
         }
-
-        if (rootLiteralKeys != null) {
-            for (String literalKey : rootLiteralKeys) {
-                if (absolutePath.startsWith(literalKey + ".") || literalKey.startsWith(absolutePath + ".")) {
-                    return null;
-                }
-            }
-        }
-
         return new FoldResult(
                 foldedKey,
                 chain.tail,
@@ -145,48 +136,63 @@ public final class Flatten {
      * @param maxDepth   maximum number of allowed segments
      * @return a {@link ChainResult} containing segments, tail, and leafValue
      */
-static ChainResult collectSingleKeyChain(final String startKey,
-                                                      final JsonNode startValue,
-                                                      final int maxDepth) {
+    static ChainResult collectSingleKeyChain(final String startKey,
+                                                     final JsonNode startValue,
+                                                     final int maxDepth) {
+        // normalize absolute key to its local segment
+        final String localStartKey = startKey.contains(DOT)
+                ? startKey.substring(startKey.lastIndexOf(DOT.charAt(0)) + 1)
+                : startKey;
+
         final List<String> segments = new ArrayList<>();
-        segments.add(startKey);
+        segments.add(localStartKey);
 
         JsonNode currentValue = startValue;
+        // track depth of folding
         int depthCounter = 1;
 
         while (depthCounter < maxDepth && currentValue.isObject()) {
             final ObjectNode obj = (ObjectNode) currentValue;
             final Iterator<Map.Entry<String, JsonNode>> it = obj.properties().iterator();
 
+            // empty object leaf
             if (!it.hasNext()) {
                 return new ChainResult(segments, null, currentValue);
             }
 
             final Map.Entry<String, JsonNode> entry = it.next();
 
+            // >1 field, this is a tail object
             if (it.hasNext()) {
                 return new ChainResult(segments, currentValue, null);
             }
 
+            // exactly one key, continue chain
             segments.add(entry.getKey());
             currentValue = entry.getValue();
 
             depthCounter++;
         }
 
+        // Determine tail or leaf
         if (currentValue.isObject()) {
             final ObjectNode obj = (ObjectNode) currentValue;
             if (obj.isEmpty()) {
+                // empty object is a leaf
                 return new ChainResult(segments, null, currentValue);
             }
 
+            // If the object has exactly ONE key, it should be part of the chain,
+            // single-key object is treated as a leaf
             if (obj.size() == 1) {
                 return new ChainResult(segments, null, currentValue);
             }
 
+            // object with multiple key it's a tail
             return new ChainResult(segments, currentValue, null);
         }
 
+        // primitive or array mines it's a leaf
         return new ChainResult(segments, null, currentValue);
     }
 

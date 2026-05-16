@@ -17,15 +17,21 @@ public final class DecodeHelper {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
 
+    /**
+     * Calculates indentation depth (nesting level) of a line.
+     * Counts leading spaces in multiples of the configured indent size.
+     * In strict mode, validates indentation (no tabs, proper multiples).
+     *
+     * @param line    the line string to parse
+     * @param context decode an object to deal with lines, delimiter, and options
+     * @return the depth of a line
+     */
     public static int getDepth(final String line, final DecodeContext context) {
+        // Blank lines (including lines with only spaces) have depth 0
         if (isBlankLine(line)) {
             return 0;
         }
-        int effectiveIndent = context.options.indent();
-        if (effectiveIndent <= 0) {
-            effectiveIndent = 1;
-        }
-        return computeLeadingSpaces(line, context) / effectiveIndent;
+        return computeLeadingSpaces(line, context) / Math.max(1, context.options.indent());
     }
 
     /**

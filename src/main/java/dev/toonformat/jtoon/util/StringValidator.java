@@ -110,7 +110,7 @@ public final class StringValidator {
         final int len = value.length();
         int i = 0;
 
-        if (value.charAt(0) == '-' || value.charAt(0) == '+') {
+        if (value.charAt(0) == '-') {
             if (len < 2) {
                 return false;
             }
@@ -127,10 +127,11 @@ public final class StringValidator {
             if (c >= '0' && c <= '9') {
                 hasDigit = true;
             } else if (c == '.') {
-                if (hasDot || hasExponent) {
+                if (hasDot || hasExponent || !hasDigit) {
                     return false;
                 }
                 hasDot = true;
+                hasDigit = false;
             } else if (c == 'e' || c == 'E') {
                 if (!hasDigit || hasExponent) {
                     return false;

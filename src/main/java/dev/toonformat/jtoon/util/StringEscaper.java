@@ -126,6 +126,7 @@ public final class StringEscaper {
      *
      * @param c The character following a backslash
      * @return The unescaped character
+     * @throws IllegalArgumentException if the escape sequence is invalid
      */
     private static char unescapeChar(final char c) {
         return switch (c) {
