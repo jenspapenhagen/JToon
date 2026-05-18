@@ -1,5 +1,7 @@
 package dev.toonformat.jtoon;
 
+import java.util.Objects;
+
 /**
  * Configuration options for encoding data to JToon format.
  *
@@ -27,10 +29,31 @@ public record EncodeOptions(
             2, Delimiter.COMMA, false, KeyFolding.OFF, Integer.MAX_VALUE);
 
     /**
+     * Maximum allowed indent to prevent memory exhaustion attacks.
+     */
+    public static final int MAX_ALLOWED_INDENT = 100;
+
+    /**
      * Creates EncodeOptions with default values.
      */
     public EncodeOptions() {
         this(2, Delimiter.COMMA, false, KeyFolding.OFF, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Compact constructor with validation.
+     */
+    public EncodeOptions {
+        if (indent < 0) {
+            throw new IllegalArgumentException("indent must be non-negative, got: " + indent);
+        }
+        if (indent > MAX_ALLOWED_INDENT) {
+            throw new IllegalArgumentException("indent must be <= " + MAX_ALLOWED_INDENT + ", got: " + indent);
+        }
+        delimiter = Objects.requireNonNull(delimiter, "delimiter cannot be null");
+        if (flattenDepth < 0) {
+            throw new IllegalArgumentException("flattenDepth must be non-negative, got: " + flattenDepth);
+        }
     }
 
     /**

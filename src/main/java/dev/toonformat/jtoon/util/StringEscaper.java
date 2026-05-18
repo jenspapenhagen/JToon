@@ -126,6 +126,7 @@ public final class StringEscaper {
      *
      * @param c The character following a backslash
      * @return The unescaped character
+     * @throws IllegalArgumentException if the escape sequence is invalid
      */
     private static char unescapeChar(final char c) {
         return switch (c) {
@@ -134,7 +135,7 @@ public final class StringEscaper {
             case 't' -> '\t';
             case '"' -> '"';
             case '\\' -> '\\';
-            default -> c;
+            default -> throw new IllegalArgumentException("Invalid escape sequence: \\" + c);
         };
     }
 }
