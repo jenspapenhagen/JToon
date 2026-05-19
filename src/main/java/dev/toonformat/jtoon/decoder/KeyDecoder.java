@@ -197,8 +197,10 @@ public final class KeyDecoder {
                 final Object parsedValue;
                 if (value.isBlank()) {
                     parsedValue = new LinkedHashMap<>();
+                } else if ("[]".equals(value)) {
+                    parsedValue = List.of();
                 } else {
-                    parsedValue = PrimitiveDecoder.parse(value);
+                    parsedValue = PrimitiveDecoder.parse(value, context);
                 }
                 context.currentLine++;
                 return parsedValue;
@@ -208,8 +210,10 @@ public final class KeyDecoder {
             final Object parsedValue;
             if (value.isBlank()) {
                 parsedValue = new LinkedHashMap<>();
+            } else if ("[]".equals(value)) {
+                parsedValue = List.of();
             } else {
-                parsedValue = PrimitiveDecoder.parse(value);
+                parsedValue = PrimitiveDecoder.parse(value, context);
             }
             context.currentLine++;
             return parsedValue;
