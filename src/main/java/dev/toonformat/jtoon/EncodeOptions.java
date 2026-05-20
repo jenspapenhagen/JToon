@@ -42,6 +42,12 @@ public record EncodeOptions(
 
     /**
      * Compact constructor with validation.
+     *
+     * @param indent        number of spaces per indentation level
+     * @param delimiter     delimiter for tabular array rows and inline arrays
+     * @param lengthMarker  whether to prefix array lengths with {@code #}
+     * @param flatten       key folding mode for nested objects
+     * @param flattenDepth  maximum depth of key folding
      */
     public EncodeOptions {
         if (indent < 0) {

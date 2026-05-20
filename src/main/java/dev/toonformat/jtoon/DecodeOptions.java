@@ -64,6 +64,14 @@ public record DecodeOptions(
 
     /**
      * Compact constructor with validation.
+     *
+     * @param indent       number of spaces per indentation level
+     * @param delimiter    delimiter for tabular array rows and inline arrays
+     * @param strict       strict validation mode flag
+     * @param expandPaths  path expansion mode for dotted keys
+     * @param maxDepth     maximum nesting depth
+     * @param maxArraySize maximum array elements
+     * @param maxStringLength maximum string length
      */
     public DecodeOptions {
         if (indent < 0) {
