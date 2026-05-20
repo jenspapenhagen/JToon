@@ -95,12 +95,34 @@ public final class ValueDecoder {
         // Handle key-value pairs: name: Ada
         final int colonIdx = DecodeHelper.findUnquotedColon(line);
         if (colonIdx > 0) {
+            if (context.options.strict()) {
+                final String key = line.substring(0, colonIdx).trim();
+                // In strict mode, reject keys with unquoted brackets that didn't match
+                // KEYED_ARRAY_PATTERN. This catches:
+                //   - extra brackets between bracket segment and colon (foo[1][bar])
+                //   - text between bracket segment and colon (foo[2]extra)
+                //   - non-integer bracket segment (foo[bar])
+                //   - negative bracket length (items[-1])
+                //   - whitespace between bracket segment and colon/fields segment
+                //     (items[2] :, items[2] {a,b}:)
+                if (DecodeHelper.hasUnquotedBrackets(key)) {
+                    throw new IllegalArgumentException(
+                        "Invalid array header syntax at line " + (context.currentLine + 1));
+                }
+            }
             final String key = line.substring(0, colonIdx).trim();
             final String value = line.substring(colonIdx + 1).trim();
             return KeyDecoder.parseKeyValuePair(key, value, depth, depth == 0, context);
         }
 
         // Bare scalar value
+        if (context.options.strict() && DecodeHelper.hasUnquotedBrackets(line)) {
+            // Line has brackets but no colon and didn't match KEYED_ARRAY_PATTERN
+            // (e.g. "items[2]{id,name}" missing colon)
+            throw new IllegalArgumentException(
+                "Invalid syntax: unquoted brackets without valid header at line "
+                    + (context.currentLine + 1));
+        }
         return ObjectDecoder.parseBareScalarValue(line, depth, context);
     }
 

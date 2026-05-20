@@ -41,6 +41,7 @@ public final class KeyDecoder {
         } else {
             // Check for conflicts with existing expanded paths
             DecodeHelper.checkPathExpansionConflict(result, key, arrayValue, context);
+            DecodeHelper.checkDuplicateKey(result, key, context);
             result.put(key, arrayValue);
         }
     }
@@ -236,6 +237,7 @@ public final class KeyDecoder {
             expandPathIntoMap(map, unescapedKey, value, context);
         } else {
             DecodeHelper.checkPathExpansionConflict(map, unescapedKey, value, context);
+            DecodeHelper.checkDuplicateKey(map, unescapedKey, context);
             map.put(unescapedKey, value);
         }
     }
@@ -327,6 +329,7 @@ public final class KeyDecoder {
         if (shouldExpandKey(originalKey, context)) {
             expandPathIntoMap(item, key, arrayValue, context);
         } else {
+            DecodeHelper.checkDuplicateKey(item, key, context);
             item.put(key, arrayValue);
         }
 
@@ -344,7 +347,7 @@ public final class KeyDecoder {
      * @return true if the field was processed as a key-value pair, false otherwise
      */
     static boolean parseKeyValueField(final String fieldContent, final Map<String, Object> item, final int depth,
-                                      final DecodeContext context) {
+                                       final DecodeContext context) {
         final int colonIdx = DecodeHelper.findUnquotedColon(fieldContent);
         if (colonIdx <= 0) {
             return false;
@@ -359,6 +362,7 @@ public final class KeyDecoder {
         if (shouldExpandKey(fieldKey, context)) {
             expandPathIntoMap(item, fieldKey, parsedValue, context);
         } else {
+            DecodeHelper.checkDuplicateKey(item, fieldKey, context);
             item.put(fieldKey, parsedValue);
         }
 

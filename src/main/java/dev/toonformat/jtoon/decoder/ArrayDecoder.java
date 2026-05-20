@@ -84,6 +84,15 @@ public final class ArrayDecoder {
         }
 
         if (arrayMatcher.find()) {
+            // In strict mode, reject bracket lengths with leading zeros (e.g. [03])
+            // unless the length is exactly "0".
+            if (context.options.strict()) {
+                final String lengthStr = arrayMatcher.group(2);
+                if (lengthStr.length() > 1 && lengthStr.charAt(0) == '0') {
+                    throw new IllegalArgumentException(
+                        "Invalid array length with leading zeros: [" + lengthStr + "]");
+                }
+            }
             final int headerEndIdx = arrayMatcher.end();
             final String afterHeader = header.substring(headerEndIdx).trim();
 

@@ -142,6 +142,7 @@ public final class ObjectDecoder {
         } else {
             // Check for conflicts with existing expanded paths
             DecodeHelper.checkPathExpansionConflict(objectMap, key, arrayValue, context);
+            DecodeHelper.checkDuplicateKey(objectMap, key, context);
             objectMap.put(key, arrayValue);
         }
     }

@@ -95,6 +95,7 @@ public final class ListItemDecoder {
             );
 
             final Map<String, Object> item = new LinkedHashMap<>();
+            DecodeHelper.checkDuplicateKey(item, key, context);
             item.put(key, arrayValue);
 
             // parseArrayWithDelimiter manages currentLine correctly:
@@ -130,6 +131,7 @@ public final class ListItemDecoder {
             // List item is at depth + 1, so pass depth + 1 to parseObjectItemValue
             parsedValue = ObjectDecoder.parseObjectItemValue(value, depth + 1, context);
         }
+        DecodeHelper.checkDuplicateKey(item, key, context);
         item.put(key, parsedValue);
         parseListItemFields(item, depth, context);
 
