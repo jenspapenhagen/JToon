@@ -76,6 +76,12 @@ public class StringEscaperTest {
             assertEquals("", StringEscaper.escape(""));
         }
 
+        @Test
+        @DisplayName("should return null for null input")
+        void testNullInput() {
+            assertNull(StringEscaper.escape(null));
+        }
+
         @ParameterizedTest
         @DisplayName("should not modify strings without special characters")
         @ValueSource(strings = {
@@ -176,6 +182,12 @@ public class StringEscaperTest {
         void testEmptyQuotedString() {
             // Then
             assertEquals("", StringEscaper.unescape("\"\""));
+        }
+
+        @Test
+        @DisplayName("should not unquote when string starts with but does not end with quote")
+        void testUnmatchedOpeningQuote() {
+            assertEquals("\"unclosed", StringEscaper.unescape("\"unclosed"));
         }
     }
 
@@ -354,6 +366,56 @@ public class StringEscaperTest {
         }
 
         @Test
+        @DisplayName("should reject truncated \\u escape (fewer than 4 hex chars)")
+        void truncatedUnicodeEscape() {
+            // \\u00b has only 3 hex chars
+            String input = "\"\\u00b\"";
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> StringEscaper.validateString(input));
+            assertEquals("Invalid escape sequence: \\u", ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("should reject high surrogate followed by non-backslash char")
+        void highSurrogateFollowedByNonBackslash() {
+            // \\uD800! — '!' is not '\\', with enough trailing chars to pass length check
+            String input = "\"a\\uD800!bcdefg\"";
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> StringEscaper.validateString(input));
+            assertEquals("Invalid unicode escape: lone high surrogate", ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("should reject high surrogate followed by backslash + non-u char")
+        void highSurrogateFollowedByNonU() {
+            // \\uD800\\t — '\\' then 't' != 'u', enough trailing chars
+            String input = "\"a\\uD800\\tbcdef\"";
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> StringEscaper.validateString(input));
+            assertEquals("Invalid unicode escape: lone high surrogate", ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("should reject high surrogate with invalid hex in next \\u")
+        void highSurrogateFollowedByInvalidHex() {
+            // \\uD800\\u00XX — "00XX" is not valid hex
+            String input = "\"a\\uD800\\u00XXbcdefg\"";
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> StringEscaper.validateString(input));
+            assertEquals("Invalid unicode escape: lone high surrogate", ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("should reject high surrogate where next \\u hex is not low surrogate")
+        void highSurrogateFollowedByNonLowSurrogate() {
+            // \\uD800\\u0041 — 0x0041 is 'A', not a low surrogate
+            String input = "\"a\\uD800\\u0041bcdefg\"";
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> StringEscaper.validateString(input));
+            assertEquals("Invalid unicode escape: lone high surrogate", ex.getMessage());
+        }
+
+        @Test
         @DisplayName("should accept valid standard escapes")
         void validStandardEscapes() {
             assertDoesNotThrow(() -> StringEscaper.validateString("\"\\n\""));
@@ -419,6 +481,42 @@ public class StringEscaperTest {
                 () -> StringEscaper.unescape("\\uD800"));
             assertTrue(ex.getMessage().contains("lone high surrogate"));
         }
+
+        @Test
+        @DisplayName("should throw on high surrogate followed by non-backslash")
+        void highSurrogateFollowedByNonBackslash() {
+            // \\uD800 followed by '!' — not '\\'
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> StringEscaper.unescape("\\uD800!!!!!!"));
+            assertTrue(ex.getMessage().contains("lone high surrogate"));
+        }
+
+        @Test
+        @DisplayName("should throw on high surrogate followed by backslash + non-u")
+        void highSurrogateFollowedByNonU() {
+            // \\uD800 followed by \\n — '\\' then 'n' != 'u'
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> StringEscaper.unescape("\\uD800\\n!!!!"));
+            assertTrue(ex.getMessage().contains("lone high surrogate"));
+        }
+
+        @Test
+        @DisplayName("should throw on high surrogate with invalid low hex")
+        void highSurrogateWithInvalidLowHex() {
+            // \\uD800\\u00XX — low hex "00XX" is not valid hex
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> StringEscaper.unescape("\\uD800\\u00XX"));
+            assertEquals("Invalid escape sequence: \\u00XX", ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("should throw on high surrogate where low hex is not low surrogate")
+        void highSurrogateWithNonLowSurrogate() {
+            // \\uD800\\u0041 — 0x0041 is 'A', not a low surrogate
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> StringEscaper.unescape("\\uD800\\u0041"));
+            assertTrue(ex.getMessage().contains("lone high surrogate"));
+        }
     }
 
     @Test
@@ -436,6 +534,12 @@ public class StringEscaperTest {
         final Throwable cause = thrown.getCause();
         assertInstanceOf(UnsupportedOperationException.class, cause);
         assertEquals("Utility class cannot be instantiated", cause.getMessage());
+    }
+
+    @Test
+    void testingValidateString_WithNotQuotedString() {
+        // covers startsWith(\") = false branch on lines 68 and 73
+        StringEscaper.validateString("plain text without quotes");
     }
 
     @Test
