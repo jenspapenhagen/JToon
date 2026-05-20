@@ -106,6 +106,10 @@ public final class StringEscaper {
                                 || !Character.isLowSurrogate((char) Integer.parseInt(nextHex, HEX_RADIX))) {
                                 throw new IllegalArgumentException(INVALID_UNICODE_LONE_HIGH);
                             }
+                            // Skip past the full surrogate pair (\\uXXXX\\uXXXX = 12 chars total)
+                            // to avoid reprocessing the consumed hex digits and the low surrogate
+                            // escape as individual characters.
+                            i += UNICODE_ESCAPE_TOTAL_LENGTH + UNICODE_HEX_LENGTH;
                         }
                     }
                     escaped = false;

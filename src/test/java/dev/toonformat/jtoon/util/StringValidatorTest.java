@@ -456,6 +456,20 @@ class StringValidatorTest {
             // Then
             assertFalse(StringValidator.isValidUnquotedKey(""));
         }
+
+        @Test
+        @DisplayName("should return false for key with control characters")
+        void testKeyWithControlChars() {
+            assertFalse(StringValidator.isValidUnquotedKey("a\u0004b"));
+            assertFalse(StringValidator.isValidUnquotedKey("a\u0000b"));
+            assertFalse(StringValidator.isValidUnquotedKey("a\u001Fb"));
+        }
+
+        @Test
+        @DisplayName("should return false for null key")
+        void testNullKey() {
+            assertFalse(StringValidator.isValidUnquotedKey(null));
+        }
     }
 
     @Test
