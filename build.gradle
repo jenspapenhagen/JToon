@@ -41,10 +41,6 @@ jacoco {
     reportsDirectory = layout.buildDirectory.dir('customJacocoReportDir')
 }
 
-spotbugs {
-    ignoreFailures = false
-    showProgress = true
-    excludeFilter = file("spotbugs-filter.xml")
 pitest {
     pitestVersion = '1.17.4'
     targetClasses = ['dev.toonformat.jtoon.*']
