@@ -108,7 +108,7 @@ class TabularArrayDecoderTest {
     @Test
     void testReturnsTrueWhenLineDepthLessThanExpected() throws Exception {
         // Given
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF);
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
 
 
         String line = "  some text";   // Content irrelevant for this branch
@@ -142,7 +142,7 @@ class TabularArrayDecoderTest {
             "key: value"   // next non-blank (depth 0)
         };
 
-        context.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF);
+        context.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.lines = lines;
         context.currentLine = 0;
 
@@ -172,8 +172,8 @@ class TabularArrayDecoderTest {
     @DisplayName("validateKeysDelimiter get called and branches will be checked")
     void checkDelimiterMismatchExecution() {
         // Given
-        String expectedChar = "|";
-        String actualChar = ",";
+        String expectedChar = Delimiter.PIPE.toString();
+        String actualChar = Delimiter.COMMA.toString();
 
         // When
         InvocationTargetException exception = assertThrows(InvocationTargetException.class,
@@ -187,8 +187,8 @@ class TabularArrayDecoderTest {
     @DisplayName("validateKeysDelimiter get called and branches will be checked")
     void checkDelimiterMismatchExecutionWithComa() {
         // Given
-        String expectedChar = ",";
-        String actualChar = "|";
+        String expectedChar = Delimiter.COMMA.toString();
+        String actualChar = Delimiter.PIPE.toString();
 
         // When
         InvocationTargetException exception = assertThrows(InvocationTargetException.class,
@@ -201,7 +201,7 @@ class TabularArrayDecoderTest {
     @Test
     void testTerminateWhenLineDepthLessThanExpected() throws Exception {
         // Given
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF);
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
 
         String line = "    some value"; // Any line works; we won't reach colon logic.
         int lineDepth = 1;              // < expectedRowDepth
@@ -217,9 +217,104 @@ class TabularArrayDecoderTest {
     }
 
     @Test
+    @DisplayName("should NOT terminate when delimiter found before colon (§9.3)")
+    void testDisambiguation_DelimiterBeforeColon_continuesRow() throws Exception {
+        // Given — "10,active:done" has comma at index 2, colon at index 9
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        context.delimiter = context.options.delimiter();
+        String line = "  10,active:done";
+        int lineDepth = 1;
+        int expectedRowDepth = 1;
+
+        // When
+        boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
+            new Class[]{String.class, int.class, int.class, DecodeContext.class},
+            line, lineDepth, expectedRowDepth, context);
+
+        // Then — delimiter comes before colon, so this is a tabular row
+        assertFalse(result, "Should continue tabular array when delimiter found before colon (§9.3)");
+    }
+
+    @Test
+    @DisplayName("should terminate when colon found before delimiter (§9.3)")
+    void testDisambiguation_ColonBeforeDelimiter_terminates() throws Exception {
+        // Given — "time: 10,active" has colon at index 4, comma nowhere relevant
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        context.delimiter = context.options.delimiter();
+        String line = "  time: 10,active";
+        int lineDepth = 1;
+        int expectedRowDepth = 1;
+
+        // When
+        boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
+            new Class[]{String.class, int.class, int.class, DecodeContext.class},
+            line, lineDepth, expectedRowDepth, context);
+
+        // Then — colon comes before any unquoted delimiter, so this is a key-value pair
+        assertTrue(result, "Should terminate tabular array when colon found before delimiter (§9.3)");
+    }
+
+    @Test
+    @DisplayName("should terminate when line has colon but no delimiter (§9.3)")
+    void testDisambiguation_ColonOnly_terminates() throws Exception {
+        // Given — "done: true" has colon but no comma delimiter
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        context.delimiter = context.options.delimiter();
+        String line = "  done: true";
+        int lineDepth = 1;
+        int expectedRowDepth = 1;
+
+        // When
+        boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
+            new Class[]{String.class, int.class, int.class, DecodeContext.class},
+            line, lineDepth, expectedRowDepth, context);
+
+        // Then — colon present, no delimiter → key-value line
+        assertTrue(result, "Should terminate tabular array when colon present without delimiter (§9.3)");
+    }
+
+    @Test
+    @DisplayName("should NOT terminate when line has delimiter but no colon (§9.3)")
+    void testDisambiguation_DelimiterOnly_continuesRow() throws Exception {
+        // Given — "10,active" has comma but no colon → tabular row
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        context.delimiter = context.options.delimiter();
+        String line = "  10,active";
+        int lineDepth = 1;
+        int expectedRowDepth = 1;
+
+        // When
+        boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
+            new Class[]{String.class, int.class, int.class, DecodeContext.class},
+            line, lineDepth, expectedRowDepth, context);
+
+        // Then — no colon → this is a tabular row
+        assertFalse(result, "Should continue tabular array when no colon present (§9.3)");
+    }
+
+    @Test
+    @DisplayName("should handle tab pipe delimiter in disambiguation (§9.3)")
+    void testDisambiguation_PipeDelimiter_continuesRow() throws Exception {
+        // Given — pipe-delimited row, pipe before colon
+        context.options = new DecodeOptions(2, Delimiter.PIPE, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        context.delimiter = context.options.delimiter();
+        String line = "  10|active:done";
+        int lineDepth = 1;
+        int expectedRowDepth = 1;
+
+        // When
+        boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
+            new Class[]{String.class, int.class, int.class, DecodeContext.class},
+            line, lineDepth, expectedRowDepth, context);
+
+        // Then — pipe (delimiter) before colon → tabular row
+        assertFalse(result, "Should continue tabular array with pipe delimiter when delim found before colon (§9.3)");
+    }
+
+    @Test
     void testParseTabularArray_ReturnsEmptyList_WhenHeaderDoesNotMatchPattern() {
         // Given
-        context.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF);
+        context.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.lines = new String[]{"ignored"};
         context.currentLine = 0;
 

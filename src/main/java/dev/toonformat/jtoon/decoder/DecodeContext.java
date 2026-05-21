@@ -4,7 +4,7 @@ import dev.toonformat.jtoon.DecodeOptions;
 import dev.toonformat.jtoon.Delimiter;
 
 /**
- * Deals with the main attributes used to decode TOON to JSON format
+ * Deals with the main attributes used to decode TOON to JSON format.
  */
 public class DecodeContext {
 
@@ -23,12 +23,27 @@ public class DecodeContext {
     /**
      * Current line being decoded.
      */
-    protected int currentLine = 0;
+    protected int currentLine;
+
+    private int currentDepth;
 
     /**
-     * Default constructor
+     * Default constructor.
      */
     public DecodeContext() {
+        this.currentDepth = 0;
+    }
+
+    void incrementDepth() {
+        currentDepth++;
+        if (currentDepth > options.maxDepth()) {
+            throw new IllegalArgumentException(
+                "Maximum nesting depth exceeded: " + options.maxDepth());
+        }
+    }
+
+    void decrementDepth() {
+        currentDepth--;
     }
 
 }

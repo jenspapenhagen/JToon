@@ -5,7 +5,10 @@ plugins {
     id 'maven-publish'
     id 'signing'
     id 'jacoco'
-    id 'com.github.spotbugs' version '6.4.8'
+    id 'com.github.spotbugs' version '6.5.4'
+    id 'pmd'
+    id 'checkstyle'
+    id 'info.solidsoft.pitest' version '1.19.0'
 }
 
 group = 'dev.toonformat'
@@ -30,6 +33,7 @@ java {
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 jacoco {
@@ -41,19 +45,125 @@ spotbugs {
     ignoreFailures = false
     showProgress = true
     excludeFilter = file("spotbugs-filter.xml")
+pitest {
+    pitestVersion = '1.17.4'
+    targetClasses = ['dev.toonformat.jtoon.*']
+    targetTests = ['dev.toonformat.jtoon.*']
+    outputFormats = ['XML', 'HTML']
+    mutationThreshold = 70
+    coverageThreshold = 70
+}
+
+spotbugs {
+    toolVersion = '4.9.8'
+    excludeFilter = file('spotbugs-exclude.xml')
+    effort = com.github.spotbugs.snom.Effort.valueOf("MAX")
+    reportLevel = com.github.spotbugs.snom.Confidence.valueOf("LOW")
+    reportsDir = layout.buildDirectory.dir('spotbugs')
+}
+
+tasks.spotbugsMain {
+    reports {
+        html {
+            required = true
+            outputLocation = file("${spotbugs.reportsDir.get()}/spotbugs-main.html")
+        }
+        xml {
+            required = true
+            outputLocation = file("${spotbugs.reportsDir.get()}/spotbugs-main.xml")
+        }
+    }
+}
+
+tasks.spotbugsTest {
+    reports {
+        html {
+            required = true
+            outputLocation = file("${spotbugs.reportsDir.get()}/spotbugs-test.html")
+        }
+        xml {
+            required = true
+            outputLocation = file("${spotbugs.reportsDir.get()}/spotbugs-test.xml")
+        }
+    }
+    ignoreFailures = true
+}
+
+pmd {
+    toolVersion = '7.21.0'
+    ruleSetFiles = files('pmd-rules.xml')
+    ruleSets = [] // Disable default rulesets, use custom file only
+    consoleOutput = true
+    ignoreFailures = true
+}
+
+tasks.pmdMain {
+    reports {
+        html.required = true
+        xml.required = true
+    }
+}
+
+tasks.pmdTest {
+    ruleSetFiles = files('pmd-rules-test.xml')
+    ignoreFailures = true
+    reports {
+        html.required = true
+        xml.required = true
+    }
+}
+
+checkstyle {
+    toolVersion = '10.12.5'
+    configFile = file('checkstyle.xml')
+    showViolations = true
+    ignoreFailures = true
+}
+
+tasks.checkstyleMain {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+tasks.checkstyleTest {
+    enabled = false
+    ignoreFailures = true
 }
 
 dependencies {
-    implementation 'tools.jackson.core:jackson-databind:3.0.3'
-    implementation 'tools.jackson.module:jackson-module-afterburner:3.0.3'
-    testImplementation platform('org.junit:junit-bom:6.0.1')
+    implementation 'tools.jackson.core:jackson-databind:3.1.3'
+    implementation 'tools.jackson.module:jackson-module-blackbird:3.1.3'
+    compileOnly 'com.github.spotbugs:spotbugs-annotations:4.9.8'
+    testImplementation platform('org.junit:junit-bom:6.0.3')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.awaitility:awaitility:4.3.0'
+    testImplementation 'org.pitest:pitest-junit5-plugin:1.2.3'
+    testImplementation 'org.openjdk.jmh:jmh-core:1.37'
+    testImplementation 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
+    testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 }
+
+// Check if running in CI or coverage is explicitly requested
+boolean isCi = System.getenv('CI') == 'true'
+boolean withCoverage = project.hasProperty('withCoverage') || isCi
 
 test {
     useJUnitPlatform()
-    finalizedBy jacocoTestReport // report is always generated after tests run
+    // Only run jacoco coverage in CI or when explicitly requested
+    if (withCoverage) {
+        finalizedBy jacocoTestReport
+        jacoco {
+            enabled = true
+        }
+    } else {
+        // Completely disable jacoco for local development
+        jacoco {
+            enabled = false
+        }
+    }
 }
 
 jacocoTestReport {
@@ -66,6 +176,8 @@ jacocoTestReport {
 }
 
 jacocoTestCoverageVerification {
+    // Only enforce coverage thresholds in CI
+    onlyIf { isCi }
     violationRules {
         rule {
             enabled = true
@@ -84,7 +196,15 @@ jacocoTestCoverageVerification {
         }
     }
 }
+
+// Only add coverage verification to check task in CI
+if (isCi) {
+    check.dependsOn jacocoTestCoverageVerification
+}
 check.dependsOn jacocoTestReport
+check.dependsOn spotbugsMain
+check.dependsOn pmdMain
+check.dependsOn checkstyleMain
 
 tasks.register('generateJavadoc', Javadoc) {
     description = 'Generates Javadoc HTML documentation in the docs/javadoc folder'
@@ -112,3 +232,14 @@ tasks.withType(SpotBugsTask).configureEach {
         html.required.set(true)
     }
 }
+tasks.register('jmh', JavaExec) {
+    group = 'verification'
+    description = 'Run JMH benchmarks'
+    classpath = configurations.testRuntimeClasspath + sourceSets.test.runtimeClasspath
+    mainClass = findProperty('benchmarkClass') ?: 'dev.toonformat.jtoon.JToonBenchmark'
+    workingDir = projectDir
+    doFirst {
+        file('build/jmh-results').mkdirs()
+    }
+}
+

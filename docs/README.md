@@ -15,7 +15,7 @@ Some Java-specific types are automatically normalized for LLM-safe output:
 | `LocalDateTime`             | ISO date-time string in quotes                             |
 | `LocalDate`                 | ISO date string in quotes                                  |
 | `LocalTime`                 | ISO time string in quotes                                  |
-| `ZonedDateTime`             | ISO zoned date-time string in quotes                       |
+| `ZonedDateTime`             | ISO offset date-time string in quotes                      |
 | `OffsetDateTime`            | ISO offset date-time string in quotes                      |
 | `Instant`                   | ISO instant string in quotes                               |
 | `java.util.Date`            | ISO instant string in quotes                               |

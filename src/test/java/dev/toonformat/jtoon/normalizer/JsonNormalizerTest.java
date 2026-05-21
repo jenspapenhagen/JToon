@@ -548,7 +548,7 @@ class JsonNormalizerTest {
 
             // Then
             assertTrue(result.isString());
-            assertTrue(result.asString().startsWith("2023-10-15T14:30:45"));
+            assertEquals("2023-10-15T14:30:45Z", result.asString());
         }
 
         @Test
@@ -1517,7 +1517,7 @@ class JsonNormalizerTest {
 
             // Then
             assertInstanceOf(StringNode.class, result);
-            assertEquals("2025-11-26T15:45:00+01:00[Europe/Berlin]", ((JsonNode) result).asString());
+            assertEquals("2025-11-26T15:45+01:00", ((JsonNode) result).asString());
         }
 
         @Test
@@ -1876,7 +1876,7 @@ class JsonNormalizerTest {
     class NormalizePojo {
         class ExplodingPojo {
             public String getValue() {
-                throw new RuntimeException("Boom");
+                throw new IllegalStateException("Boom");
             }
         }
 
@@ -1920,7 +1920,7 @@ class JsonNormalizerTest {
 
 
             // Then
-            assertEquals("Invalid JSON", thrown.getMessage());
+            assertEquals("JSON string cannot be null", thrown.getMessage());
         }
 
 
@@ -1935,9 +1935,149 @@ class JsonNormalizerTest {
 
 
             // Then
-            assertEquals("Invalid JSON", thrown.getMessage());
+            assertEquals("JSON string cannot be blank", thrown.getMessage());
         }
 
+    }
+
+    @Nested
+    @DisplayName("Security - Depth Limits")
+    class SecurityDepthLimits {
+
+        @Test
+        @DisplayName("MAX_ALLOWED_NESTING_DEPTH constant should be 256")
+        void constantShouldBe256() {
+            assertEquals(256, JsonNormalizer.MAX_ALLOWED_NESTING_DEPTH);
+        }
+
+        @Test
+        @DisplayName("Should throw when nesting depth exceeds MAX_DEPTH")
+        void throwsWhenDepthExceedsMax() {
+            // Given - create deeply nested structure that exceeds MAX_DEPTH
+            // We'll use reflection to test this by creating a custom scenario
+            // For practical testing, we verify the constant exists and logic works
+            Map<String, Object> deepMap = new HashMap<>();
+            Map<String, Object> current = deepMap;
+            for (int i = 0; i < 600; i++) {
+                Map<String, Object> next = new HashMap<>();
+                next.put("value", "test");
+                current.put("nested", next);
+                current = next;
+            }
+
+            // When/Then - should throw due to depth limit
+            assertThrows(IllegalArgumentException.class, () -> JsonNormalizer.normalize(deepMap));
+        }
+
+        @Test
+        @DisplayName("Should include MAX_DEPTH in exception message")
+        void exceptionMessageIncludesMaxDepth() {
+            Map<String, Object> deepMap = new HashMap<>();
+            Map<String, Object> current = deepMap;
+            for (int i = 0; i < 600; i++) {
+                Map<String, Object> next = new HashMap<>();
+                current.put("nested", next);
+                current = next;
+            }
+
+            IllegalArgumentException thrown = assertThrows(
+                IllegalArgumentException.class,
+                () -> JsonNormalizer.normalize(deepMap)
+            );
+
+            assertTrue(thrown.getMessage().contains("256"));
+            assertTrue(thrown.getMessage().contains("nesting depth"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Security - Circular Reference Detection")
+    class SecurityCircularReference {
+
+        @Test
+        @DisplayName("Should detect circular reference in Map")
+        void detectsCircularMapReference() {
+            // Given - create circular reference in Map
+            Map<String, Object> map1 = new HashMap<>();
+            Map<String, Object> map2 = new HashMap<>();
+            map1.put("key", map2);
+            map2.put("key", map1); // circular!
+
+            // When/Then
+            IllegalArgumentException thrown = assertThrows(
+                IllegalArgumentException.class,
+                () -> JsonNormalizer.normalize(map1)
+            );
+
+            assertTrue(thrown.getMessage().contains("Circular reference"));
+        }
+
+        @Test
+        @DisplayName("Should detect circular reference in List")
+        void detectsCircularListReference() {
+            // Given - create circular reference in List
+            List<Object> list1 = new java.util.ArrayList<>();
+            List<Object> list2 = new java.util.ArrayList<>();
+            list1.add(list2);
+            list2.add(list1); // circular!
+
+            // When/Then
+            IllegalArgumentException thrown = assertThrows(
+                IllegalArgumentException.class,
+                () -> JsonNormalizer.normalize(list1)
+            );
+
+            assertTrue(thrown.getMessage().contains("Circular reference"));
+        }
+
+        @Test
+        @DisplayName("Should detect self-referential object")
+        void detectsSelfReference() {
+            // Given - self-referential object
+            Map<String, Object> map = new HashMap<>();
+            map.put("self", map);
+
+            // When/Then
+            IllegalArgumentException thrown = assertThrows(
+                IllegalArgumentException.class,
+                () -> JsonNormalizer.normalize(map)
+            );
+
+            assertTrue(thrown.getMessage().contains("Circular reference"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Security - Stream Handling")
+    class SecurityStreamHandling {
+
+        @Test
+        @DisplayName("Stream should be materialized to List")
+        void streamMaterializedToList() {
+            // Given
+            Stream<String> stream = Stream.of("a", "b", "c");
+
+            // When
+            JsonNode result = JsonNormalizer.normalize(stream);
+
+            // Then
+            assertInstanceOf(ArrayNode.class, result);
+            assertEquals(3, result.size());
+        }
+
+        @Test
+        @DisplayName("Empty stream should return empty array")
+        void emptyStreamReturnsEmptyArray() {
+            // Given
+            Stream<String> stream = Stream.empty();
+
+            // When
+            JsonNode result = JsonNormalizer.normalize(stream);
+
+            // Then
+            assertInstanceOf(ArrayNode.class, result);
+            assertEquals(0, result.size());
+        }
     }
 }
 

@@ -114,6 +114,18 @@ public class JToonDecodeTest {
             Map<String, Object> map = (Map<String, Object>) result;
             assertEquals("line1\nline2", map.get("text"));
         }
+
+        @Test
+        @DisplayName("should decode unicode escape sequences")
+        void testUnicodeEscapedStrings() {
+            // Given
+            Object result = JToon.decode("val: \"a\\u0004b\"");
+
+            // Then
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) result;
+            assertEquals("a\u0004b", map.get("val"));
+        }
     }
 
     @Nested
@@ -307,6 +319,20 @@ public class JToonDecodeTest {
             @SuppressWarnings("unchecked")
             List<Object> items = (List<Object>) map.get("items");
             assertEquals(0, items.size());
+        }
+
+        @Test
+        @DisplayName("should decode canonical empty array field")
+        void testCanonicalEmptyArrayField() {
+            // Given
+            Object result = JToon.decode("items: []");
+
+            // Then
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) result;
+            @SuppressWarnings("unchecked")
+            List<Object> items = (List<Object>) map.get("items");
+            assertTrue(items.isEmpty());
         }
     }
 
@@ -592,6 +618,17 @@ public class JToonDecodeTest {
             List<Object> tags = (List<Object>) map.get("tags");
             assertEquals(2, tags.size());
         }
+
+        @Test
+        @DisplayName("should decode canonical empty root array")
+        void testCanonicalEmptyRootArray() {
+            // When
+            Object result = JToon.decode("[]");
+
+            // Then
+            assertInstanceOf(List.class, result);
+            assertEquals(List.of(), result);
+        }
     }
 
     @Nested
@@ -632,6 +669,127 @@ public class JToonDecodeTest {
 
             // Then
             assertEquals(Collections.emptyList(), result);
+        }
+
+        @Test
+        @DisplayName("strict mode: throws on duplicate sibling keys")
+        void strictDuplicateSiblingKeys() {
+            assertThrows(IllegalArgumentException.class,
+                () -> JToon.decode("name: Ada\nname: Bob"));
+        }
+
+        @Test
+        @DisplayName("strict mode: throws on nested duplicate sibling keys")
+        void strictNestedDuplicateKeys() {
+            assertThrows(IllegalArgumentException.class,
+                () -> JToon.decode("""
+                    outer:
+                      name: Ada
+                      name: Bob
+                    """));
+        }
+
+        @Test
+        @DisplayName("strict mode: throws on duplicate keys within a list-item object")
+        void strictDuplicateKeysInListItem() {
+            assertThrows(IllegalArgumentException.class,
+                () -> JToon.decode("""
+                    items[1]:
+                      - id: 1
+                        id: 2
+                    """));
+        }
+
+        @Test
+        @DisplayName("strict mode: throws on extra brackets between bracket segment and colon")
+        void strictExtraBrackets() {
+            assertThrows(IllegalArgumentException.class,
+                () -> JToon.decode("foo[1][bar]: 10"));
+        }
+
+        @Test
+        @DisplayName("strict mode: throws on non-integer bracket segment")
+        void strictNonIntegerBracket() {
+            assertThrows(IllegalArgumentException.class,
+                () -> JToon.decode("foo[bar]: 10"));
+        }
+
+        @Test
+        @DisplayName("strict mode: throws on text between bracket segment and colon")
+        void strictTextBetweenBracketAndColon() {
+            assertThrows(IllegalArgumentException.class,
+                () -> JToon.decode("foo[2]extra: a,b"));
+        }
+
+        @Test
+        @DisplayName("strict mode: throws on negative bracket length")
+        void strictNegativeBracketLength() {
+            assertThrows(IllegalArgumentException.class,
+                () -> JToon.decode("items[-1]: a,b,c"));
+        }
+
+        @Test
+        @DisplayName("strict mode: throws on bracket length with leading zeros")
+        void strictLeadingZeroBracketLength() {
+            assertThrows(IllegalArgumentException.class,
+                () -> JToon.decode("items[03]: a,b,c"));
+        }
+
+        @Test
+        @DisplayName("strict mode: throws on array header missing colon")
+        void strictMissingColonInArrayHeader() {
+            assertThrows(IllegalArgumentException.class,
+                () -> JToon.decode("""
+                    items[2]{id,name}
+                      1,Ada
+                      2,Bob
+                    """));
+        }
+
+        @Test
+        @DisplayName("strict mode: throws on whitespace between bracket segment and colon")
+        void strictWhitespaceBetweenBracketAndColon() {
+            assertThrows(IllegalArgumentException.class,
+                () -> JToon.decode("items[2] :\n  1,2"));
+        }
+
+        @Test
+        @DisplayName("strict mode: throws on whitespace between bracket and fields segment")
+        void strictWhitespaceBetweenBracketAndFields() {
+            assertThrows(IllegalArgumentException.class,
+                () -> JToon.decode("items[2] {a,b}:\n  1,2\n  3,4"));
+        }
+
+        @Test
+        @DisplayName("lenient mode: allows brackets in keys")
+        void lenientAllowsBracketsInKeys() {
+            DecodeOptions lenient = DecodeOptions.withStrict(false);
+            Object result = JToon.decode("foo[1][bar]: 10", lenient);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) result;
+            assertEquals(10L, map.get("foo[1][bar]"));
+        }
+
+        @Test
+        @DisplayName("lenient mode: allows duplicate keys (last-write-wins)")
+        void lenientAllowsDuplicateKeys() {
+            DecodeOptions lenient = DecodeOptions.withStrict(false);
+            Object result = JToon.decode("name: Ada\nname: Bob", lenient);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) result;
+            assertEquals("Bob", map.get("name"));
+        }
+
+        @Test
+        @DisplayName("lenient mode: allows leading zeros in bracket length")
+        void lenientAllowsLeadingZeros() {
+            DecodeOptions lenient = DecodeOptions.withStrict(false);
+            Object result = JToon.decode("items[03]: a,b,c", lenient);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) result;
+            @SuppressWarnings("unchecked")
+            List<Object> items = (List<Object>) map.get("items");
+            assertEquals(3, items.size());
         }
     }
 

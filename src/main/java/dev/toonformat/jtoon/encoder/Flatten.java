@@ -2,24 +2,24 @@ package dev.toonformat.jtoon.encoder;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import static dev.toonformat.jtoon.util.Constants.DOT;
 
 /**
  * Recursively flattens a JSON object or array into a single-level object.
  */
 public final class Flatten {
 
+    private static final Pattern SAFE_IDENTIFIER = Pattern.compile("(?i)^[A-Z_]\\w*$");
+
     private Flatten() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
-
-    private static final Pattern SAFE_IDENTIFIER = Pattern.compile("(?i)^[A-Z_]\\w*$");
 
     /**
      * Represents the result of a key-folding operation.
@@ -36,13 +36,13 @@ public final class Flatten {
     }
 
     /**
-     * Represents the result of the Collect segments of the single-key chain
+     * Represents the result of the Collect segments of the single-key chain.
      *
      * @param segments  collected single-key object
      * @param tail      the tail node (if any)
      * @param leafValue the leaf JsonValue
      */
-    private record ChainResult(List<String> segments, JsonNode tail, JsonNode leafValue) {
+    record ChainResult(List<String> segments, JsonNode tail, JsonNode leafValue) {
     }
 
     /**
@@ -63,19 +63,19 @@ public final class Flatten {
      * @param remainingDepth  the remaining depth of the object
      * @return a {@link FoldResult}, or null if folding is not possible
      */
-    public static FoldResult tryFoldKeyChain(String key,
-                                             JsonNode value,
-                                             Set<String> siblings,
-                                             Set<String> rootLiteralKeys,
-                                             String pathPrefix,
-                                             Integer remainingDepth) {
+    public static FoldResult tryFoldKeyChain(final String key,
+                                              final JsonNode value,
+                                              final Set<String> siblings,
+                                              final Set<String> rootLiteralKeys,
+                                              final String pathPrefix,
+                                              final Integer remainingDepth) {
         // Must be an object to begin folding
         if (!value.isObject() || remainingDepth <= 1) {
             return null;
         }
 
         // start chain from absolute key
-        String absKey = (pathPrefix == null) ? key : String.join(".", pathPrefix, key);
+        final String absKey = (pathPrefix == null) ? key : String.join(DOT, pathPrefix, key);
 
         // Collect segments of the single-key chain
         final ChainResult chain = collectSingleKeyChain(absKey, value, remainingDepth);
@@ -97,7 +97,7 @@ public final class Flatten {
         }
 
         // Build folded key
-        String foldedKey = String.join(".", chain.segments);
+        final String foldedKey = String.join(DOT, chain.segments);
 
         // Detect collisions with sibling keys
         if (siblings.contains(foldedKey)) {
@@ -105,9 +105,9 @@ public final class Flatten {
         }
 
         // Compute absolute dotted path
-        String absolutePath =
+        final String absolutePath =
                 (pathPrefix != null && !pathPrefix.isEmpty())
-                        ? String.join(".", pathPrefix, foldedKey)
+                        ? String.join(DOT, pathPrefix, foldedKey)
                         : foldedKey;
 
 
@@ -125,7 +125,7 @@ public final class Flatten {
 
     /**
      * Traverses nested single-key {@link ObjectNode} values, collecting the
-     * sequence of keys until one of the following occurs:
+     * sequence of keys until one of the following occurs.
      * - A non-object value is encountered
      * - An object with zero or more than one key is encountered
      * - An empty object is encountered (treated as a leaf)
@@ -136,10 +136,12 @@ public final class Flatten {
      * @param maxDepth   maximum number of allowed segments
      * @return a {@link ChainResult} containing segments, tail, and leafValue
      */
-    private static ChainResult collectSingleKeyChain(String startKey, JsonNode startValue, int maxDepth) {
+    static ChainResult collectSingleKeyChain(final String startKey,
+                                                     final JsonNode startValue,
+                                                     final int maxDepth) {
         // normalize absolute key to its local segment
-        String localStartKey = startKey.contains(".")
-                ? startKey.substring(startKey.lastIndexOf('.') + 1)
+        final String localStartKey = startKey.contains(DOT)
+                ? startKey.substring(startKey.lastIndexOf(DOT.charAt(0)) + 1)
                 : startKey;
 
         final List<String> segments = new ArrayList<>();
@@ -149,16 +151,16 @@ public final class Flatten {
         // track depth of folding
         int depthCounter = 1;
 
-        while (currentValue.isObject() && depthCounter < maxDepth) {
+        while (depthCounter < maxDepth && currentValue.isObject()) {
             final ObjectNode obj = (ObjectNode) currentValue;
-            Iterator<Map.Entry<String, JsonNode>> it = obj.properties().iterator();
+            final Iterator<Map.Entry<String, JsonNode>> it = obj.properties().iterator();
 
             // empty object leaf
             if (!it.hasNext()) {
                 return new ChainResult(segments, null, currentValue);
             }
 
-            Map.Entry<String, JsonNode> entry = it.next();
+            final Map.Entry<String, JsonNode> entry = it.next();
 
             // >1 field, this is a tail object
             if (it.hasNext()) {

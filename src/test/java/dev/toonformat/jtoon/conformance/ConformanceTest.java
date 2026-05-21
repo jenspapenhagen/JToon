@@ -48,6 +48,7 @@ public class ConformanceTest {
                 .map(this::parseFixture);
         }
 
+        @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
         private EncodeTestFile parseFixture(File file) {
             try {
                 EncodeTestFixture fixture = mapper.readValue(file, EncodeTestFixture.class);
@@ -131,9 +132,10 @@ public class ConformanceTest {
                 .map(this::parseFixture);
         }
 
+        @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
         private DecodeTestFile parseFixture(File file) {
             try {
-                var fixture = mapper.readValue(file, DecodeTestFixture.class);
+                DecodeTestFixture fixture = mapper.readValue(file, DecodeTestFixture.class);
                 return new DecodeTestFile(file, fixture);
             } catch (Exception exception) {
                 throw new RuntimeException("Failed to parse test fixture: " + file.getName(), exception);
@@ -150,7 +152,7 @@ public class ConformanceTest {
         }
 
         private Stream<DynamicTest> createTestsFromFixture(DecodeTestFile decodeFile) {
-            var fixture = decodeFile.fixture();
+            DecodeTestFixture fixture = decodeFile.fixture();
             return fixture.tests().stream()
                 .map(this::createDynamicTest);
         }
@@ -160,7 +162,7 @@ public class ConformanceTest {
         }
 
         private void executeTestCase(JsonDecodeTestCase testCase) {
-            var options = parseOptions(testCase.options());
+            DecodeOptions options = parseOptions(testCase.options());
             String toonInput = testCase.input().asString();
 
             if (Boolean.TRUE.equals(testCase.shouldError())) {
@@ -212,7 +214,7 @@ public class ConformanceTest {
                 };
             }
 
-            return new DecodeOptions(indent, delimiter, strict, expandPaths);
+            return new DecodeOptions(indent, delimiter, strict, expandPaths, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         }
 
         private record DecodeTestFile(File file, DecodeTestFixture fixture) {

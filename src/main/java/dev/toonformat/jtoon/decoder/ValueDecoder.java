@@ -3,10 +3,10 @@ package dev.toonformat.jtoon.decoder;
 import dev.toonformat.jtoon.DecodeOptions;
 import dev.toonformat.jtoon.util.ObjectMapperSingleton;
 import tools.jackson.databind.ObjectMapper;
-
 import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
-
+import static dev.toonformat.jtoon.util.Constants.NULL_LITERAL;
+import static dev.toonformat.jtoon.util.Constants.OPEN_BRACKET;
 import static dev.toonformat.jtoon.util.Headers.KEYED_ARRAY_PATTERN;
 
 /**
@@ -45,20 +45,36 @@ public final class ValueDecoder {
      * @throws IllegalArgumentException if strict mode is enabled and input is
      *                                  invalid
      */
-    public static Object decode(String toon, DecodeOptions options) {
-        if (toon == null || toon.trim().isEmpty()) {
+    public static Object decode(final String toon, final DecodeOptions options) {
+        try {
+            return decodeInternal(toon, options);
+        } catch (IllegalArgumentException e) {
+            if (!options.strict()) {
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    private static Object decodeInternal(final String toon, final DecodeOptions options) {
+        if (toon == null || toon.isBlank()) {
             return new LinkedHashMap<>();
         }
 
         // Special case: if input is exactly "null", return null
-        String trimmed = toon.trim();
-        if ("null".equals(trimmed)) {
+        final String trimmed = toon.trim();
+        if (NULL_LITERAL.equals(trimmed)) {
             return null;
+        }
+        if ("[]".equals(trimmed)) {
+            return java.util.Collections.emptyList();
         }
 
         // Don't trim leading whitespace - we need it for indentation validation
         // Only trim trailing whitespace to avoid issues with empty lines at the end
-        String processed = Character.isWhitespace(toon.charAt(toon.length() - 1)) ? toon.stripTrailing() : toon;
+        final String processed = Character.isWhitespace(toon.charAt(toon.length() - 1))
+            ? toon.stripTrailing()
+            : toon;
 
         //set an own decode context
         final DecodeContext context = new DecodeContext();
@@ -66,9 +82,9 @@ public final class ValueDecoder {
         context.options = options;
         context.delimiter = options.delimiter();
 
-        int lineIndex = context.currentLine;
-        String line = context.lines[lineIndex];
-        int depth = DecodeHelper.getDepth(line, context);
+        final int lineIndex = context.currentLine;
+        final String line = context.lines[lineIndex];
+        final int depth = DecodeHelper.getDepth(line, context);
 
         if (depth > 0) {
             if (context.options.strict()) {
@@ -78,24 +94,46 @@ public final class ValueDecoder {
         }
 
         // Handle standalone arrays: [2]:
-        if (!line.isEmpty() && line.charAt(0) == '[') {
+        if (!line.isEmpty() && line.charAt(0) == OPEN_BRACKET.charAt(0)) {
             return ArrayDecoder.parseArray(line, depth, context);
         }
 
         // Handle keyed arrays: items[2]{id,name}:
-        Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(line);
+        final Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(line);
         if (keyedArray.matches()) {
             return KeyDecoder.parseKeyedArrayValue(keyedArray, line, depth, context);
         }
         // Handle key-value pairs: name: Ada
-        int colonIdx = DecodeHelper.findUnquotedColon(line);
+        final int colonIdx = DecodeHelper.findUnquotedColon(line);
         if (colonIdx > 0) {
-            String key = line.substring(0, colonIdx).trim();
-            String value = line.substring(colonIdx + 1).trim();
+            if (context.options.strict()) {
+                final String key = line.substring(0, colonIdx).trim();
+                // In strict mode, reject keys with unquoted brackets that didn't match
+                // KEYED_ARRAY_PATTERN. This catches:
+                //   - extra brackets between bracket segment and colon (foo[1][bar])
+                //   - text between bracket segment and colon (foo[2]extra)
+                //   - non-integer bracket segment (foo[bar])
+                //   - negative bracket length (items[-1])
+                //   - whitespace between bracket segment and colon/fields segment
+                //     (items[2] :, items[2] {a,b}:)
+                if (DecodeHelper.hasUnquotedBrackets(key)) {
+                    throw new IllegalArgumentException(
+                        "Invalid array header syntax at line " + (context.currentLine + 1));
+                }
+            }
+            final String key = line.substring(0, colonIdx).trim();
+            final String value = line.substring(colonIdx + 1).trim();
             return KeyDecoder.parseKeyValuePair(key, value, depth, depth == 0, context);
         }
 
         // Bare scalar value
+        if (context.options.strict() && DecodeHelper.hasUnquotedBrackets(line)) {
+            // Line has brackets but no colon and didn't match KEYED_ARRAY_PATTERN
+            // (e.g. "items[2]{id,name}" missing colon)
+            throw new IllegalArgumentException(
+                "Invalid syntax: unquoted brackets without valid header at line "
+                    + (context.currentLine + 1));
+        }
         return ObjectDecoder.parseBareScalarValue(line, depth, context);
     }
 
@@ -114,10 +152,17 @@ public final class ValueDecoder {
      * @throws IllegalArgumentException if strict mode is enabled and input is
      *                                  invalid
      */
-    public static String decodeToJson(String toon, DecodeOptions options) {
+    public static String decodeToJson(final String toon, final DecodeOptions options) {
         try {
-            Object decoded = decode(toon, options);
+            final Object decoded = decode(toon, options);
+            if (decoded == null) {
+                return NULL_LITERAL;
+            }
             return MAPPER.writeValueAsString(decoded);
+        } catch (IllegalArgumentException e) {
+            // decode() already threw, or strict-mode structural failure
+            // re-throw with wrapping for consistency
+            throw new IllegalArgumentException("Failed to convert decoded value to JSON", e);
         } catch (Exception e) {
             throw new IllegalArgumentException("Failed to convert decoded value to JSON: " + e.getMessage(), e);
         }

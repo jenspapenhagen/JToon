@@ -3,12 +3,12 @@ package dev.toonformat.jtoon.decoder;
 import dev.toonformat.jtoon.Delimiter;
 import dev.toonformat.jtoon.PathExpansion;
 import dev.toonformat.jtoon.util.StringEscaper;
-
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
-
+import java.util.regex.MatchResult;
+import static dev.toonformat.jtoon.util.Constants.DOT;
 import static dev.toonformat.jtoon.util.Headers.KEYED_ARRAY_PATTERN;
 
 /**
@@ -29,11 +29,11 @@ public final class KeyDecoder {
      * @param parentDepth parent depth of keyed array line
      * @param context     decode an object to deal with lines, delimiter and options
      */
-    static void processKeyedArrayLine(Map<String, Object> result, String content, String originalKey,
-                                      int parentDepth, DecodeContext context) {
-        String key = StringEscaper.unescape(originalKey);
-        String arrayHeader = content.substring(originalKey.length());
-        List<Object> arrayValue = ArrayDecoder.parseArray(arrayHeader, parentDepth + 1, context);
+    static void processKeyedArrayLine(final Map<String, Object> result, final String content, final String originalKey,
+                                      final int parentDepth, final DecodeContext context) {
+        final String key = StringEscaper.unescape(originalKey);
+        final String arrayHeader = content.substring(originalKey.length());
+        final List<Object> arrayValue = ArrayDecoder.parseArray(arrayHeader, parentDepth + 1, context);
 
         // Handle path expansion for array keys
         if (shouldExpandKey(originalKey, context)) {
@@ -41,6 +41,7 @@ public final class KeyDecoder {
         } else {
             // Check for conflicts with existing expanded paths
             DecodeHelper.checkPathExpansionConflict(result, key, arrayValue, context);
+            DecodeHelper.checkDuplicateKey(result, key, context);
             result.put(key, arrayValue);
         }
     }
@@ -53,24 +54,26 @@ public final class KeyDecoder {
      * @param value     value
      * @param context   decode an object to deal with lines, delimiter and options
      */
-    static void expandPathIntoMap(Map<String, Object> current, String dottedKey, Object value, DecodeContext context) {
-        String[] segments = dottedKey.split("\\.");
+    static void expandPathIntoMap(final Map<String, Object> current, final String dottedKey, final Object value,
+                                  final DecodeContext context) {
+        final String[] segments = dottedKey.split("\\.");
+        Map<String, Object> currentMap = current;
 
         // Navigate/create nested structure
         for (int i = 0; i < segments.length - 1; i++) {
-            String segment = segments[i];
-            Object existing = current.get(segment);
+            final String segment = segments[i];
+            final Object existing = currentMap.get(segment);
 
             if (existing == null) {
                 // Create a new nested object
-                Map<String, Object> nested = new LinkedHashMap<>();
-                current.put(segment, nested);
-                current = nested;
+                final Map<String, Object> nested = new LinkedHashMap<>();
+                currentMap.put(segment, nested);
+                currentMap = nested;
             } else if (existing instanceof Map) {
                 // Use existing nested object
                 @SuppressWarnings("unchecked")
-                Map<String, Object> existingMap = (Map<String, Object>) existing;
-                current = existingMap;
+                final Map<String, Object> existingMap = (Map<String, Object>) existing;
+                currentMap = existingMap;
             } else {
                 // Conflict: existing is not a Map
                 if (context.options.strict()) {
@@ -79,22 +82,24 @@ public final class KeyDecoder {
                             segment, existing.getClass().getSimpleName()));
                 }
                 // LWW: overwrite with new nested object
-                Map<String, Object> nested = new LinkedHashMap<>();
-                current.put(segment, nested);
-                current = nested;
+                final Map<String, Object> nested = new LinkedHashMap<>();
+                currentMap.put(segment, nested);
+                currentMap = nested;
             }
         }
 
         // Set the final value
-        String finalSegment = segments[segments.length - 1];
-        Object existing = current.get(finalSegment);
+        final String finalSegment = segments[segments.length - 1];
+        final Object existing = currentMap.get(finalSegment);
 
         DecodeHelper.checkFinalValueConflict(finalSegment, existing, value, context);
 
         // LWW: last write wins (always overwrite in non-strict, or if types match in
         // strict)
-        current.put(finalSegment, value);
+        currentMap.put(finalSegment, value);
     }
+
+
 
     /**
      * Processes a key-value line (e.g., "key: value").
@@ -104,12 +109,13 @@ public final class KeyDecoder {
      * @param depth   the depth of the value line
      * @param context decode an object to deal with lines, delimiter and options
      */
-    static void processKeyValueLine(Map<String, Object> result, String content, int depth, DecodeContext context) {
-        int colonIdx = DecodeHelper.findUnquotedColon(content);
+    static void processKeyValueLine(final Map<String, Object> result, final String content,
+            final int depth, final DecodeContext context) {
+        final int colonIdx = DecodeHelper.findUnquotedColon(content);
 
         if (colonIdx > 0) {
-            String key = content.substring(0, colonIdx).trim();
-            String value = content.substring(colonIdx + 1).trim();
+            final String key = content.substring(0, colonIdx).trim();
+            final String value = content.substring(colonIdx + 1).trim();
             parseKeyValuePairIntoMap(result, key, value, depth, context);
         } else {
             // No colon found in key-value context - this is an error
@@ -130,11 +136,11 @@ public final class KeyDecoder {
      * @param depth   the depth of the value pair
      * @param context decode an object to deal with lines, delimiter and options
      */
-    static void parseKeyValuePairIntoMap(Map<String, Object> map, String key, String value,
-                                         int depth, DecodeContext context) {
-        String unescapedKey = StringEscaper.unescape(key);
+    static void parseKeyValuePairIntoMap(final Map<String, Object> map, final String key, final String value,
+                                         final int depth, final DecodeContext context) {
+        final String unescapedKey = StringEscaper.unescape(key);
 
-        Object parsedValue = parseKeyValue(value, depth, context);
+        final Object parsedValue = parseKeyValue(value, depth, context);
         putKeyValueIntoMap(map, key, unescapedKey, parsedValue, context);
     }
 
@@ -147,7 +153,7 @@ public final class KeyDecoder {
      * @param context decode an object to deal with lines, delimiter and options
      * @return true if a key should be expanded or false if not
      */
-    static boolean shouldExpandKey(String key, DecodeContext context) {
+    static boolean shouldExpandKey(final String key, final DecodeContext context) {
         if (context.options.expandPaths() != PathExpansion.SAFE) {
             return false;
         }
@@ -156,13 +162,13 @@ public final class KeyDecoder {
             return false;
         }
         // Check if a key contains dots and is a valid identifier pattern
-        if (!key.contains(".")) {
+        if (!key.contains(DOT)) {
             return false;
         }
         // Valid identifier: starts with a letter or underscore, followed by letters,
         // digits, underscores
         // Each segment must match this pattern
-        String[] segments = key.split("\\.");
+        final String[] segments = key.split("\\.");
         for (String segment : segments) {
             if (!segment.matches("^[a-zA-Z_]\\w*$")) {
                 return false;
@@ -179,32 +185,36 @@ public final class KeyDecoder {
      * @param depth the depth at which the key-value pair is located
      * @return the parsed value (Map, List, or primitive)
      */
-    private static Object parseKeyValue(String value, int depth, DecodeContext context) {
+    private static Object parseKeyValue(final String value, final int depth, final DecodeContext context) {
         // Check if the next line is nested (deeper indentation)
         if (context.currentLine + 1 < context.lines.length) {
-            int nextDepth = DecodeHelper.getDepth(context.lines[context.currentLine + 1], context);
+            final int nextDepth = DecodeHelper.getDepth(context.lines[context.currentLine + 1], context);
             if (nextDepth > depth) {
                 context.currentLine++;
                 // parseNestedObject manages the currentLine, so we don't increment here
                 return ObjectDecoder.parseNestedObject(depth, context);
             } else {
                 // If the value is empty, create an empty object; otherwise parse as primitive
-                Object parsedValue;
-                if (value.trim().isEmpty()) {
+                final Object parsedValue;
+                if (value.isBlank()) {
                     parsedValue = new LinkedHashMap<>();
+                } else if ("[]".equals(value)) {
+                    parsedValue = List.of();
                 } else {
-                    parsedValue = PrimitiveDecoder.parse(value);
+                    parsedValue = PrimitiveDecoder.parse(value, context);
                 }
                 context.currentLine++;
                 return parsedValue;
             }
         } else {
             // If the value is empty, create an empty object; otherwise parse as primitive
-            Object parsedValue;
-            if (value.trim().isEmpty()) {
+            final Object parsedValue;
+            if (value.isBlank()) {
                 parsedValue = new LinkedHashMap<>();
+            } else if ("[]".equals(value)) {
+                parsedValue = List.of();
             } else {
-                parsedValue = PrimitiveDecoder.parse(value);
+                parsedValue = PrimitiveDecoder.parse(value, context);
             }
             context.currentLine++;
             return parsedValue;
@@ -220,13 +230,14 @@ public final class KeyDecoder {
      * @param unescapedKey the unescaped key
      * @param value        the value to put
      */
-    private static void putKeyValueIntoMap(Map<String, Object> map, String originalKey, String unescapedKey,
-                                           Object value, DecodeContext context) {
+    private static void putKeyValueIntoMap(final Map<String, Object> map, final String originalKey,
+            final String unescapedKey, final Object value, final DecodeContext context) {
         // Handle path expansion
         if (shouldExpandKey(originalKey, context)) {
             expandPathIntoMap(map, unescapedKey, value, context);
         } else {
             DecodeHelper.checkPathExpansionConflict(map, unescapedKey, value, context);
+            DecodeHelper.checkDuplicateKey(map, unescapedKey, context);
             map.put(unescapedKey, value);
         }
     }
@@ -241,9 +252,9 @@ public final class KeyDecoder {
      * @param context         decode an object to deal with lines, delimiter, and options
      * @return parsed a key-value pair
      */
-    static Object parseKeyValuePair(String key, String value, int depth, boolean parseRootFields,
-                                    DecodeContext context) {
-        Map<String, Object> obj = new LinkedHashMap<>();
+    static Object parseKeyValuePair(final String key, final String value, final int depth,
+            final boolean parseRootFields, final DecodeContext context) {
+        final Map<String, Object> obj = new LinkedHashMap<>();
         parseKeyValuePairIntoMap(obj, key, value, depth, context);
 
         if (parseRootFields) {
@@ -261,13 +272,15 @@ public final class KeyDecoder {
      * @param context    decode an object to deal with lines, delimiter, and options
      * @return parsed keyed array value
      */
-    static Object parseKeyedArrayValue(Matcher keyedArray, String content, int depth, DecodeContext context) {
-        String originalKey = keyedArray.group(1).trim();
-        String key = StringEscaper.unescape(originalKey);
-        String arrayHeader = content.substring(keyedArray.group(1).length());
+    static Object parseKeyedArrayValue(final MatchResult keyedArray, final String content,
+            final int depth, final DecodeContext context) {
+        final String group1 = keyedArray.group(1);
+        final String originalKey = group1.trim();
+        final String key = StringEscaper.unescape(originalKey);
+        final String arrayHeader = content.substring(group1.length());
 
-        var arrayValue = ArrayDecoder.parseArray(arrayHeader, depth, context);
-        Map<String, Object> obj = new LinkedHashMap<>();
+        final List<Object> arrayValue = ArrayDecoder.parseArray(arrayHeader, depth, context);
+        final Map<String, Object> obj = new LinkedHashMap<>();
 
         // Handle path expansion for array keys
         if (shouldExpandKey(originalKey, context)) {
@@ -295,24 +308,28 @@ public final class KeyDecoder {
      * @param context      decode an object to deal with lines, delimiter and options
      * @return true if the field was processed as a keyed array, false otherwise
      */
-    static boolean parseKeyedArrayField(String fieldContent, Map<String, Object> item, int depth, DecodeContext context) {
-        Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(fieldContent);
+    static boolean parseKeyedArrayField(final String fieldContent, final Map<String, Object> item, final int depth,
+                                        final DecodeContext context) {
+        final Matcher keyedArray = KEYED_ARRAY_PATTERN.matcher(fieldContent);
         if (!keyedArray.matches()) {
             return false;
         }
 
-        String originalKey = keyedArray.group(1).trim();
-        String key = StringEscaper.unescape(originalKey);
-        String arrayHeader = fieldContent.substring(keyedArray.group(1).length());
+        final String group1 = keyedArray.group(1);
+        final String originalKey = group1.trim();
+        final String key = StringEscaper.unescape(originalKey);
+        final String arrayHeader = fieldContent.substring(group1.length());
 
         // For nested arrays in list items, default to comma delimiter if not specified
-        Delimiter nestedArrayDelimiter = ArrayDecoder.extractDelimiterFromHeader(arrayHeader, context);
-        var arrayValue = ArrayDecoder.parseArrayWithDelimiter(arrayHeader, depth + 2, nestedArrayDelimiter, context);
+        final Delimiter nestedArrayDelimiter = ArrayDecoder.extractDelimiterFromHeader(arrayHeader, context);
+        final List<Object> arrayValue = ArrayDecoder.parseArrayWithDelimiter(arrayHeader, depth + 2,
+                                                                             nestedArrayDelimiter, context);
 
         // Handle path expansion for array keys
         if (shouldExpandKey(originalKey, context)) {
             expandPathIntoMap(item, key, arrayValue, context);
         } else {
+            DecodeHelper.checkDuplicateKey(item, key, context);
             item.put(key, arrayValue);
         }
 
@@ -329,21 +346,23 @@ public final class KeyDecoder {
      * @param context      decode an object to deal with lines, delimiter and options
      * @return true if the field was processed as a key-value pair, false otherwise
      */
-    static boolean parseKeyValueField(String fieldContent, Map<String, Object> item, int depth, DecodeContext context) {
-        int colonIdx = DecodeHelper.findUnquotedColon(fieldContent);
+    static boolean parseKeyValueField(final String fieldContent, final Map<String, Object> item, final int depth,
+                                       final DecodeContext context) {
+        final int colonIdx = DecodeHelper.findUnquotedColon(fieldContent);
         if (colonIdx <= 0) {
             return false;
         }
 
-        String fieldKey = StringEscaper.unescape(fieldContent.substring(0, colonIdx).trim());
-        String fieldValue = fieldContent.substring(colonIdx + 1).trim();
+        final String fieldKey = StringEscaper.unescape(fieldContent.substring(0, colonIdx).trim());
+        final String fieldValue = fieldContent.substring(colonIdx + 1).trim();
 
-        Object parsedValue = ObjectDecoder.parseFieldValue(fieldValue, depth + 2, context);
+        final Object parsedValue = ObjectDecoder.parseFieldValue(fieldValue, depth + 2, context);
 
         // Handle path expansion
         if (shouldExpandKey(fieldKey, context)) {
             expandPathIntoMap(item, fieldKey, parsedValue, context);
         } else {
+            DecodeHelper.checkDuplicateKey(item, fieldKey, context);
             item.put(fieldKey, parsedValue);
         }
 

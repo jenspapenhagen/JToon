@@ -148,7 +148,7 @@ class ValueDecoderTest {
     @Test
     void givenNoLines_whenParse_thenReturnEmptyMap() {
         // Given
-        DecodeOptions decodeOptions = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF);
+        DecodeOptions decodeOptions = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         Object parseValue = ValueDecoder.decode("  indented", decodeOptions);// depth=1
 
         // Then
@@ -159,7 +159,7 @@ class ValueDecoderTest {
     @Test
     void givenIndentedLineAndStrict_whenParse_thenThrow() {
         // Given
-        DecodeOptions decodeOptions = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF);
+        DecodeOptions decodeOptions = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
 
         // When / Then
         assertThrows(IllegalArgumentException.class, () -> ValueDecoder.decode("  indented", decodeOptions));
@@ -168,7 +168,7 @@ class ValueDecoderTest {
     @Test
     void decode_keyValuePair_callsKeyDecoder() {
         // Given
-        DecodeOptions decodeOptions = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF);
+        DecodeOptions decodeOptions = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
 
         // When
         Object result = ValueDecoder.decode("name: Ada", decodeOptions);
@@ -187,7 +187,7 @@ class ValueDecoderTest {
     @Test
     void decodeToJson_throwsWrappedException_whenDecodeFails() {
         // Given
-        DecodeOptions options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF);
+        DecodeOptions options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
 
         String invalidIndentedInput = "  badIndent";
 
@@ -202,6 +202,59 @@ class ValueDecoderTest {
         assertNotNull(ex.getCause());  // original decode() exception is preserved
         assertInstanceOf(IllegalArgumentException.class, ex.getCause());
         assertTrue(ex.getCause().getMessage().contains("Unexpected indentation"));
+    }
+
+    @Test
+    void givenInvalidInputAndStrictFalse_whenDecode_thenReturnsNull() {
+        // Given — malformed quoted string causes StringEscaper to throw
+        DecodeOptions options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        String invalidInput = "value: \"unclosed";
+
+        // When
+        Object result = ValueDecoder.decode(invalidInput, options);
+
+        // Then
+        assertNull(result);
+    }
+
+    @Test
+    void givenDecodeReturnsNull_whenDecodeToJson_thenReturnsNullLiteral() {
+        // Given — malformed quoted string causes StringEscaper to throw
+        DecodeOptions options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        String invalidInput = "value: \"unclosed";
+
+        // When
+        String result = ValueDecoder.decodeToJson(invalidInput, options);
+
+        // Then
+        assertEquals("null", result);
+    }
+
+    @Test
+    void givenNullLiteralInput_whenDecodeToJson_thenReturnsNullLiteral() {
+        // Given
+        String input = "null";
+
+        // When
+        String result = ValueDecoder.decodeToJson(input, DecodeOptions.DEFAULT);
+
+        // Then
+        assertEquals("null", result);
+    }
+
+    @Test
+    void givenValidInputAndStrictFalse_whenDecode_thenReturnsResult() {
+        // Given
+        DecodeOptions options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        String validInput = "name: Ada";
+
+        // When
+        Object result = ValueDecoder.decode(validInput, options);
+
+        // Then
+        assertNotNull(result);
+        assertInstanceOf(Map.class, result);
+        assertEquals("Ada", ((Map<?, ?>) result).get("name"));
     }
 
 }

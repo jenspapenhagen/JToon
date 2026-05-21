@@ -4,8 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import tools.jackson.databind.MapperFeature;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.module.afterburner.AfterburnerModule;
-
+import tools.jackson.module.blackbird.BlackbirdModule;
 import java.util.TimeZone;
 
 /**
@@ -15,7 +14,7 @@ public final class ObjectMapperSingleton {
     /**
      * Holds the singleton ObjectMapper.
      */
-    private static ObjectMapper INSTANCE;
+    private static volatile ObjectMapper instance;
 
     private ObjectMapperSingleton() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
@@ -27,14 +26,22 @@ public final class ObjectMapperSingleton {
      * @return ObjectMapper
      */
     public static ObjectMapper getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = JsonMapper.builder()
-                .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.ALWAYS))
-                .addModule(new AfterburnerModule()) // Speeds up Jackson by 20–40% in most real-world cases
-                .defaultTimeZone(TimeZone.getTimeZone("UTC")) // set a default timezone for dates
-                .disable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
-                .build();
+        ObjectMapper result = instance;
+        if (result == null) {
+            synchronized (ObjectMapperSingleton.class) {
+                result = instance;
+                if (result == null) {
+                    result = JsonMapper.builder()
+                        .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.ALWAYS))
+                        .addModule(new BlackbirdModule()) // Speeds up Jackson by 20-40%
+                                                              // using MethodHandles (faster than Afterburner)
+                        .defaultTimeZone(TimeZone.getTimeZone("UTC")) // set a default timezone for dates
+                        .disable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
+                        .build();
+                    instance = result;
+                }
+            }
         }
-        return INSTANCE;
+        return result;
     }
 }

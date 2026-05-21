@@ -2,18 +2,27 @@ package dev.toonformat.jtoon.decoder;
 
 import dev.toonformat.jtoon.Delimiter;
 import dev.toonformat.jtoon.util.StringEscaper;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
-
+import static dev.toonformat.jtoon.util.Constants.BACKSLASH;
+import static dev.toonformat.jtoon.util.Constants.DOUBLE_QUOTE;
 import static dev.toonformat.jtoon.util.Headers.TABULAR_HEADER_PATTERN;
 
 /**
  * Handles decoding of tabular arrays to JSON format.
+ *
+ * <p>In strict mode ({@code DecodeOptions.strict() == true}), each tabular row must contain exactly
+ * the same number of values as the header declares field keys, or an
+ * {@link IllegalArgumentException} is thrown.</p>
+ *
+ * <p>In lenient mode ({@code strict == false}), rows with fewer values than keys will have the
+ * missing keys silently omitted, and rows with more values than keys will have the extra values
+ * silently dropped. This means decoding can produce partial data without error when
+ * strict validation is disabled.</p>
  */
 public final class TabularArrayDecoder {
 
@@ -32,22 +41,23 @@ public final class TabularArrayDecoder {
      * @param context        decode an object to deal with lines, delimiter and options
      * @return tabular array converted to JSON format
      */
-    public static List<Object> parseTabularArray(String header, int depth, Delimiter arrayDelimiter, DecodeContext context) {
-        Matcher matcher = TABULAR_HEADER_PATTERN.matcher(header);
+    public static List<Object> parseTabularArray(final String header, final int depth, final Delimiter arrayDelimiter,
+                                                  final DecodeContext context) {
+        final Matcher matcher = TABULAR_HEADER_PATTERN.matcher(header);
         if (!matcher.find()) {
             return Collections.emptyList();
         }
 
-        String keysStr = matcher.group(4);
-        List<String> keys = parseTabularKeys(keysStr, arrayDelimiter, context);
+        final String keysStr = matcher.group(4);
+        final List<String> keys = parseTabularKeys(keysStr, arrayDelimiter, context);
 
-        List<Object> result = new ArrayList<>();
+        final List<Object> result = new ArrayList<>();
         context.currentLine++;
 
         // Determine the expected row depth dynamically from the first non-blank line
         int expectedRowDepth = depth + 1;
         if (context.currentLine < context.lines.length) {
-            int nextNonBlankLine = DecodeHelper.findNextNonBlankLine(context.currentLine, context);
+            final int nextNonBlankLine = DecodeHelper.findNextNonBlankLine(context.currentLine, context);
             if (nextNonBlankLine < context.lines.length) {
                 expectedRowDepth = DecodeHelper.getDepth(context.lines[nextNonBlankLine], context);
             }
@@ -59,7 +69,7 @@ public final class TabularArrayDecoder {
             }
         }
 
-        ArrayDecoder.validateArrayLength(header, result.size());
+        ArrayDecoder.validateArrayLength(header, result.size(), context.options.maxArraySize());
         return result;
     }
 
@@ -72,15 +82,16 @@ public final class TabularArrayDecoder {
      * @param context        decode an object to deal with lines, delimiter and options
      * @return list of keys
      */
-    private static List<String> parseTabularKeys(String keysStr, Delimiter arrayDelimiter, DecodeContext context) {
+    private static List<String> parseTabularKeys(final String keysStr, final Delimiter arrayDelimiter,
+            final DecodeContext context) {
         // Validate delimiter mismatch between bracket and brace fields
         if (context.options.strict()) {
             validateKeysDelimiter(keysStr, arrayDelimiter);
         }
 
-        List<String> result = new ArrayList<>();
-        List<String> rawValues = ArrayDecoder.parseDelimitedValues(keysStr, arrayDelimiter);
-        for (String key : rawValues) {
+        final List<String> rawValues = ArrayDecoder.parseDelimitedValues(keysStr, arrayDelimiter);
+        final List<String> result = new ArrayList<>(rawValues.size());
+        for (final String key : rawValues) {
             result.add(StringEscaper.unescape(key));
         }
         return result;
@@ -92,18 +103,18 @@ public final class TabularArrayDecoder {
      * @param keysStr           the string representation of keys
      * @param expectedDelimiter the expected delimiter used in the array
      */
-    private static void validateKeysDelimiter(String keysStr, Delimiter expectedDelimiter) {
-        char expectedChar = expectedDelimiter.toString().charAt(0);
+    private static void validateKeysDelimiter(final String keysStr, final Delimiter expectedDelimiter) {
+        final char expectedChar = expectedDelimiter.toString().charAt(0);
         boolean inQuotes = false;
         boolean escaped = false;
 
         for (int i = 0; i < keysStr.length(); i++) {
-            char c = keysStr.charAt(i);
+            final char c = keysStr.charAt(i);
             if (escaped) {
                 escaped = false;
-            } else if (c == '\\') {
+            } else if (c == BACKSLASH) {
                 escaped = true;
-            } else if (c == '"') {
+            } else if (c == DOUBLE_QUOTE) {
                 inQuotes = !inQuotes;
             } else if (!inQuotes) {
                 checkDelimiterMismatch(expectedChar, c);
@@ -117,16 +128,17 @@ public final class TabularArrayDecoder {
      * @param expectedChar the expected delimiter character
      * @param actualChar   the actual delimiter character
      */
-    private static void checkDelimiterMismatch(char expectedChar, char actualChar) {
-        if (expectedChar == '\t' && actualChar == ',') {
-            throw new IllegalArgumentException(
-                "Delimiter mismatch: bracket declares tab, brace fields use comma");
+    private static void checkDelimiterMismatch(final char expectedChar, final char actualChar) {
+        if (expectedChar == Delimiter.TAB.getValue() && actualChar == Delimiter.COMMA.getValue()) {
+            throw new IllegalArgumentException("Delimiter mismatch: bracket declares tab (expected='"
+                    + expectedChar + "', actual='" + actualChar + "')");
         }
-        if (expectedChar == '|' && actualChar == ',') {
-            throw new IllegalArgumentException(
-                "Delimiter mismatch: bracket declares pipe, brace fields use comma");
+        if (expectedChar == Delimiter.PIPE.getValue() && actualChar == Delimiter.COMMA.getValue()) {
+            throw new IllegalArgumentException("Delimiter mismatch: bracket declares pipe (expected='"
+                    + expectedChar + "', actual='" + actualChar + "')");
         }
-        if (expectedChar == ',' && (actualChar == '\t' || actualChar == '|')) {
+        if (expectedChar == Delimiter.COMMA.getValue()
+                && (actualChar == Delimiter.TAB.getValue() || actualChar == Delimiter.PIPE.getValue())) {
             throw new IllegalArgumentException(
                 "Delimiter mismatch: bracket declares comma, brace fields use different delimiter");
         }
@@ -142,15 +154,16 @@ public final class TabularArrayDecoder {
      * @param context          decode an object to deal with lines, delimiter and options
      * @return true if parsing should continue, false if an array should terminate
      */
-    private static boolean processTabularArrayLine(int expectedRowDepth, List<String> keys, Delimiter arrayDelimiter,
-                                                   List<Object> result, DecodeContext context) {
-        String line = context.lines[context.currentLine];
+    private static boolean processTabularArrayLine(final int expectedRowDepth, final List<String> keys,
+            final Delimiter arrayDelimiter, final List<Object> result,
+            final DecodeContext context) {
+        final String line = context.lines[context.currentLine];
 
         if (DecodeHelper.isBlankLine(line)) {
             return !handleBlankLineInTabularArray(expectedRowDepth, context);
         }
 
-        int lineDepth = DecodeHelper.getDepth(line, context);
+        final int lineDepth = DecodeHelper.getDepth(line, context);
         if (shouldTerminateTabularArray(line, lineDepth, expectedRowDepth, context)) {
             return false;
         }
@@ -168,13 +181,13 @@ public final class TabularArrayDecoder {
      * @param context          decode an object to deal with lines, delimiter and options
      * @return true if an array should terminate, false if a line should be skipped
      */
-    private static boolean handleBlankLineInTabularArray(int expectedRowDepth, DecodeContext context) {
-        int nextNonBlankLine = DecodeHelper.findNextNonBlankLine(context.currentLine + 1, context);
+    private static boolean handleBlankLineInTabularArray(final int expectedRowDepth, final DecodeContext context) {
+        final int nextNonBlankLine = DecodeHelper.findNextNonBlankLine(context.currentLine + 1, context);
 
         if (nextNonBlankLine < context.lines.length) {
-            int nextDepth = DecodeHelper.getDepth(context.lines[nextNonBlankLine], context);
+            final int nextDepth = DecodeHelper.getDepth(context.lines[nextNonBlankLine], context);
             // Header depth is one level above the expected row depth
-            int headerDepth = expectedRowDepth - 1;
+            final int headerDepth = expectedRowDepth - 1;
             if (nextDepth <= headerDepth) {
                 return true;
             }
@@ -192,6 +205,13 @@ public final class TabularArrayDecoder {
 
     /**
      * Determines if tabular array parsing should terminate based on online depth.
+     * Implements the full disambiguation algorithm per spec §9.3:
+     * - Compute the first unquoted occurrence of the active delimiter and the first unquoted colon.
+     * - If a same-depth line has no unquoted colon → row.
+     * - If both appear, compare first-unquoted positions:
+     *   - Delimiter before colon → row.
+     *   - Colon before delimiter → key-value line (end of rows).
+     * - If a line has an unquoted colon but no unquoted active delimiter → key-value line.
      *
      * @param line             the line to check
      * @param lineDepth        the depth of the line
@@ -199,14 +219,14 @@ public final class TabularArrayDecoder {
      * @param context          decode an object to deal with lines, delimiter and options
      * @return true if an array should terminate, false otherwise.
      */
-    private static boolean shouldTerminateTabularArray(String line, int lineDepth, int expectedRowDepth, DecodeContext context) {
-        // Header depth is one level above the expected row depth
-        int headerDepth = expectedRowDepth - 1;
+    private static boolean shouldTerminateTabularArray(final String line, final int lineDepth,
+            final int expectedRowDepth, final DecodeContext context) {
+        final int headerDepth = expectedRowDepth - 1;
 
         if (lineDepth < expectedRowDepth) {
             if (lineDepth == headerDepth) {
-                String content = line.substring(headerDepth * context.options.indent());
-                int colonIdx = DecodeHelper.findUnquotedColon(content);
+                final String content = line.substring(headerDepth * context.options.indent());
+                final int colonIdx = DecodeHelper.findUnquotedColon(content);
                 if (colonIdx > 0) {
                     return true; // Key-value pair at the same depth-terminate an array
                 }
@@ -214,14 +234,47 @@ public final class TabularArrayDecoder {
             return true; // Line depth is less than expected - terminate
         }
 
-        // Check for a key-value pair at the expected row depth
-        if (lineDepth == expectedRowDepth) {
-            String rowContent = line.substring(expectedRowDepth * context.options.indent());
-            int colonIdx = DecodeHelper.findUnquotedColon(rowContent);
-            return colonIdx > 0; // Key-value pair at the same depth as rows - terminate an array
+        if (lineDepth != expectedRowDepth) {
+            return false;
         }
 
-        return false;
+        // Spec §9.3 disambiguation at row depth
+        final String rowContent = line.substring(expectedRowDepth * context.options.indent());
+        final char delimChar = context.delimiter.getValue();
+        final int delimIdx = findFirstUnquoted(rowContent, delimChar);
+        final int colonIdx = DecodeHelper.findUnquotedColon(rowContent);
+
+        if (colonIdx < 0) {
+            return false; // No colon → this is a row
+        }
+
+        if (delimIdx < 0) {
+            return true; // Colon present, no delimiter → key-value line
+        }
+
+        // Both colon and delimiter present: compare positions
+        return colonIdx < delimIdx; // Colon first → key-value; delimiter first → row
+    }
+
+    /**
+     * Finds the index of the first unquoted occurrence of a character in a string.
+     */
+    private static int findFirstUnquoted(final String content, final char target) {
+        boolean inQuotes = false;
+        boolean escaped = false;
+        for (int i = 0; i < content.length(); i++) {
+            final char c = content.charAt(i);
+            if (escaped) {
+                escaped = false;
+            } else if (c == '\\') {
+                escaped = true;
+            } else if (c == '"') {
+                inQuotes = !inQuotes;
+            } else if (!inQuotes && c == target) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
@@ -236,11 +289,12 @@ public final class TabularArrayDecoder {
      * @param context          decode an object to deal with lines, delimiter and options
      * @return true if a line was processed and the currentLine should be incremented, false otherwise.
      */
-    private static boolean processTabularRow(String line, int lineDepth, int expectedRowDepth, List<String> keys,
-                                             Delimiter arrayDelimiter, List<Object> result, DecodeContext context) {
+    private static boolean processTabularRow(final String line, final int lineDepth,
+            final int expectedRowDepth, final List<String> keys, final Delimiter arrayDelimiter,
+            final List<Object> result, final DecodeContext context) {
         if (lineDepth == expectedRowDepth) {
-            String rowContent = line.substring(expectedRowDepth * context.options.indent());
-            Map<String, Object> row = parseTabularRow(rowContent, keys, arrayDelimiter, context);
+            final String rowContent = line.substring(expectedRowDepth * context.options.indent());
+            final Map<String, Object> row = parseTabularRow(rowContent, keys, arrayDelimiter, context);
             result.add(row);
             return true;
         } else if (lineDepth > expectedRowDepth) {
@@ -255,15 +309,21 @@ public final class TabularArrayDecoder {
      * Parses a tabular row into a Map using the provided keys.
      * Validates that the row uses the correct delimiter.
      *
+     * <p>In strict mode, the number of values must exactly match the number of keys.
+     * In lenient mode, excess values are silently dropped and missing values
+     * result in omitted keys.</p>
+     *
      * @param rowContent     the row content to parse
      * @param keys           the keys for the tabular array
      * @param arrayDelimiter the type of delimiter used in the array
      * @param context        decode an object to deal with lines, delimiter and options
      * @return a Map containing the parsed row values
      */
-    private static Map<String, Object> parseTabularRow(String rowContent, List<String> keys, Delimiter arrayDelimiter, DecodeContext context) {
-        Map<String, Object> row = new LinkedHashMap<>();
-        List<Object> values = ArrayDecoder.parseArrayValues(rowContent, arrayDelimiter);
+    private static Map<String, Object> parseTabularRow(final String rowContent, final List<String> keys,
+                                                       final Delimiter arrayDelimiter, final DecodeContext context) {
+        final Map<String, Object> row = new LinkedHashMap<>();
+        final List<Object> values = ArrayDecoder.parseArrayValues(rowContent, arrayDelimiter,
+            context.options.maxArraySize(), context.options.maxStringLength());
 
         // Validate value count matches key count
         if (context.options.strict() && values.size() != keys.size()) {

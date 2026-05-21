@@ -584,6 +584,75 @@ class DecodeHelperTest {
     }
 
     @Nested
+    @DisplayName("hasUnquotedBrackets()")
+    class HasUnquotedBrackets {
+
+        @Test
+        @DisplayName("should return true when brackets are present")
+        void detectsBrackets() {
+            assertTrue(DecodeHelper.hasUnquotedBrackets("foo[bar]"));
+            assertTrue(DecodeHelper.hasUnquotedBrackets("[test]"));
+            assertTrue(DecodeHelper.hasUnquotedBrackets("items[2]extra"));
+        }
+
+        @Test
+        @DisplayName("should return false when no brackets")
+        void noBrackets() {
+            assertFalse(DecodeHelper.hasUnquotedBrackets("simple key: value"));
+            assertFalse(DecodeHelper.hasUnquotedBrackets("foo"));
+            assertFalse(DecodeHelper.hasUnquotedBrackets(""));
+        }
+
+        @Test
+        @DisplayName("should return false when brackets are inside quotes")
+        void bracketsInsideQuotes() {
+            assertFalse(DecodeHelper.hasUnquotedBrackets("\"[test]\""));
+            assertFalse(DecodeHelper.hasUnquotedBrackets("\"foo[bar]\""));
+        }
+
+        @Test
+        @DisplayName("should handle escaped quotes properly")
+        void escapedQuotes() {
+            // escaped quote inside quoted section should not end the quotes
+            assertFalse(DecodeHelper.hasUnquotedBrackets("\"escaped\\\"quote[br]\""));
+        }
+    }
+
+    @Nested
+    @DisplayName("checkDuplicateKey()")
+    class CheckDuplicateKey {
+
+        @Test
+        @DisplayName("should throw when key already exists in strict mode")
+        void duplicateKeyThrows() {
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", "Ada");
+            setUpContext("");
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> DecodeHelper.checkDuplicateKey(map, "name", context));
+            assertTrue(ex.getMessage().contains("Duplicate key"));
+        }
+
+        @Test
+        @DisplayName("should not throw when key does not exist")
+        void newKeyOk() {
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", "Ada");
+            setUpContext("");
+            assertDoesNotThrow(() -> DecodeHelper.checkDuplicateKey(map, "other", context));
+        }
+
+        @Test
+        @DisplayName("should not throw in non-strict mode")
+        void nonStrictAllowsDuplicate() {
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", "Ada");
+            context.options = DecodeOptions.withStrict(false);
+            assertDoesNotThrow(() -> DecodeHelper.checkDuplicateKey(map, "name", context));
+        }
+    }
+
+    @Nested
     @DisplayName("computeLeadingSpaces()")
     class computeLeadingSpaces {
         DecodeContext ctxStrict2 = new DecodeContext();
@@ -592,9 +661,9 @@ class DecodeHelperTest {
 
         @BeforeEach
         void setup() {
-            ctxStrict2.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF);
-            ctxNonStrict2.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF);
-            ctxStrict4.options = new DecodeOptions(4, Delimiter.COMMA, true, PathExpansion.OFF);
+            ctxStrict2.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+            ctxNonStrict2.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+            ctxStrict4.options = new DecodeOptions(4, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         }
 
         private int invokeCompute(String line, DecodeContext ctx) throws Exception {
@@ -651,7 +720,7 @@ class DecodeHelperTest {
 
     private void setUpContext(String[] lines, boolean strict, int indent) {
         this.context.lines = lines;
-        this.context.options = new DecodeOptions(indent, Delimiter.COMMA, strict, PathExpansion.OFF);
+        this.context.options = new DecodeOptions(indent, Delimiter.COMMA, strict, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         this.context.delimiter = DecodeOptions.DEFAULT.delimiter();
     }
 }

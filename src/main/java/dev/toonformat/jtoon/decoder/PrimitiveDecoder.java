@@ -1,6 +1,10 @@
 package dev.toonformat.jtoon.decoder;
 
 import dev.toonformat.jtoon.util.StringEscaper;
+import static dev.toonformat.jtoon.util.Constants.DOT;
+import static dev.toonformat.jtoon.util.Constants.NULL_LITERAL;
+import static dev.toonformat.jtoon.util.Constants.TRUE_LITERAL;
+import static dev.toonformat.jtoon.util.Constants.FALSE_LITERAL;
 
 /**
  * Handles parsing of primitive TOON values with type inference.
@@ -41,20 +45,32 @@ public final class PrimitiveDecoder {
      * @return The parsed value as {@code Boolean}, {@code Long}, {@code Double},
      * {@code String}, or {@code null}
      */
-    static Object parse(String value) {
+    static Object parse(final String value) {
+        return parse(value, Integer.MAX_VALUE);
+    }
+
+    static Object parse(final String value, final DecodeContext context) {
+        return parse(value, context.options.maxStringLength());
+    }
+
+    static Object parse(final String value, final int maxStringLength) {
         if (value == null || value.isEmpty()) {
             return "";
+        }
+        if (value.length() > maxStringLength) {
+            throw new IllegalArgumentException(
+                "String length " + value.length() + " exceeds maximum allowed " + maxStringLength);
         }
 
         // Check for null literal
         switch (value) {
-            case "null" -> {
+            case NULL_LITERAL -> {
                 return null;
             }
-            case "true" -> {
+            case TRUE_LITERAL -> {
                 return true;
             }
-            case "false" -> {
+            case FALSE_LITERAL -> {
                 return false;
             }
             default -> {
@@ -69,26 +85,36 @@ public final class PrimitiveDecoder {
             return StringEscaper.unescape(value);
         }
 
-        // Check for leading zeros (treat as string, except for "0", "-0", "0.0", etc.)
-        String trimmed = value.trim();
-        if (trimmed.length() > 1 && trimmed.matches("^-?0+[0-7].*")) {
-            return value;
+        // Check for forbidden leading zeros (treat as string, except for "0", "-0", "0.0", etc.)
+        // Per spec §4: tokens like "05", "0001", "-05", "-0001" must be treated as strings.
+        // But "0.5", "0e1", "-0.5", "-0e1" are valid numbers.
+        final String trimmed = value.trim();
+        if (trimmed.length() > 1) {
+            // Match forbidden leading zeros: starts with optional '-', then one or more zeros,
+            // then another digit (0-9) — meaning it's a multi-digit number with leading zeros.
+            // Exclude cases where the zero is part of a fractional/exponent form like "0.5", "0e1".
+            final boolean hasLeadingZeros = trimmed.matches("^-?0+\\d.*");
+            // But we must NOT match "0.5" style numbers (single zero integer part)
+            final boolean isLikelyFractionalOrExponent = trimmed.matches("^-?0[.eE].*");
+            if (hasLeadingZeros && !isLikelyFractionalOrExponent) {
+                return value; // treat as string
+            }
         }
 
         // Try parsing as number
         try {
             // Check if it contains exponent notation or decimal point
-            if (value.contains(".") || value.contains("e") || value.contains("E")) {
-                double parsed = Double.parseDouble(value);
+            if (value.contains("e") || value.contains("E") || value.contains(DOT)) {
+                final double parsed = Double.parseDouble(value);
                 // Handle negative zero - Java doesn't distinguish, but spec says it should be 0
                 if (parsed == 0.0) {
                     return 0L;
                 }
                 // Check if the result is a whole number - if so, return as Long
-                if (parsed == Math.floor(parsed)
-                    && !Double.isInfinite(parsed)
+                if (!Double.isInfinite(parsed)
                     && parsed >= Long.MIN_VALUE
-                    && parsed <= Long.MAX_VALUE) {
+                    && parsed <= Long.MAX_VALUE
+                    && parsed == Math.floor(parsed)) {
                     return (long) parsed;
                 }
 

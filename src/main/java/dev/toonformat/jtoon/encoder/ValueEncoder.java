@@ -4,7 +4,6 @@ import dev.toonformat.jtoon.EncodeOptions;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -21,23 +20,28 @@ public final class ValueEncoder {
     /**
      * Encodes a normalized JsonNode value to TOON format.
      * 
-     * @param value   The JsonNode to encode
+     * @param value   The JsonNode to encode (can be null)
      * @param options Encoding options (indent, delimiter, length marker)
      * @return The TOON-formatted string
      */
-    public static String encodeValue(JsonNode value, EncodeOptions options) {
+    public static String encodeValue(final JsonNode value, final EncodeOptions options) {
+        // Handle null values
+        if (value == null || value.isNull()) {
+            return "null";
+        }
+
         // Handle primitive values directly
         if (value.isValueNode()) {
             return PrimitiveEncoder.encodePrimitive(value, options.delimiter().toString());
         }
 
         // Complex values need a LineWriter for indentation
-        LineWriter writer = new LineWriter(options.indent());
+        final LineWriter writer = new LineWriter(options.indent());
 
         if (value.isArray()) {
             ArrayEncoder.encodeArray(null, (ArrayNode) value, writer, 0, options);
         } else if (value.isObject()) {
-            Set<String> jsonNodes = new HashSet<>(value.propertyNames());
+            final Set<String> jsonNodes = new HashSet<>(value.propertyNames());
             ObjectEncoder.encodeObject((ObjectNode) value, writer, 0, options, jsonNodes, null, null, new HashSet<>());
         }
 

@@ -235,6 +235,84 @@ class PrimitiveDecoderTest {
     }
 
     @Test
+    void given08_whenParse_thenReturnsString() {
+        // Given
+        String input = "08";
+
+        // When
+        Object result = PrimitiveDecoder.parse(input);
+
+        // Then
+        assertNotNull(result);
+        assertEquals("08", result);
+    }
+
+    @Test
+    void given09_whenParse_thenReturnsString() {
+        // Given
+        String input = "09";
+
+        // When
+        Object result = PrimitiveDecoder.parse(input);
+
+        // Then
+        assertNotNull(result);
+        assertEquals("09", result);
+    }
+
+    @Test
+    void given00_whenParse_thenReturnsString() {
+        // Given
+        String input = "00";
+
+        // When
+        Object result = PrimitiveDecoder.parse(input);
+
+        // Then
+        assertNotNull(result);
+        assertEquals("00", result);
+    }
+
+    @Test
+    void givenNegativeLeadingZero_whenParse_thenReturnsString() {
+        // Given
+        String input = "-07";
+
+        // When
+        Object result = PrimitiveDecoder.parse(input);
+
+        // Then
+        assertNotNull(result);
+        assertEquals("-07", result);
+    }
+
+    @Test
+    void givenLeadingZeroDecimal_whenParse_thenReturnsNumber() {
+        // Given
+        String input = "0.5";
+
+        // When
+        Object result = PrimitiveDecoder.parse(input);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(0.5, (Double) result, 0.000001);
+    }
+
+    @Test
+    void givenLeadingZeroExponent_whenParse_thenReturnsNumber() {
+        // Given — "0e1" = 0 × 10^1 = 0, which is a whole number → Long
+        String input = "0e1";
+
+        // When
+        Object result = PrimitiveDecoder.parse(input);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(0L, result);
+    }
+
+    @Test
     void givenMinLongNumber_whenParse_thenReturnsLong() {
         // Given
         String input = String.valueOf(Long.MIN_VALUE);
