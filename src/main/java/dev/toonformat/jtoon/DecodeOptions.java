@@ -8,10 +8,10 @@ import java.util.Objects;
  * @param indent          Number of spaces per indentation level (default: 2)
  * @param delimiter       Delimiter expected in tabular array rows and inline
  *                        primitive arrays (default: COMMA)
- * @param strict          Strict validation mode. When true, throws
- *                        IllegalArgumentException on invalid input. When false,
- *                        uses best-effort parsing and returns null on errors
- *                        (default: true)
+ * @param strict          Strict validation mode (default: true). When true,
+ *                        throws IllegalArgumentException on invalid input.
+ *                        When false, uses best-effort parsing and top-level
+ *                        decode errors return null instead of throwing.
  * @param expandPaths     Path expansion mode for dotted keys (default: OFF)
  * @param maxDepth        Maximum allowed nesting depth during decoding (default: 512).
  *                        Prevents StackOverflowError from deeply nested input.

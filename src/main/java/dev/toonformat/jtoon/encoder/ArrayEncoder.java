@@ -31,16 +31,16 @@ public final class ArrayEncoder {
     public static void encodeArray(final String key, final ArrayNode value,
             final LineWriter writer, final int depth, final EncodeOptions options) {
         if (value.isEmpty()) {
-            if (!options.lengthMarker()) {
-                if (key == null && depth == 0) {
-                    writer.push(depth, "[]");
-                    return;
-                }
-                if (key != null) {
-                    final String encodedKey = PrimitiveEncoder.encodeKey(key);
-                    writer.push(depth, encodedKey + ": []");
-                    return;
-                }
+            // Per spec §9.1: encoders SHOULD emit key: [] for empty arrays.
+            // When lengthMarker is enabled, use the legacy header form instead.
+            if (key == null && depth == 0) {
+                writer.push(depth, options.lengthMarker() ? "[0]: " : "[]");
+                return;
+            }
+            if (key != null && !options.lengthMarker()) {
+                final String encodedKey = PrimitiveEncoder.encodeKey(key);
+                writer.push(depth, encodedKey + ": []");
+                return;
             }
             final String header = PrimitiveEncoder.formatHeader(0, key, null, options.delimiter().toString(),
                     options.lengthMarker());

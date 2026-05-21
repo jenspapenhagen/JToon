@@ -46,6 +46,17 @@ public final class ValueDecoder {
      *                                  invalid
      */
     public static Object decode(final String toon, final DecodeOptions options) {
+        try {
+            return decodeInternal(toon, options);
+        } catch (IllegalArgumentException e) {
+            if (!options.strict()) {
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    private static Object decodeInternal(final String toon, final DecodeOptions options) {
         if (toon == null || toon.isBlank()) {
             return new LinkedHashMap<>();
         }
@@ -144,7 +155,14 @@ public final class ValueDecoder {
     public static String decodeToJson(final String toon, final DecodeOptions options) {
         try {
             final Object decoded = decode(toon, options);
+            if (decoded == null) {
+                return NULL_LITERAL;
+            }
             return MAPPER.writeValueAsString(decoded);
+        } catch (IllegalArgumentException e) {
+            // decode() already threw, or strict-mode structural failure
+            // re-throw with wrapping for consistency
+            throw new IllegalArgumentException("Failed to convert decoded value to JSON", e);
         } catch (Exception e) {
             throw new IllegalArgumentException("Failed to convert decoded value to JSON: " + e.getMessage(), e);
         }
