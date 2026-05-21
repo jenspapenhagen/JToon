@@ -299,9 +299,61 @@ class LineWriterTest {
     @DisplayName("Edge Cases")
     class EdgeCases {
 
-        @Test
-        @DisplayName("should handle depth 0 correctly")
-        void testDepthZero() {
+    @Test
+    @DisplayName("should strip trailing spaces from content (§12)")
+    void testTrailingSpacesAreStripped() {
+        // Given
+        LineWriter writer = new LineWriter(2);
+
+        // When
+        writer.push(0, "content   ");
+
+        // Then
+        assertEquals("content", writer.toString());
+    }
+
+    @Test
+    @DisplayName("should strip trailing spaces from indented content (§12)")
+    void testTrailingSpacesIndented() {
+        // Given — content "  value   " has leading spaces (indent) and trailing spaces
+        LineWriter writer = new LineWriter(2);
+
+        // When — trailing spaces stripped first → "  value", then depth=1 adds indent
+        writer.push(1, "  value   ");
+
+        // Then — indent (2 spaces) + "  " + "value" = "    value"
+        assertEquals("    value", writer.toString());
+    }
+
+    @Test
+    @DisplayName("should handle content that is entirely spaces (§12)")
+    void testAllSpacesContent() {
+        // Given
+        LineWriter writer = new LineWriter(2);
+
+        // When
+        writer.push(0, "   ");
+
+        // Then
+        assertEquals("", writer.toString());
+    }
+
+    @Test
+    @DisplayName("should handle content with no trailing spaces (§12)")
+    void testNoTrailingSpaces() {
+        // Given
+        LineWriter writer = new LineWriter(2);
+
+        // When
+        writer.push(0, "content");
+
+        // Then
+        assertEquals("content", writer.toString());
+    }
+
+    @Test
+    @DisplayName("should handle depth 0 correctly")
+    void testDepthZero() {
             // Given
             LineWriter writer = new LineWriter(2);
 
