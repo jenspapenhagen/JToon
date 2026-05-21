@@ -124,6 +124,33 @@ class PrimitiveEncoderTest {
             // Then
             assertEquals("123.456", result);
         }
+
+        @Test
+        @DisplayName("should preserve high-precision BigDecimal exactly")
+        void testHighPrecisionDecimal() {
+            // Given — a 40-digit number that would lose precision through Double
+            java.math.BigDecimal precise = new java.math.BigDecimal("1234567890123456789012345678901234567890.12345678901234567890");
+
+            // When
+            String result = PrimitiveEncoder.encodePrimitive(DecimalNode.valueOf(precise), Delimiter.COMMA.toString());
+
+            // Then — exact value preserved, not truncated via double precision
+            // trailing zero stripped by stripTrailingZeros
+            assertEquals("1234567890123456789012345678901234567890.1234567890123456789", result);
+        }
+
+        @Test
+        @DisplayName("should preserve high-precision small decimal")
+        void testHighPrecisionSmallDecimal() {
+            // Given — a tiny fractional number that loses precision via Double
+            java.math.BigDecimal tiny = new java.math.BigDecimal("0.00000000000012345678901234567890");
+
+            // When
+            String result = PrimitiveEncoder.encodePrimitive(DecimalNode.valueOf(tiny), Delimiter.COMMA.toString());
+
+            // Then — trailing zero stripped by stripTrailingZeros
+            assertEquals("0.0000000000001234567890123456789", result);
+        }
     }
 
     @Nested

@@ -85,10 +85,20 @@ public final class PrimitiveDecoder {
             return StringEscaper.unescape(value);
         }
 
-        // Check for leading zeros (treat as string, except for "0", "-0", "0.0", etc.)
+        // Check for forbidden leading zeros (treat as string, except for "0", "-0", "0.0", etc.)
+        // Per spec §4: tokens like "05", "0001", "-05", "-0001" must be treated as strings.
+        // But "0.5", "0e1", "-0.5", "-0e1" are valid numbers.
         final String trimmed = value.trim();
-        if (trimmed.length() > 1 && trimmed.matches("^-?0+[0-7].*")) {
-            return value;
+        if (trimmed.length() > 1) {
+            // Match forbidden leading zeros: starts with optional '-', then one or more zeros,
+            // then another digit (0-9) — meaning it's a multi-digit number with leading zeros.
+            // Exclude cases where the zero is part of a fractional/exponent form like "0.5", "0e1".
+            final boolean hasLeadingZeros = trimmed.matches("^-?0+\\d.*");
+            // But we must NOT match "0.5" style numbers (single zero integer part)
+            final boolean isLikelyFractionalOrExponent = trimmed.matches("^-?0[.eE].*");
+            if (hasLeadingZeros && !isLikelyFractionalOrExponent) {
+                return value; // treat as string
+            }
         }
 
         // Try parsing as number

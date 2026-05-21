@@ -205,6 +205,13 @@ public final class TabularArrayDecoder {
 
     /**
      * Determines if tabular array parsing should terminate based on online depth.
+     * Implements the full disambiguation algorithm per spec §9.3:
+     * - Compute the first unquoted occurrence of the active delimiter and the first unquoted colon.
+     * - If a same-depth line has no unquoted colon → row.
+     * - If both appear, compare first-unquoted positions:
+     *   - Delimiter before colon → row.
+     *   - Colon before delimiter → key-value line (end of rows).
+     * - If a line has an unquoted colon but no unquoted active delimiter → key-value line.
      *
      * @param line             the line to check
      * @param lineDepth        the depth of the line
@@ -214,7 +221,6 @@ public final class TabularArrayDecoder {
      */
     private static boolean shouldTerminateTabularArray(final String line, final int lineDepth,
             final int expectedRowDepth, final DecodeContext context) {
-        // Header depth is one level above the expected row depth
         final int headerDepth = expectedRowDepth - 1;
 
         if (lineDepth < expectedRowDepth) {
@@ -228,14 +234,47 @@ public final class TabularArrayDecoder {
             return true; // Line depth is less than expected - terminate
         }
 
-        // Check for a key-value pair at the expected row depth
-        if (lineDepth == expectedRowDepth) {
-            final String rowContent = line.substring(expectedRowDepth * context.options.indent());
-            final int colonIdx = DecodeHelper.findUnquotedColon(rowContent);
-            return colonIdx > 0; // Key-value pair at the same depth as rows - terminate an array
+        if (lineDepth != expectedRowDepth) {
+            return false;
         }
 
-        return false;
+        // Spec §9.3 disambiguation at row depth
+        final String rowContent = line.substring(expectedRowDepth * context.options.indent());
+        final char delimChar = context.delimiter.getValue();
+        final int delimIdx = findFirstUnquoted(rowContent, delimChar);
+        final int colonIdx = DecodeHelper.findUnquotedColon(rowContent);
+
+        if (colonIdx < 0) {
+            return false; // No colon → this is a row
+        }
+
+        if (delimIdx < 0) {
+            return true; // Colon present, no delimiter → key-value line
+        }
+
+        // Both colon and delimiter present: compare positions
+        return colonIdx < delimIdx; // Colon first → key-value; delimiter first → row
+    }
+
+    /**
+     * Finds the index of the first unquoted occurrence of a character in a string.
+     */
+    private static int findFirstUnquoted(final String content, final char target) {
+        boolean inQuotes = false;
+        boolean escaped = false;
+        for (int i = 0; i < content.length(); i++) {
+            final char c = content.charAt(i);
+            if (escaped) {
+                escaped = false;
+            } else if (c == '\\') {
+                escaped = true;
+            } else if (c == '"') {
+                inQuotes = !inQuotes;
+            } else if (!inQuotes && c == target) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**

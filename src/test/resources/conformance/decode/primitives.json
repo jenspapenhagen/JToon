@@ -165,6 +165,12 @@
       "input": "\"05\"",
       "expected": "05",
       "specSection": "7.4"
+    },
+    {
+      "name": "decodes supplementary scalar (U+1F680) in quoted string as literal UTF-8",
+      "input": "\"🚀 launch\"",
+      "expected": "🚀 launch",
+      "specSection": "7.1"
     }
   ]
 }

@@ -45,4 +45,30 @@ class HeadersTest {
         assertNotNull(Headers.KEYED_ARRAY_PATTERN.matcher("tags[3]:").matches());
         assertNotNull(Headers.KEYED_ARRAY_PATTERN.matcher("data[4]{id}:").matches());
     }
+
+    @Test
+    @DisplayName("KEYED_ARRAY_PATTERN matches quoted keys with spaces")
+    void keyedArrayPatternQuotedKeyWithSpaces() {
+        assertNotNull(Headers.KEYED_ARRAY_PATTERN.matcher("\"my items\"[3]:").matches());
+        assertNotNull(Headers.KEYED_ARRAY_PATTERN.matcher("\"user name\"[2]{id,name}:").matches());
+    }
+
+    @Test
+    @DisplayName("KEYED_ARRAY_PATTERN matches quoted keys with escaped quotes")
+    void keyedArrayPatternEscapedQuotes() {
+        // Key containing escaped quotes: "name\"with\"quotes"
+        assertTrue(Headers.KEYED_ARRAY_PATTERN.matcher("\"name\\\"with\\\"quotes\"[3]:").matches());
+        assertTrue(Headers.KEYED_ARRAY_PATTERN.matcher("\"key\\\"word\"[2]{a,b}:").matches());
+    }
+
+    @Test
+    @DisplayName("KEYED_ARRAY_PATTERN does not match malformed patterns")
+    void keyedArrayPatternNoMatch() {
+        // Missing colon
+        assertFalse(Headers.KEYED_ARRAY_PATTERN.matcher("items[3]").matches());
+        // Missing brackets
+        assertFalse(Headers.KEYED_ARRAY_PATTERN.matcher("items:").matches());
+        // Negative length
+        assertFalse(Headers.KEYED_ARRAY_PATTERN.matcher("items[-1]:").matches());
+    }
 }

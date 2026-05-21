@@ -92,6 +92,12 @@ public final class StringValidator {
 
         for (int i = 1; i < len; i++) {
             final char c = key.charAt(i);
+            // Reject control characters (U+0000-U+001F) even though
+            // Character.isJavaIdentifierPart returns true for identifier-ignorable
+            // control chars like U+0004. These must be escaped in TOON output.
+            if (c <= CONTROL_CHAR_MAX) {
+                return false;
+            }
             if (!Character.isJavaIdentifierPart(c) && c != '.') {
                 return false;
             }

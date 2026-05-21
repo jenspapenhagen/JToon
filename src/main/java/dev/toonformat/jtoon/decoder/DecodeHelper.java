@@ -174,9 +174,25 @@ public final class DecodeHelper {
     }
 
     /**
+     * Checks for duplicate keys in strict mode.
+     * Throws if the map already contains the given key and strict mode is enabled.
+     *
+     * @param map     the map to check
+     * @param key     the key being inserted
+     * @param context decode context for strict mode check
+     * @throws IllegalArgumentException if strict mode and key already exists
+     */
+    static void checkDuplicateKey(final Map<String, Object> map, final String key, final DecodeContext context) {
+        if (context.options.strict() && map.containsKey(key)) {
+            throw new IllegalArgumentException(
+                "Duplicate key '" + key + "' at line " + (context.currentLine + 1));
+        }
+    }
+
+    /**
      * Finds the depth of the next non-blank line, skipping blank lines.
      *
-     * @param context decode an object to deal with lines, delimiter, and options
+     * @param context decode an object to deal with lines, delimiter and options
      * @return the depth of the next non-blank line, or null if none exists
      */
     static Integer findNextNonBlankLineDepth(final DecodeContext context) {
@@ -193,9 +209,34 @@ public final class DecodeHelper {
     }
 
     /**
+     * Checks if a line contains unquoted brackets ({@code [} or {@code ]}).
+     * Used to detect malformed array header syntax in strict mode.
+     *
+     * @param line the line to check
+     * @return true if unquoted brackets are found
+     */
+    static boolean hasUnquotedBrackets(final String line) {
+        boolean inQuotes = false;
+        boolean escaped = false;
+        for (int i = 0; i < line.length(); i++) {
+            final char c = line.charAt(i);
+            if (escaped) {
+                escaped = false;
+            } else if (c == BACKSLASH) {
+                escaped = true;
+            } else if (c == DOUBLE_QUOTE) {
+                inQuotes = !inQuotes;
+            } else if (!inQuotes && (c == '[' || c == ']')) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Validates that there are no multiple primitives at root level in strict mode.
      *
-     * @param context decode an object to deal with lines, delimiter, and options
+     * @param context decode an object to deal with lines, delimiter and options
      * @throws IllegalArgumentException in case the next depth is equal to 0
      */
     static void validateNoMultiplePrimitivesAtRoot(final DecodeContext context) {

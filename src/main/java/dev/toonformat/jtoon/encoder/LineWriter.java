@@ -37,6 +37,8 @@ public final class LineWriter {
 
     /**
      * Adds a line with the specified depth and content.
+     * Trailing spaces are stripped from content per spec §12
+     * (encoders MUST NOT emit trailing spaces).
      *
      * @param depth   Indentation depth (0 = no indentation)
      * @param content Line content to add
@@ -56,7 +58,13 @@ public final class LineWriter {
                 }
             }
         }
-        stringBuilder.append(content);
+        // Strip trailing spaces per spec §12
+        final int end = content.length() - 1;
+        int trimEnd = end;
+        while (trimEnd >= 0 && content.charAt(trimEnd) == ' ') {
+            trimEnd--;
+        }
+        stringBuilder.append(trimEnd < 0 ? "" : content.substring(0, trimEnd + 1));
     }
 
     /**

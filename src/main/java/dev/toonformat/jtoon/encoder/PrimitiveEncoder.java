@@ -48,11 +48,22 @@ public final class PrimitiveEncoder {
             return value.asString();
         }
 
-        final double doubleValue = value.asDouble();
-        final BigDecimal decimal = BigDecimal.valueOf(doubleValue);
+        // Use decimalValue() for exact precision from Jackson's DecimalNode,
+        // avoiding precision loss from double conversion.
+        // BigDecimal.valueOf(double) uses Double.toString which can only
+        // represent ~15-17 significant digits.
+        final BigDecimal decimal = value.decimalValue();
         final String plainString = decimal.toPlainString();
 
-        return stripTrailingZeros(plainString);
+        // Strip trailing zeros but preserve the number's mathematical value
+        final String stripped = stripTrailingZeros(plainString);
+
+        // Per spec §2: -0 MUST be normalized to 0
+        if ("-0".equals(stripped)) {
+            return "0";
+        }
+
+        return stripped;
     }
 
     /**

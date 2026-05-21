@@ -6,8 +6,10 @@ import java.util.Objects;
  * Configuration options for encoding data to JToon format.
  *
  * @param indent       Number of spaces per indentation level (default: 2)
- * @param delimiter    Delimiter to use for tabular array rows and inline
- *                     primitive arrays (default: COMMA)
+ * @param delimiter    Delimiter used for both document delimiter and active
+ *                     array delimiter. Controls quoting for object field values
+ *                     (document delimiter) and inline array values / tabular
+ *                     rows (active delimiter). (default: COMMA)
  * @param lengthMarker Optional marker to prefix array lengths in headers. When
  *                     true, arrays render as [#N] instead of [N] (default:
  *                     false)
@@ -42,6 +44,12 @@ public record EncodeOptions(
 
     /**
      * Compact constructor with validation.
+     *
+     * @param indent        number of spaces per indentation level
+     * @param delimiter     delimiter for tabular array rows and inline arrays
+     * @param lengthMarker  whether to prefix array lengths with {@code #}
+     * @param flatten       key folding mode for nested objects
+     * @param flattenDepth  maximum depth of key folding
      */
     public EncodeOptions {
         if (indent < 0) {

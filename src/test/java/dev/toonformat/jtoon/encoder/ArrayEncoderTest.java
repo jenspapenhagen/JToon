@@ -1,5 +1,6 @@
 package dev.toonformat.jtoon.encoder;
 
+import dev.toonformat.jtoon.Delimiter;
 import dev.toonformat.jtoon.EncodeOptions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -131,6 +132,81 @@ class ArrayEncoderTest {
         assertEquals("  \"\"[2]:\n" +
                          "    - [3]: 1,2,3\n" +
                          "    - [3]: 4,5,6", lineWriter.toString());
+    }
+
+    @Test
+    @DisplayName("should encode empty keyed array as key: [] without lengthMarker")
+    void encodeEmptyArrayAsKeyValue() {
+        // Given
+        ArrayNode emptyArray = jsonNodeFactory.arrayNode();
+        EncodeOptions options = EncodeOptions.DEFAULT;
+        LineWriter writer = new LineWriter(2);
+
+        // When
+        ArrayEncoder.encodeArray("tags", emptyArray, writer, 0, options);
+
+        // Then
+        assertEquals("tags: []", writer.toString());
+    }
+
+    @Test
+    @DisplayName("should encode empty keyed array with lengthMarker as header form")
+    void encodeEmptyArrayWithLengthMarker() {
+        // Given
+        ArrayNode emptyArray = jsonNodeFactory.arrayNode();
+        EncodeOptions options = EncodeOptions.withLengthMarker(true);
+        LineWriter writer = new LineWriter(2);
+
+        // When
+        ArrayEncoder.encodeArray("tags", emptyArray, writer, 0, options);
+
+        // Then
+        assertEquals("tags[#0]:", writer.toString());
+    }
+
+    @Test
+    @DisplayName("should encode top-level empty array as [] without lengthMarker")
+    void encodeRootEmptyArray() {
+        // Given
+        ArrayNode emptyArray = jsonNodeFactory.arrayNode();
+        EncodeOptions options = EncodeOptions.DEFAULT;
+        LineWriter writer = new LineWriter(2);
+
+        // When
+        ArrayEncoder.encodeArray(null, emptyArray, writer, 0, options);
+
+        // Then
+        assertEquals("[]", writer.toString());
+    }
+
+    @Test
+    @DisplayName("should encode top-level empty array with lengthMarker as [0]:")
+    void encodeRootEmptyArrayWithLengthMarker() {
+        // Given
+        ArrayNode emptyArray = jsonNodeFactory.arrayNode();
+        EncodeOptions options = EncodeOptions.withLengthMarker(true);
+        LineWriter writer = new LineWriter(2);
+
+        // When
+        ArrayEncoder.encodeArray(null, emptyArray, writer, 0, options);
+
+        // Then
+        assertEquals("[0]:", writer.toString());
+    }
+
+    @Test
+    @DisplayName("should encode empty nested array as key: []")
+    void encodeEmptyNestedArray() {
+        // Given
+        ArrayNode emptyArray = jsonNodeFactory.arrayNode();
+        EncodeOptions options = EncodeOptions.DEFAULT;
+        LineWriter writer = new LineWriter(2);
+
+        // When
+        ArrayEncoder.encodeArray("data", emptyArray, writer, 1, options);
+
+        // Then
+        assertEquals("  data: []", writer.toString());
     }
 
     @Test

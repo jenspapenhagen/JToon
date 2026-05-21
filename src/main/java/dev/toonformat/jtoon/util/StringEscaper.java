@@ -73,8 +73,8 @@ public final class StringEscaper {
         if (value.startsWith("\"") && value.endsWith("\"")) {
             final String unquoted = value.substring(1, value.length() - 1);
             boolean escaped = false;
-
-            for (int i = 0; i < unquoted.length(); i++) {
+            int i = 0;
+            while (i < unquoted.length()) {
                 final char c = unquoted.charAt(i);
                 if (escaped) {
                     // Check if escape sequence is valid
@@ -106,12 +106,17 @@ public final class StringEscaper {
                                 || !Character.isLowSurrogate((char) Integer.parseInt(nextHex, HEX_RADIX))) {
                                 throw new IllegalArgumentException(INVALID_UNICODE_LONE_HIGH);
                             }
+                            // Skip past the full surrogate pair (\\uXXXX\\uXXXX = 12 chars total)
+                            // to avoid reprocessing the consumed hex digits and the low surrogate
+                            // escape as individual characters.
+                            i += UNICODE_ESCAPE_TOTAL_LENGTH + UNICODE_HEX_LENGTH;
                         }
                     }
                     escaped = false;
                 } else if (c == '\\') {
                     escaped = true;
                 }
+                i++;
             }
 
             // Check for trailing backslash (invalid escape)

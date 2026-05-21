@@ -204,4 +204,57 @@ class ValueDecoderTest {
         assertTrue(ex.getCause().getMessage().contains("Unexpected indentation"));
     }
 
+    @Test
+    void givenInvalidInputAndStrictFalse_whenDecode_thenReturnsNull() {
+        // Given — malformed quoted string causes StringEscaper to throw
+        DecodeOptions options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        String invalidInput = "value: \"unclosed";
+
+        // When
+        Object result = ValueDecoder.decode(invalidInput, options);
+
+        // Then
+        assertNull(result);
+    }
+
+    @Test
+    void givenDecodeReturnsNull_whenDecodeToJson_thenReturnsNullLiteral() {
+        // Given — malformed quoted string causes StringEscaper to throw
+        DecodeOptions options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        String invalidInput = "value: \"unclosed";
+
+        // When
+        String result = ValueDecoder.decodeToJson(invalidInput, options);
+
+        // Then
+        assertEquals("null", result);
+    }
+
+    @Test
+    void givenNullLiteralInput_whenDecodeToJson_thenReturnsNullLiteral() {
+        // Given
+        String input = "null";
+
+        // When
+        String result = ValueDecoder.decodeToJson(input, DecodeOptions.DEFAULT);
+
+        // Then
+        assertEquals("null", result);
+    }
+
+    @Test
+    void givenValidInputAndStrictFalse_whenDecode_thenReturnsResult() {
+        // Given
+        DecodeOptions options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        String validInput = "name: Ada";
+
+        // When
+        Object result = ValueDecoder.decode(validInput, options);
+
+        // Then
+        assertNotNull(result);
+        assertInstanceOf(Map.class, result);
+        assertEquals("Ada", ((Map<?, ?>) result).get("name"));
+    }
+
 }

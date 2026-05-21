@@ -251,7 +251,9 @@ public final class JsonNormalizer {
         } else if (value instanceof LocalTime lt) {
             return formatTemporal(lt, DateTimeFormatter.ISO_LOCAL_TIME);
         } else if (value instanceof ZonedDateTime zonedDateTime) {
-            return formatTemporal(zonedDateTime, DateTimeFormatter.ISO_ZONED_DATE_TIME);
+            // Use toOffsetDateTime().toString() to avoid [Zone/Id] bracket
+            // that ZonedDateTime.toString() appends (not standard ISO 8601)
+            return StringNode.valueOf(zonedDateTime.toOffsetDateTime().toString());
         } else if (value instanceof OffsetDateTime offsetDateTime) {
             return formatTemporal(offsetDateTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         } else if (value instanceof Calendar calendar) {
