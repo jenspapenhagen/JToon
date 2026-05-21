@@ -1,27 +1,27 @@
 package dev.toonformat.jtoon.normalizer;
 
+import static org.junit.jupiter.api.Assertions.*;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import tools.jackson.databind.JsonNode;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 @Execution(ExecutionMode.CONCURRENT)
 class JsonNormalizerThreadSafetyTest {
 
-    @RepeatedTest(100)
+    private static final int TEST_REPETITIONS = 100;
+
+    @RepeatedTest(TEST_REPETITIONS)
     @DisplayName("JsonNormalizer should be thread-safe when normalizing complex objects")
     void normalizeThreadSafety() {
         // Given
-        String id = UUID.randomUUID().toString();
-        Map<String, Object> input = Map.of(
+        final String id = UUID.randomUUID().toString();
+        final Map<String, Object> input = Map.of(
             "id", id,
             "timestamp", LocalDateTime.now(),
             "tags", List.of("a", "b", "c"),
@@ -29,7 +29,7 @@ class JsonNormalizerThreadSafetyTest {
         );
 
         // When
-        JsonNode normalized = JsonNormalizer.normalize(input);
+        final JsonNode normalized = JsonNormalizer.normalize(input);
 
         // Then
         assertNotNull(normalized);
@@ -38,15 +38,15 @@ class JsonNormalizerThreadSafetyTest {
         assertEquals(normalized.get("id").asString(), id);
     }
 
-    @RepeatedTest(100)
+    @RepeatedTest(TEST_REPETITIONS)
     @DisplayName("JsonNormalizer should be thread-safe when parsing JSON strings")
     void parseThreadSafety() {
         // Given
-        String id = UUID.randomUUID().toString();
-        String json = "{\"id\":\"" + id + "\",\"active\":true}";
+        final String id = UUID.randomUUID().toString();
+        final String json = "{\"id\":\"" + id + "\",\"active\":true}";
 
         // When
-        JsonNode parsed = JsonNormalizer.parse(json);
+        final JsonNode parsed = JsonNormalizer.parse(json);
 
         // Then
         assertNotNull(parsed);

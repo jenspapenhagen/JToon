@@ -1,7 +1,8 @@
 package dev.toonformat.jtoon;
 
-import org.junit.jupiter.api.Test;
-
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -11,23 +12,22 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
-
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 class JToonConcurrencyTest {
 
+    private static final int AWAIT_TIMEOUT_SECONDS = 10;
+
     @Test
     void encodeDecodeStressTest() {
-        int threads = 8;
-        int tasksPerThread = 5_000;
+        final int threads = 8;
+        final int tasksPerThread = 5_000;
 
         final ExecutorService executor = Executors.newFixedThreadPool(threads);
         final CountDownLatch latch = new CountDownLatch(threads * tasksPerThread);
         final List<Throwable> errors = Collections.synchronizedList(new ArrayList<>());
 
-        Runnable task = () -> {
+        final Runnable task = () -> {
             try {
                 // Given
                 final Map<String, Object> data = new LinkedHashMap<>();
@@ -55,7 +55,7 @@ class JToonConcurrencyTest {
         }
 
         await()
-            .atMost(10, SECONDS)
+            .atMost(AWAIT_TIMEOUT_SECONDS, SECONDS)
             .until(() -> latch.getCount() == 0);
 
         executor.shutdown();
@@ -63,25 +63,25 @@ class JToonConcurrencyTest {
         assertTrue(errors.isEmpty(), "Errors occurred in threads: " + errors);
     }
 
-    void encodeDecodeJSONStressTest() {
-        int threads = 8;
-        int tasksPerThread = 5_000;
+    void encodeDecodeJsonStressTest() {
+        final int threads = 8;
+        final int tasksPerThread = 5_000;
 
         final ExecutorService executor = Executors.newFixedThreadPool(threads);
         final CountDownLatch latch = new CountDownLatch(threads * tasksPerThread);
         final List<Throwable> errors = Collections.synchronizedList(new ArrayList<>());
 
-        Runnable task = () -> {
+        final Runnable task = () -> {
             try {
                 // Given
-                String json = "{\"foo\":123, \"bar\":[\"a\",\"b\"]}";
+                final String json = "{\"foo\":123, \"bar\":[\"a\",\"b\"]}";
 
                 // When
-                String toon = JToon.encodeJson(json);
+                final String toon = JToon.encodeJson(json);
 
                 // Then
                 assertNotNull(toon);
-                String roundTrip = JToon.decodeToJson(toon);
+                final String roundTrip = JToon.decodeToJson(toon);
                 assertNotNull(roundTrip);
                 assertTrue(roundTrip.contains("\"foo\":123"));
 
@@ -97,7 +97,7 @@ class JToonConcurrencyTest {
         }
 
         await()
-            .atMost(10, SECONDS)
+            .atMost(AWAIT_TIMEOUT_SECONDS, SECONDS)
             .until(() -> latch.getCount() == 0);
 
         executor.shutdown();

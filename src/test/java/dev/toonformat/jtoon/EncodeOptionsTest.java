@@ -1,8 +1,7 @@
 package dev.toonformat.jtoon;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 class EncodeOptionsTest {
 
@@ -11,7 +10,7 @@ class EncodeOptionsTest {
         // Given
 
         // When
-        EncodeOptions opts = new EncodeOptions();
+        final EncodeOptions opts = new EncodeOptions();
 
         // Then
         assertEquals(2, opts.indent());
@@ -24,7 +23,7 @@ class EncodeOptionsTest {
     @Test
     void givenDefaultStaticInstance_whenAccess_thenValuesMatchDefaultConstructor() {
         // Given
-        EncodeOptions opts = EncodeOptions.DEFAULT;
+        final EncodeOptions opts = EncodeOptions.DEFAULT;
 
         // When
         // (direct access)
@@ -40,13 +39,13 @@ class EncodeOptionsTest {
     @Test
     void givenCustomIndent_whenUsingWithIndent_thenOnlyIndentIsModified() {
         // Given
-        int indent = 4;
+        final int indent = 4;
 
         // When
-        EncodeOptions opts = EncodeOptions.withIndent(indent);
+        final EncodeOptions opts = EncodeOptions.withIndent(indent);
 
         // Then
-        assertEquals(4, opts.indent());
+        assertEquals(indent, opts.indent());
         assertEquals(Delimiter.COMMA, opts.delimiter());
         assertFalse(opts.lengthMarker());
         assertEquals(KeyFolding.OFF, opts.flatten());
@@ -56,10 +55,10 @@ class EncodeOptionsTest {
     @Test
     void givenCustomDelimiter_whenUsingWithDelimiter_thenOnlyDelimiterIsModified() {
         // Given
-        Delimiter delimiter = Delimiter.TAB;
+        final Delimiter delimiter = Delimiter.TAB;
 
         // When
-        EncodeOptions opts = EncodeOptions.withDelimiter(delimiter);
+        final EncodeOptions opts = EncodeOptions.withDelimiter(delimiter);
 
         // Then
         assertEquals(2, opts.indent());
@@ -72,10 +71,10 @@ class EncodeOptionsTest {
     @Test
     void givenLengthMarkerFlag_whenUsingWithLengthMarker_thenOnlyLengthMarkerIsModified() {
         // Given
-        boolean marker = true;
+        final boolean marker = true;
 
         // When
-        EncodeOptions opts = EncodeOptions.withLengthMarker(marker);
+        final EncodeOptions opts = EncodeOptions.withLengthMarker(marker);
 
         // Then
         assertEquals(2, opts.indent());
@@ -88,10 +87,10 @@ class EncodeOptionsTest {
     @Test
     void givenFlattenFlag_whenUsingWithFlatten_thenOnlyFlattenIsModified() {
         // Given
-        boolean flatten = true;
+        final boolean flatten = true;
 
         // When
-        EncodeOptions opts = EncodeOptions.withFlatten(flatten);
+        final EncodeOptions opts = EncodeOptions.withFlatten(flatten);
 
         // Then
         assertEquals(2, opts.indent());
@@ -104,10 +103,10 @@ class EncodeOptionsTest {
     @Test
     void givenNegativeFlattenFlag_whenUsingWithFlatten_thenOnlyFlattenIsModified() {
         // Given
-        boolean flatten = false;
+        final boolean flatten = false;
 
         // When
-        EncodeOptions opts = EncodeOptions.withFlatten(flatten);
+        final EncodeOptions opts = EncodeOptions.withFlatten(flatten);
 
         // Then
         assertEquals(2, opts.indent());
@@ -120,16 +119,16 @@ class EncodeOptionsTest {
     @Test
     void givenFlattenDepth_whenUsingWithFlattenDepth_thenFlattenDepthIsSetAndFlattenIsTrue() {
         // Given
-        int flattenDepth = 3;
+        final int flattenDepth = 3;
 
         // When
-        EncodeOptions opts = EncodeOptions.withFlattenDepth(flattenDepth);
+        final EncodeOptions opts = EncodeOptions.withFlattenDepth(flattenDepth);
 
         // Then
         assertEquals(2, opts.indent());
         assertEquals(Delimiter.COMMA, opts.delimiter());
         assertFalse(opts.lengthMarker());
         assertEquals(KeyFolding.SAFE, opts.flatten());
-        assertEquals(3, opts.flattenDepth());
+        assertEquals(flattenDepth, opts.flattenDepth());
     }
 }

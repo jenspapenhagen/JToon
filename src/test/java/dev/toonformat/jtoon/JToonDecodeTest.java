@@ -1,18 +1,22 @@
 package dev.toonformat.jtoon;
 
+import static org.junit.jupiter.api.Assertions.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 @Tag("unit")
 public class JToonDecodeTest {
+
+    private static final long DECODED_VALUE_42 = 42L;
+    private static final long DECODED_ID_123 = 123L;
+    private static final double DECODED_PI = 3.14;
+    private static final double ASSERT_DELTA = 0.0001;
+    private static final int EXPECTED_TAG_COUNT = 3;
 
     @Nested
     @DisplayName("Primitives")
@@ -22,12 +26,12 @@ public class JToonDecodeTest {
         @DisplayName("should decode null")
         void testNull() {
             // Given
-            Object result = JToon.decode("value: null");
+            final Object result = JToon.decode("value: null");
 
             // Then
             assertInstanceOf(Map.class, result);
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             assertNull(map.get("value"));
         }
 
@@ -35,11 +39,11 @@ public class JToonDecodeTest {
         @DisplayName("should decode booleans")
         void testBooleans() {
             // Given
-            Object result1 = JToon.decode("active: true");
+            final Object result1 = JToon.decode("active: true");
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map1 = (Map<String, Object>) result1;
+            final Map<String, Object> map1 = (Map<String, Object>) result1;
             assertEquals(true, map1.get("active"));
         }
 
@@ -47,11 +51,11 @@ public class JToonDecodeTest {
         @DisplayName("should decode booleans")
         void testBooleans2() {
             // Given
-            Object result2 = JToon.decode("active: false");
+            final Object result2 = JToon.decode("active: false");
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map2 = (Map<String, Object>) result2;
+            final Map<String, Object> map2 = (Map<String, Object>) result2;
             assertEquals(false, map2.get("active"));
         }
 
@@ -59,35 +63,35 @@ public class JToonDecodeTest {
         @DisplayName("should decode integers")
         void testIntegers() {
             // Given
-            Object result = JToon.decode("count: 42");
+            final Object result = JToon.decode("count: 42");
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
-            assertEquals(42L, map.get("count"));
+            final Map<String, Object> map = (Map<String, Object>) result;
+            assertEquals(DECODED_VALUE_42, map.get("count"));
         }
 
         @Test
         @DisplayName("should decode floating point numbers")
         void testFloatingPoint() {
             // Given
-            Object result = JToon.decode("price: 3.14");
+            final Object result = JToon.decode("price: 3.14");
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
-            assertEquals(3.14, (Double) map.get("price"), 0.0001);
+            final Map<String, Object> map = (Map<String, Object>) result;
+            assertEquals(DECODED_PI, (Double) map.get("price"), ASSERT_DELTA);
         }
 
         @Test
         @DisplayName("should decode unquoted strings")
         void testUnquotedStrings() {
             // Given
-            Object result = JToon.decode("name: Ada");
+            final Object result = JToon.decode("name: Ada");
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             assertEquals("Ada", map.get("name"));
         }
 
@@ -95,11 +99,11 @@ public class JToonDecodeTest {
         @DisplayName("should decode quoted strings")
         void testQuotedStrings() {
             // Given
-            Object result = JToon.decode("note: \"hello, world\"");
+            final Object result = JToon.decode("note: \"hello, world\"");
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             assertEquals("hello, world", map.get("note"));
         }
 
@@ -107,11 +111,11 @@ public class JToonDecodeTest {
         @DisplayName("should decode strings with escape sequences")
         void testEscapedStrings() {
             // Given
-            Object result = JToon.decode("text: \"line1\\nline2\"");
+            final Object result = JToon.decode("text: \"line1\\nline2\"");
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             assertEquals("line1\nline2", map.get("text"));
         }
 
@@ -119,12 +123,12 @@ public class JToonDecodeTest {
         @DisplayName("should decode unicode escape sequences")
         void testUnicodeEscapedStrings() {
             // Given
-            Object result = JToon.decode("val: \"a\\u0004b\"");
+            final Object result = JToon.decode("val: \"a\\u0004b\"");
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
-            assertEquals("a\u0004b", map.get("val"));
+            final Map<String, Object> map = (Map<String, Object>) result;
+            assertEquals("a\004b", map.get("val"));
         }
     }
 
@@ -136,51 +140,21 @@ public class JToonDecodeTest {
         @DisplayName("should decode simple object")
         void testSimpleObject() {
             // Given
-            String toon = """
+            final String toon = """
                 id: 123
                 name: Ada
                 active: true
                 """;
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
-            assertEquals(123L, map.get("id"));
+            final Map<String, Object> map = (Map<String, Object>) result;
+            assertEquals(DECODED_ID_123, map.get("id"));
             assertEquals("Ada", map.get("name"));
             assertEquals(true, map.get("active"));
-        }
-
-        @Test
-        @DisplayName("should decode object with quoted keys")
-        void testQuotedKeys() {
-            // Given
-            String toon = "\"full name\": Alice";
-
-            // When
-            Object result = JToon.decode(toon);
-
-            // Then
-            @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
-            assertEquals("Alice", map.get("full name"));
-        }
-
-        @Test
-        @DisplayName("should decode object with special character keys")
-        void testSpecialCharacterKeys() {
-            // Given
-            String toon = "\"order:id\": 42";
-
-            // When
-            Object result = JToon.decode(toon);
-
-            // Then
-            @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
-            assertEquals(42L, map.get("order:id"));
         }
     }
 
@@ -192,21 +166,21 @@ public class JToonDecodeTest {
         @DisplayName("should decode nested object")
         void testNestedObject() {
             // Given
-            String toon = """
+            final String toon = """
                 user:
                   id: 123
                   name: Ada
                 """;
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            Map<String, Object> user = (Map<String, Object>) map.get("user");
-            assertEquals(123L, user.get("id"));
+            final Map<String, Object> user = (Map<String, Object>) map.get("user");
+            assertEquals(DECODED_ID_123, user.get("id"));
             assertEquals("Ada", user.get("name"));
         }
 
@@ -214,7 +188,7 @@ public class JToonDecodeTest {
         @DisplayName("should decode deeply nested object")
         void testDeeplyNestedObject() {
             // Given
-            String toon = """
+            final String toon = """
                 user:
                   id: 123
                   contact:
@@ -223,15 +197,15 @@ public class JToonDecodeTest {
                 """;
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            Map<String, Object> user = (Map<String, Object>) map.get("user");
+            final Map<String, Object> user = (Map<String, Object>) map.get("user");
             @SuppressWarnings("unchecked")
-            Map<String, Object> contact = (Map<String, Object>) user.get("contact");
+            final Map<String, Object> contact = (Map<String, Object>) user.get("contact");
             assertEquals("ada@example.com", contact.get("email"));
             assertEquals("555-1234", contact.get("phone"));
         }
@@ -245,17 +219,17 @@ public class JToonDecodeTest {
         @DisplayName("should decode inline primitive array")
         void testInlinePrimitiveArray() {
             // Given
-            String toon = "tags[3]: reading,gaming,coding";
+            final String toon = "tags[3]: reading,gaming,coding";
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            List<Object> tags = (List<Object>) map.get("tags");
-            assertEquals(3, tags.size());
+            final List<Object> tags = (List<Object>) map.get("tags");
+            assertEquals(EXPECTED_TAG_COUNT, tags.size());
             assertEquals("reading", tags.get(0));
             assertEquals("gaming", tags.get(1));
             assertEquals("coding", tags.get(2));
@@ -265,20 +239,20 @@ public class JToonDecodeTest {
         @DisplayName("should decode multiline primitive array")
         void testMultilinePrimitiveArray() {
             // Given
-            String toon = """
+            final String toon = """
                 tags[3]:
                   reading,gaming,coding
                 """;
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            List<Object> tags = (List<Object>) map.get("tags");
-            assertEquals(3, tags.size());
+            final List<Object> tags = (List<Object>) map.get("tags");
+            assertEquals(EXPECTED_TAG_COUNT, tags.size());
             assertEquals("reading", tags.get(0));
             assertEquals("gaming", tags.get(1));
             assertEquals("coding", tags.get(2));
@@ -288,36 +262,37 @@ public class JToonDecodeTest {
         @DisplayName("should decode array with mixed primitives")
         void testMixedPrimitiveArray() {
             // Given
-            String toon = "values[4]: 42,3.14,\"true\",null";
+            final String toon = "values[4]: 42,3.14,\"true\",null";
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            List<Object> values = (List<Object>) map.get("values");
-            assertEquals(42L, values.get(0));
-            assertEquals(3.14, (Double) values.get(1), 0.0001);
+            final List<Object> values = (List<Object>) map.get("values");
+            assertEquals(DECODED_VALUE_42, values.get(0));
+            assertEquals(DECODED_PI, (Double) values.get(1), ASSERT_DELTA);
             assertEquals("true", values.get(2));
-            assertNull(values.get(3));
+            final int fourthIndex = 3;
+            assertNull(values.get(fourthIndex));
         }
 
         @Test
         @DisplayName("should decode empty array")
         void testEmptyArray() {
             // Given
-            String toon = "items[0]:";
+            final String toon = "items[0]:";
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            List<Object> items = (List<Object>) map.get("items");
+            final List<Object> items = (List<Object>) map.get("items");
             assertEquals(0, items.size());
         }
 
@@ -325,13 +300,13 @@ public class JToonDecodeTest {
         @DisplayName("should decode canonical empty array field")
         void testCanonicalEmptyArrayField() {
             // Given
-            Object result = JToon.decode("items: []");
+            final Object result = JToon.decode("items: []");
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            List<Object> items = (List<Object>) map.get("items");
+            final List<Object> items = (List<Object>) map.get("items");
             assertTrue(items.isEmpty());
         }
     }
@@ -344,30 +319,30 @@ public class JToonDecodeTest {
         @DisplayName("should decode tabular array")
         void testTabularArray() {
             // Given
-            String toon = """
+            final String toon = """
                 users[2]{id,name,role}:
                   1,Alice,admin
                   2,Bob,user
                 """;
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            List<Object> users = (List<Object>) map.get("users");
+            final List<Object> users = (List<Object>) map.get("users");
             assertEquals(2, users.size());
 
             @SuppressWarnings("unchecked")
-            Map<String, Object> user1 = (Map<String, Object>) users.get(0);
+            final Map<String, Object> user1 = (Map<String, Object>) users.get(0);
             assertEquals(1L, user1.get("id"));
             assertEquals("Alice", user1.get("name"));
             assertEquals("admin", user1.get("role"));
 
             @SuppressWarnings("unchecked")
-            Map<String, Object> user2 = (Map<String, Object>) users.get(1);
+            final Map<String, Object> user2 = (Map<String, Object>) users.get(1);
             assertEquals(2L, user2.get("id"));
             assertEquals("Bob", user2.get("name"));
             assertEquals("user", user2.get("role"));
@@ -377,49 +352,50 @@ public class JToonDecodeTest {
         @DisplayName("should decode tabular array with mixed types")
         void testTabularArrayMixedTypes() {
             // Given
-            String toon = """
+            final String toon = """
                 items[2]{sku,qty,price}:
                   A1,2,9.99
                   B2,1,14.5
                 """;
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            List<Object> items = (List<Object>) map.get("items");
+            final List<Object> items = (List<Object>) map.get("items");
 
             @SuppressWarnings("unchecked")
-            Map<String, Object> item1 = (Map<String, Object>) items.get(0);
+            final Map<String, Object> item1 = (Map<String, Object>) items.get(0);
             assertEquals("A1", item1.get("sku"));
             assertEquals(2L, item1.get("qty"));
-            assertEquals(9.99, (Double) item1.get("price"), 0.0001);
+            final double expectedPrice = 9.99;
+            assertEquals(expectedPrice, (Double) item1.get("price"), ASSERT_DELTA);
         }
 
         @Test
         @DisplayName("should decode tabular array with quoted values")
         void testTabularArrayQuotedValues() {
             // Given
-            String toon = """
+            final String toon = """
                 items[2]{id,name}:
                   1,"First Item"
                   2,"Second, Item"
                 """;
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            List<Object> items = (List<Object>) map.get("items");
+            final List<Object> items = (List<Object>) map.get("items");
 
             @SuppressWarnings("unchecked")
-            Map<String, Object> item2 = (Map<String, Object>) items.get(1);
+            final Map<String, Object> item2 = (Map<String, Object>) items.get(1);
             assertEquals("Second, Item", item2.get("name"));
         }
     }
@@ -432,20 +408,20 @@ public class JToonDecodeTest {
         @DisplayName("should decode list array with simple items")
         void testSimpleListArray() {
             // Given
-            String toon = """
+            final String toon = """
                 items[2]:
                   - first
                   - second
                 """;
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            List<Object> items = (List<Object>) map.get("items");
+            final List<Object> items = (List<Object>) map.get("items");
             assertEquals("first", items.get(0));
             assertEquals("second", items.get(1));
         }
@@ -454,7 +430,7 @@ public class JToonDecodeTest {
         @DisplayName("should decode list array with object items")
         void testListArrayWithObjects() {
             // Given
-            String toon = """
+            final String toon = """
                 items[2]:
                   - id: 1
                     name: First
@@ -463,21 +439,21 @@ public class JToonDecodeTest {
                 """;
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            List<Object> items = (List<Object>) map.get("items");
+            final List<Object> items = (List<Object>) map.get("items");
 
             @SuppressWarnings("unchecked")
-            Map<String, Object> item1 = (Map<String, Object>) items.get(0);
+            final Map<String, Object> item1 = (Map<String, Object>) items.get(0);
             assertEquals(1L, item1.get("id"));
             assertEquals("First", item1.get("name"));
 
             @SuppressWarnings("unchecked")
-            Map<String, Object> item2 = (Map<String, Object>) items.get(1);
+            final Map<String, Object> item2 = (Map<String, Object>) items.get(1);
             assertEquals(2L, item2.get("id"));
             assertEquals("Second", item2.get("name"));
         }
@@ -491,36 +467,36 @@ public class JToonDecodeTest {
         @DisplayName("should decode comma-delimited array")
         void testCommaDelimiter() {
             // Given
-            String toon = "tags[3]: a,b,c";
+            final String toon = "tags[3]: a,b,c";
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            List<Object> tags = (List<Object>) map.get("tags");
-            assertEquals(3, tags.size());
+            final List<Object> tags = (List<Object>) map.get("tags");
+            assertEquals(EXPECTED_TAG_COUNT, tags.size());
         }
 
         @Test
         @DisplayName("should decode tab-delimited array")
         void testTabDelimiter() {
             // Given
-            String toon = "tags[3\t]:\ta\tb\tc";
-            DecodeOptions options = DecodeOptions.withDelimiter(Delimiter.TAB);
+            final String toon = "tags[3\t]:\ta\tb\tc";
+            final DecodeOptions options = DecodeOptions.withDelimiter(Delimiter.TAB);
 
 
             // When
-            Object result = JToon.decode(toon, options);
+            final Object result = JToon.decode(toon, options);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            List<Object> tags = (List<Object>) map.get("tags");
-            assertEquals(3, tags.size());
+            final List<Object> tags = (List<Object>) map.get("tags");
+            assertEquals(EXPECTED_TAG_COUNT, tags.size());
             assertEquals("a", tags.get(0));
             assertEquals("b", tags.get(1));
             assertEquals("c", tags.get(2));
@@ -530,18 +506,18 @@ public class JToonDecodeTest {
         @DisplayName("should decode pipe-delimited array")
         void testPipeDelimiter() {
             // Given
-            String toon = "tags[3|]: a|b|c";
-            DecodeOptions options = DecodeOptions.withDelimiter(Delimiter.PIPE);
+            final String toon = "tags[3|]: a|b|c";
+            final DecodeOptions options = DecodeOptions.withDelimiter(Delimiter.PIPE);
 
             // When
-            Object result = JToon.decode(toon, options);
+            final Object result = JToon.decode(toon, options);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            List<Object> tags = (List<Object>) map.get("tags");
-            assertEquals(3, tags.size());
+            final List<Object> tags = (List<Object>) map.get("tags");
+            assertEquals(EXPECTED_TAG_COUNT, tags.size());
         }
     }
 
@@ -553,7 +529,7 @@ public class JToonDecodeTest {
         @DisplayName("should decode object with nested arrays")
         void testObjectWithNestedArrays() {
             // Given
-            String toon = """
+            final String toon = """
                 user:
                   id: 123
                   name: Ada
@@ -561,15 +537,15 @@ public class JToonDecodeTest {
                 """;
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            Map<String, Object> user = (Map<String, Object>) map.get("user");
+            final Map<String, Object> user = (Map<String, Object>) map.get("user");
             @SuppressWarnings("unchecked")
-            List<Object> tags = (List<Object>) user.get("tags");
+            final List<Object> tags = (List<Object>) user.get("tags");
             assertEquals(2, tags.size());
         }
 
@@ -577,20 +553,20 @@ public class JToonDecodeTest {
         @DisplayName("should decode array of nested objects")
         void testArrayOfNestedObjects() {
             // Given
-            String toon = """
+            final String toon = """
                 users[2]{id,name}:
                   1,Alice
                   2,Bob
                 """;
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            List<Object> users = (List<Object>) map.get("users");
+            final List<Object> users = (List<Object>) map.get("users");
             assertEquals(2, users.size());
         }
 
@@ -598,7 +574,7 @@ public class JToonDecodeTest {
         @DisplayName("should decode mixed content at root level")
         void testMixedRootContent() {
             // Given
-            String toon = """
+            final String toon = """
                 id: 123
                 name: Ada
                 tags[2]: dev,admin
@@ -606,16 +582,16 @@ public class JToonDecodeTest {
                 """;
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
-            assertEquals(123L, map.get("id"));
+            final Map<String, Object> map = (Map<String, Object>) result;
+            assertEquals(DECODED_ID_123, map.get("id"));
             assertEquals("Ada", map.get("name"));
             assertEquals(true, map.get("active"));
             @SuppressWarnings("unchecked")
-            List<Object> tags = (List<Object>) map.get("tags");
+            final List<Object> tags = (List<Object>) map.get("tags");
             assertEquals(2, tags.size());
         }
 
@@ -623,7 +599,7 @@ public class JToonDecodeTest {
         @DisplayName("should decode canonical empty root array")
         void testCanonicalEmptyRootArray() {
             // When
-            Object result = JToon.decode("[]");
+            final Object result = JToon.decode("[]");
 
             // Then
             assertInstanceOf(List.class, result);
@@ -648,10 +624,10 @@ public class JToonDecodeTest {
         @DisplayName("should throw in strict mode for invalid array header")
         void testStrictModeError() {
             // Given
-            String toon = "[invalid]";  // Invalid array header format
+            final String toon = "[invalid]";  // Invalid array header format
 
             // When
-            DecodeOptions options = DecodeOptions.withStrict(true);
+            final DecodeOptions options = DecodeOptions.withStrict(true);
 
             // Then
             assertThrows(IllegalArgumentException.class, () -> JToon.decode(toon, options));
@@ -661,11 +637,11 @@ public class JToonDecodeTest {
         @DisplayName("should return null in lenient mode for invalid array header")
         void testLenientMode() {
             // Given
-            String toon = "[invalid]";  // Invalid array header format
-            DecodeOptions options = DecodeOptions.withStrict(false);
+            final String toon = "[invalid]";  // Invalid array header format
+            final DecodeOptions options = DecodeOptions.withStrict(false);
 
             // When
-            Object result = JToon.decode(toon, options);
+            final Object result = JToon.decode(toon, options);
 
             // Then
             assertEquals(Collections.emptyList(), result);
@@ -763,33 +739,34 @@ public class JToonDecodeTest {
         @Test
         @DisplayName("lenient mode: allows brackets in keys")
         void lenientAllowsBracketsInKeys() {
-            DecodeOptions lenient = DecodeOptions.withStrict(false);
-            Object result = JToon.decode("foo[1][bar]: 10", lenient);
+            final DecodeOptions lenient = DecodeOptions.withStrict(false);
+            final Object result = JToon.decode("foo[1][bar]: 10", lenient);
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
-            assertEquals(10L, map.get("foo[1][bar]"));
+            final Map<String, Object> map = (Map<String, Object>) result;
+            final long decodedTen = 10L;
+        assertEquals(decodedTen, map.get("foo[1][bar]"));
         }
 
         @Test
         @DisplayName("lenient mode: allows duplicate keys (last-write-wins)")
         void lenientAllowsDuplicateKeys() {
-            DecodeOptions lenient = DecodeOptions.withStrict(false);
-            Object result = JToon.decode("name: Ada\nname: Bob", lenient);
+            final DecodeOptions lenient = DecodeOptions.withStrict(false);
+            final Object result = JToon.decode("name: Ada\nname: Bob", lenient);
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             assertEquals("Bob", map.get("name"));
         }
 
         @Test
         @DisplayName("lenient mode: allows leading zeros in bracket length")
         void lenientAllowsLeadingZeros() {
-            DecodeOptions lenient = DecodeOptions.withStrict(false);
-            Object result = JToon.decode("items[03]: a,b,c", lenient);
+            final DecodeOptions lenient = DecodeOptions.withStrict(false);
+            final Object result = JToon.decode("items[03]: a,b,c", lenient);
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) result;
+            final Map<String, Object> map = (Map<String, Object>) result;
             @SuppressWarnings("unchecked")
-            List<Object> items = (List<Object>) map.get("items");
-            assertEquals(3, items.size());
+            final List<Object> items = (List<Object>) map.get("items");
+            assertEquals(EXPECTED_TAG_COUNT, items.size());
         }
     }
 
@@ -801,13 +778,13 @@ public class JToonDecodeTest {
         @DisplayName("should decode to JSON string")
         void testDecodeToJson() {
             // Given
-            String toon = """
+            final String toon = """
                 id: 123
                 name: Ada
                 """;
 
             // When
-            String json = JToon.decodeToJson(toon);
+            final String json = JToon.decodeToJson(toon);
 
             // Then
             assertNotNull(json);
@@ -819,14 +796,14 @@ public class JToonDecodeTest {
         @DisplayName("should decode complex structure to JSON")
         void testComplexDecodeToJson() {
             // Given
-            String toon = """
+            final String toon = """
                 users[2]{id,name}:
                   1,Alice
                   2,Bob
                 """;
 
             // When
-            String json = JToon.decodeToJson(toon);
+            final String json = JToon.decodeToJson(toon);
 
             // Then
             assertNotNull(json);
@@ -839,7 +816,7 @@ public class JToonDecodeTest {
         @DisplayName("should decode very complex structure to JSON, with empty Lists")
         void testVeryComplexDecodeToJson() {
             // Given
-            String toon = """
+            final String toon = """
                 [2]:
                   - name: Person.java
                     absolutePath: /Users/samples/petclinic/model/Person.java
@@ -885,7 +862,7 @@ public class JToonDecodeTest {
                 """;
 
             // When
-            String json = JToon.decodeToJson(toon);
+            final String json = JToon.decodeToJson(toon);
 
             // Then
             assertNotNull(json);

@@ -1,12 +1,11 @@
 package dev.toonformat.jtoon.validator;
 
+import static org.junit.jupiter.api.Assertions.*;
 import dev.toonformat.jtoon.DecodeOptions;
 import dev.toonformat.jtoon.Delimiter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for {@link ToonValidator} — structural and conformance validation.
@@ -17,10 +16,10 @@ class ToonValidatorTest {
     @Test
     void validToon_passesValidation() {
         // Given
-        String toon = "id: 123\nname: Ada\nactive: true";
+        final String toon = "id: 123\nname: Ada\nactive: true";
 
         // When
-        ToonValidator.ValidationResult result = ToonValidator.validate(toon);
+        final ToonValidator.ValidationResult result = ToonValidator.validate(toon);
 
         // Then
         assertTrue(result.valid());
@@ -30,10 +29,10 @@ class ToonValidatorTest {
     @Test
     void validToon_withTabularArray_passes() {
         // Given
-        String toon = "items[2]{id,name}:\n  1,Alice\n  2,Bob";
+        final String toon = "items[2]{id,name}:\n  1,Alice\n  2,Bob";
 
         // When
-        ToonValidator.ValidationResult result = ToonValidator.validate(toon);
+        final ToonValidator.ValidationResult result = ToonValidator.validate(toon);
 
         // Then
         assertTrue(result.valid());
@@ -43,10 +42,10 @@ class ToonValidatorTest {
     @Test
     void nullInput_passesValidation() {
         // Given
-        String toon = null;
+        final String toon = null;
 
         // When
-        ToonValidator.ValidationResult result = ToonValidator.validate(toon);
+        final ToonValidator.ValidationResult result = ToonValidator.validate(toon);
 
         // Then
         assertTrue(result.valid());
@@ -55,10 +54,10 @@ class ToonValidatorTest {
     @Test
     void blankInput_passesValidation() {
         // Given
-        String toon = "   ";
+        final String toon = "   ";
 
         // When
-        ToonValidator.ValidationResult result = ToonValidator.validate(toon);
+        final ToonValidator.ValidationResult result = ToonValidator.validate(toon);
 
         // Then
         assertTrue(result.valid());
@@ -67,10 +66,10 @@ class ToonValidatorTest {
     @Test
     void invalidStructure_failsValidation() {
         // Given — bad indentation
-        String toon = "  badIndent";
+        final String toon = "  badIndent";
 
         // When
-        ToonValidator.ValidationResult result = ToonValidator.validate(toon);
+        final ToonValidator.ValidationResult result = ToonValidator.validate(toon);
 
         // Then
         assertFalse(result.valid());
@@ -81,10 +80,10 @@ class ToonValidatorTest {
     @Test
     void trailingSpaces_detected() {
         // Given
-        String toon = "id: 123 \nname: Ada";
+        final String toon = "id: 123 \nname: Ada";
 
         // When
-        ToonValidator.ValidationResult result = ToonValidator.validate(toon);
+        final ToonValidator.ValidationResult result = ToonValidator.validate(toon);
 
         // Then
         assertFalse(result.valid());
@@ -94,10 +93,10 @@ class ToonValidatorTest {
     @Test
     void trailingNewline_detected() {
         // Given
-        String toon = "id: 123\n";
+        final String toon = "id: 123\n";
 
         // When
-        ToonValidator.ValidationResult result = ToonValidator.validate(toon);
+        final ToonValidator.ValidationResult result = ToonValidator.validate(toon);
 
         // Then
         assertFalse(result.valid());
@@ -107,10 +106,10 @@ class ToonValidatorTest {
     @Test
     void multipleTrailingSpaces_allDetected() {
         // Given — trailing spaces on multiple lines
-        String toon = "id: 123 \nname: Ada \nactive: true";
+        final String toon = "id: 123 \nname: Ada \nactive: true";
 
         // When
-        ToonValidator.ValidationResult result = ToonValidator.validate(toon);
+        final ToonValidator.ValidationResult result = ToonValidator.validate(toon);
 
         // Then
         assertFalse(result.valid());
@@ -120,7 +119,7 @@ class ToonValidatorTest {
     @Test
     void isValid_returnsTrueForValidToon() {
         // Given
-        String toon = "key: value";
+        final String toon = "key: value";
 
         // Then
         assertTrue(ToonValidator.isValid(toon));
@@ -129,7 +128,7 @@ class ToonValidatorTest {
     @Test
     void isValid_returnsFalseForInvalidToon() {
         // Given
-        String toon = "  badIndent";
+        final String toon = "  badIndent";
 
         // Then
         assertFalse(ToonValidator.isValid(toon));
@@ -138,11 +137,11 @@ class ToonValidatorTest {
     @Test
     void validate_withCustomOptions() {
         // Given — pipe-delimited valid TOON
-        String toon = "items[2|]{a|b}:\n  1|x\n  2|y";
-        DecodeOptions options = DecodeOptions.withDelimiter(Delimiter.PIPE);
+        final String toon = "items[2|]{a|b}:\n  1|x\n  2|y";
+        final DecodeOptions options = DecodeOptions.withDelimiter(Delimiter.PIPE);
 
         // When
-        ToonValidator.ValidationResult result = ToonValidator.validate(toon, options);
+        final ToonValidator.ValidationResult result = ToonValidator.validate(toon, options);
 
         // Then
         assertTrue(result.valid());

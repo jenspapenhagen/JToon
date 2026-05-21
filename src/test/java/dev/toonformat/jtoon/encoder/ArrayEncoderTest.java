@@ -1,5 +1,12 @@
 package dev.toonformat.jtoon.encoder;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import dev.toonformat.jtoon.Delimiter;
 import dev.toonformat.jtoon.EncodeOptions;
 import org.junit.jupiter.api.DisplayName;
@@ -9,15 +16,6 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.ObjectNode;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 class ArrayEncoderTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -26,30 +24,31 @@ class ArrayEncoderTest {
     @Test
     void isArrayOfPrimitivesTestWithObjectNode() {
         // Given
-        ObjectNode dataTable = MAPPER.createObjectNode();
+        final ObjectNode dataTable = MAPPER.createObjectNode();
 
         // When
-        boolean arrayOfArrays = ArrayEncoder.isArrayOfPrimitives(dataTable);
+        final boolean arrayOfArrays = ArrayEncoder.isArrayOfPrimitives(dataTable);
 
         // Then
         assertFalse(arrayOfArrays);
     }
 
     @Test
-    @DisplayName("given array-of-arrays with mixed inner types when encodeArrayOfArraysAsListItems then writes header and primitive list items")
+    @DisplayName("given array-of-arrays with mixed inner types when encodeArrayOfArraysAsListItems"
+            + " then writes header and primitive list items")
     void givenArrayOfArraysWithMixedInnerTypes_whenEncodePrivate_thenWritesExpected() throws Exception {
         // Given
-        ArrayNode outer = jsonNodeFactory.arrayNode();
+        final ArrayNode outer = jsonNodeFactory.arrayNode();
 
-        ArrayNode innerPrims = jsonNodeFactory.arrayNode().add(1).add(2);
-        ArrayNode innerObjects = jsonNodeFactory.arrayNode();
+        final ArrayNode innerPrims = jsonNodeFactory.arrayNode().add(1).add(2);
+        final ArrayNode innerObjects = jsonNodeFactory.arrayNode();
         innerObjects.add(jsonNodeFactory.objectNode().put("a", 1));
         outer.add(innerPrims).add(innerObjects).add("x");
 
-        EncodeOptions options = EncodeOptions.DEFAULT;
-        LineWriter writer = new LineWriter(options.indent());
+        final EncodeOptions options = EncodeOptions.DEFAULT;
+        final LineWriter writer = new LineWriter(options.indent());
 
-        Method method = ArrayEncoder.class.getDeclaredMethod(
+        final Method method = ArrayEncoder.class.getDeclaredMethod(
             "encodeArrayOfArraysAsListItems",
             String.class,
             ArrayNode.class,
@@ -63,7 +62,7 @@ class ArrayEncoderTest {
         method.invoke(null, "items", outer, writer, 0, options);
 
         // Then
-        String expected = String.join("\n",
+        final String expected = String.join("\n",
                                       "items[3]:",
                                       "  - [2]: 1,2"
         );
@@ -73,10 +72,10 @@ class ArrayEncoderTest {
     @Test
     void isArrayOfArraysTestWithObjectNode() {
         // Given
-        ObjectNode dataTable = MAPPER.createObjectNode();
+        final ObjectNode dataTable = MAPPER.createObjectNode();
 
         // When
-        boolean arrayOfArrays = ArrayEncoder.isArrayOfArrays(dataTable);
+        final boolean arrayOfArrays = ArrayEncoder.isArrayOfArrays(dataTable);
 
         // Then
         assertFalse(arrayOfArrays);
@@ -85,10 +84,10 @@ class ArrayEncoderTest {
     @Test
     void isArrayOfObjectsTestWithObjectNode() {
         // Given
-        ObjectNode dataTable = MAPPER.createObjectNode();
+        final ObjectNode dataTable = MAPPER.createObjectNode();
 
         // When
-        boolean arrayOfArrays = ArrayEncoder.isArrayOfObjects(dataTable);
+        final boolean arrayOfArrays = ArrayEncoder.isArrayOfObjects(dataTable);
 
         // Then
         assertFalse(arrayOfArrays);
@@ -97,10 +96,11 @@ class ArrayEncoderTest {
     @Test
     void encodeArrayWithAllPrimitives() {
         // Given
-        ArrayNode arrayNode = jsonNodeFactory.arrayNode();
-        arrayNode.add(1).add(2).add(3);
-        EncodeOptions options = EncodeOptions.DEFAULT;
-        LineWriter lineWriter = new LineWriter(options.indent());
+        final int thirdValue = 3;
+        final ArrayNode arrayNode = jsonNodeFactory.arrayNode();
+        arrayNode.add(1).add(2).add(thirdValue);
+        final EncodeOptions options = EncodeOptions.DEFAULT;
+        final LineWriter lineWriter = new LineWriter(options.indent());
 
         // When
         ArrayEncoder.encodeArray("", arrayNode, lineWriter, 1, options);
@@ -113,16 +113,20 @@ class ArrayEncoderTest {
     @Test
     void encodeArrayWithAllPrimitivesArrayOfArrays() {
         // Given
-        ArrayNode arrayNode = jsonNodeFactory.arrayNode();
-        ArrayNode innerArrayNode = jsonNodeFactory.arrayNode();
-        innerArrayNode.add(1).add(2).add(3);
-        ArrayNode innerArrayNode2 = jsonNodeFactory.arrayNode();
-        innerArrayNode2.add(4).add(5).add(6);
+        final int arr1val3 = 3;
+        final int arr2val1 = 4;
+        final int arr2val2 = 5;
+        final int arr2val3 = 6;
+        final ArrayNode arrayNode = jsonNodeFactory.arrayNode();
+        final ArrayNode innerArrayNode = jsonNodeFactory.arrayNode();
+        innerArrayNode.add(1).add(2).add(arr1val3);
+        final ArrayNode innerArrayNode2 = jsonNodeFactory.arrayNode();
+        innerArrayNode2.add(arr2val1).add(arr2val2).add(arr2val3);
 
         arrayNode.add(innerArrayNode).add(innerArrayNode2);
 
-        EncodeOptions options = EncodeOptions.DEFAULT;
-        LineWriter lineWriter = new LineWriter(options.indent());
+        final EncodeOptions options = EncodeOptions.DEFAULT;
+        final LineWriter lineWriter = new LineWriter(options.indent());
 
         // When
         ArrayEncoder.encodeArray("", arrayNode, lineWriter, 1, options);
@@ -138,9 +142,9 @@ class ArrayEncoderTest {
     @DisplayName("should encode empty keyed array as key: [] without lengthMarker")
     void encodeEmptyArrayAsKeyValue() {
         // Given
-        ArrayNode emptyArray = jsonNodeFactory.arrayNode();
-        EncodeOptions options = EncodeOptions.DEFAULT;
-        LineWriter writer = new LineWriter(2);
+        final ArrayNode emptyArray = jsonNodeFactory.arrayNode();
+        final EncodeOptions options = EncodeOptions.DEFAULT;
+        final LineWriter writer = new LineWriter(2);
 
         // When
         ArrayEncoder.encodeArray("tags", emptyArray, writer, 0, options);
@@ -153,9 +157,9 @@ class ArrayEncoderTest {
     @DisplayName("should encode empty keyed array with lengthMarker as header form")
     void encodeEmptyArrayWithLengthMarker() {
         // Given
-        ArrayNode emptyArray = jsonNodeFactory.arrayNode();
-        EncodeOptions options = EncodeOptions.withLengthMarker(true);
-        LineWriter writer = new LineWriter(2);
+        final ArrayNode emptyArray = jsonNodeFactory.arrayNode();
+        final EncodeOptions options = EncodeOptions.withLengthMarker(true);
+        final LineWriter writer = new LineWriter(2);
 
         // When
         ArrayEncoder.encodeArray("tags", emptyArray, writer, 0, options);
@@ -168,9 +172,9 @@ class ArrayEncoderTest {
     @DisplayName("should encode top-level empty array as [] without lengthMarker")
     void encodeRootEmptyArray() {
         // Given
-        ArrayNode emptyArray = jsonNodeFactory.arrayNode();
-        EncodeOptions options = EncodeOptions.DEFAULT;
-        LineWriter writer = new LineWriter(2);
+        final ArrayNode emptyArray = jsonNodeFactory.arrayNode();
+        final EncodeOptions options = EncodeOptions.DEFAULT;
+        final LineWriter writer = new LineWriter(2);
 
         // When
         ArrayEncoder.encodeArray(null, emptyArray, writer, 0, options);
@@ -183,9 +187,9 @@ class ArrayEncoderTest {
     @DisplayName("should encode top-level empty array with lengthMarker as [0]:")
     void encodeRootEmptyArrayWithLengthMarker() {
         // Given
-        ArrayNode emptyArray = jsonNodeFactory.arrayNode();
-        EncodeOptions options = EncodeOptions.withLengthMarker(true);
-        LineWriter writer = new LineWriter(2);
+        final ArrayNode emptyArray = jsonNodeFactory.arrayNode();
+        final EncodeOptions options = EncodeOptions.withLengthMarker(true);
+        final LineWriter writer = new LineWriter(2);
 
         // When
         ArrayEncoder.encodeArray(null, emptyArray, writer, 0, options);
@@ -198,9 +202,9 @@ class ArrayEncoderTest {
     @DisplayName("should encode empty nested array as key: []")
     void encodeEmptyNestedArray() {
         // Given
-        ArrayNode emptyArray = jsonNodeFactory.arrayNode();
-        EncodeOptions options = EncodeOptions.DEFAULT;
-        LineWriter writer = new LineWriter(2);
+        final ArrayNode emptyArray = jsonNodeFactory.arrayNode();
+        final EncodeOptions options = EncodeOptions.DEFAULT;
+        final LineWriter writer = new LineWriter(2);
 
         // When
         ArrayEncoder.encodeArray("data", emptyArray, writer, 1, options);

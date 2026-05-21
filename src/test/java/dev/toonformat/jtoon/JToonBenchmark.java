@@ -1,5 +1,8 @@
 package dev.toonformat.jtoon;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -15,10 +18,6 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 @State(Scope.Thread)
 @BenchmarkMode(Mode.Throughput)
@@ -37,18 +36,20 @@ public class JToonBenchmark {
 
     @Setup
     public void setup() {
+        final double maxRandomValue = 1000;
+        final int repeatCount = 10;
         testObject = new HashMap<>();
         for (int i = 0; i < size; i++) {
-            Map<String, Object> nested = new HashMap<>();
+            final Map<String, Object> nested = new HashMap<>();
             nested.put("id", i);
             nested.put("name", "item_" + i);
-            nested.put("value", Math.random() * 1000);
+            nested.put("value", Math.random() * maxRandomValue);
             nested.put("active", i % 2 == 0);
             testObject.put("key_" + i, nested);
         }
         toonString = JToon.encode(testObject);
         jsonString = "{\"name\":\"test\",\"value\":42,\"items\":[" +
-            String.join(",", java.util.Collections.nCopies(10, "{\"id\":1,\"name\":\"test\"}")) +
+            String.join(",", java.util.Collections.nCopies(repeatCount, "{\"id\":1,\"name\":\"test\"}")) +
             "],\"nested\":{\"a\":1,\"b\":2,\"c\":3}}";
     }
 
@@ -77,8 +78,8 @@ public class JToonBenchmark {
         return JToon.decode(toonString);
     }
 
-    public static void main(String[] args) throws RunnerException {
-        Options opt = new OptionsBuilder()
+    public static void main(final String[] args) throws RunnerException {
+        final Options opt = new OptionsBuilder()
             .include(JToonBenchmark.class.getSimpleName())
             .result("build/jmh-results/results.json")
             .build();

@@ -1,5 +1,8 @@
 package dev.toonformat.jtoon.encoder;
 
+import static org.junit.jupiter.api.Assertions.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import dev.toonformat.jtoon.EncodeOptions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -7,11 +10,6 @@ import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.NumericNode;
 import tools.jackson.databind.node.ObjectNode;
 import tools.jackson.databind.node.ArrayNode;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class ValueEncoderTest {
 
@@ -38,11 +36,11 @@ class ValueEncoderTest {
     @DisplayName("given primitive JsonNode when encodeValue then returns encoded primitive")
     void givenPrimitive_whenEncodeValue_thenReturnsEncodedPrimitive() {
         // Given
-        NumericNode number = jsonNodeFactory.numberNode(42);
-        EncodeOptions options = EncodeOptions.DEFAULT;
+        final NumericNode number = jsonNodeFactory.numberNode(42);
+        final EncodeOptions options = EncodeOptions.DEFAULT;
 
         // When
-        String result = ValueEncoder.encodeValue(number, options);
+        final String result = ValueEncoder.encodeValue(number, options);
 
         // Then
         assertEquals("42", result);
@@ -52,11 +50,11 @@ class ValueEncoderTest {
     @DisplayName("given primitive array when encodeValue then writes inline array header and values")
     void givenPrimitiveArray_whenEncodeValue_thenWritesInlineArray() {
         // Given
-        ArrayNode array = jsonNodeFactory.arrayNode().add(1).add(2).add(3);
-        EncodeOptions options = EncodeOptions.DEFAULT;
+        final ArrayNode array = jsonNodeFactory.arrayNode().add(1).add(2).add(3);
+        final EncodeOptions options = EncodeOptions.DEFAULT;
 
         // When
-        String result = ValueEncoder.encodeValue(array, options);
+        final String result = ValueEncoder.encodeValue(array, options);
 
         // Then
         assertEquals("[3]: 1,2,3", result);
@@ -66,16 +64,16 @@ class ValueEncoderTest {
     @DisplayName("given simple object when encodeValue then writes key-value lines")
     void givenObject_whenEncodeValue_thenWritesObjectLines() {
         // Given
-        ObjectNode obj = jsonNodeFactory.objectNode();
+        final ObjectNode obj = jsonNodeFactory.objectNode();
         obj.put("a", 1);
         obj.put("b", "x");
-        EncodeOptions options = EncodeOptions.DEFAULT;
+        final EncodeOptions options = EncodeOptions.DEFAULT;
 
         // When
-        String result = ValueEncoder.encodeValue(obj, options);
+        final String result = ValueEncoder.encodeValue(obj, options);
 
         // Then
-        String expected = String.join("\n",
+        final String expected = String.join("\n",
                 "a: 1",
                 "b: x");
         assertEquals(expected, result);

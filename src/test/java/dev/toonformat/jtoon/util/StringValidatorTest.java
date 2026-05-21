@@ -1,15 +1,13 @@
 package dev.toonformat.jtoon.util;
 
+import static org.junit.jupiter.api.Assertions.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import dev.toonformat.jtoon.Delimiter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for StringValidator utility class.
@@ -311,7 +309,8 @@ class StringValidatorTest {
         @DisplayName("should return true for tab with comma delimiter")
         void testTabWithCommaDelimiter() {
             // Then
-            assertFalse(StringValidator.isSafeUnquoted("a\tb", Delimiter.COMMA.toString())); // Still false due to control char
+            // Still false due to control char
+            assertFalse(StringValidator.isSafeUnquoted("a\tb", Delimiter.COMMA.toString()));
         }
     }
 
@@ -460,9 +459,9 @@ class StringValidatorTest {
         @Test
         @DisplayName("should return false for key with control characters")
         void testKeyWithControlChars() {
-            assertFalse(StringValidator.isValidUnquotedKey("a\u0004b"));
-            assertFalse(StringValidator.isValidUnquotedKey("a\u0000b"));
-            assertFalse(StringValidator.isValidUnquotedKey("a\u001Fb"));
+            assertFalse(StringValidator.isValidUnquotedKey("a\004b"));
+            assertFalse(StringValidator.isValidUnquotedKey("a\0b"));
+            assertFalse(StringValidator.isValidUnquotedKey("a\037b"));
         }
 
         @Test

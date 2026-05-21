@@ -1,5 +1,12 @@
 package dev.toonformat.jtoon.decoder;
 
+import static org.junit.jupiter.api.Assertions.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import dev.toonformat.jtoon.DecodeOptions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,17 +15,13 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 @Tag("unit")
 class ObjectDecoderTest {
+
+    private static final int CONSUMED_CHILD_LINES = 3;
+    private static final long ROOT_A_VALUE = 10L;
+    private static final long SCALAR_PARSE_VALUE = 15L;
+    private static final long TEST_NUMBER_VALUE = 123L;
 
     private final DecodeContext context = new DecodeContext();
 
@@ -46,7 +49,7 @@ class ObjectDecoderTest {
         setUpContext("v: \"true\"");
 
         // When
-        Object result = ObjectDecoder.parseBareScalarValue("v: \"true\"", 0, context);
+        final Object result = ObjectDecoder.parseBareScalarValue("v: \"true\"", 0, context);
 
         // Then
         assertEquals("v: \"true\"", result.toString());
@@ -59,7 +62,7 @@ class ObjectDecoderTest {
         setUpContext("note: \"a,b\"");
 
         // When
-        Object result = ObjectDecoder.parseObjectItemValue("note: \"a,b\"", 0, context);
+        final Object result = ObjectDecoder.parseObjectItemValue("note: \"a,b\"", 0, context);
 
         // Then
         assertEquals("note: \"a,b\"", result.toString());
@@ -94,13 +97,13 @@ class ObjectDecoderTest {
             context.currentLine = 1; // simulate: parser is already on the nested part
 
             // When
-            Map<String, Object> result = ObjectDecoder.parseNestedObject(0, context);
+            final Map<String, Object> result = ObjectDecoder.parseNestedObject(0, context);
 
             // Then
             assertEquals("A", result.get("child1"));
             assertEquals("B", result.get("child2"));
 
-            assertEquals(3, context.currentLine); // consumed all children
+            assertEquals(CONSUMED_CHILD_LINES, context.currentLine); // consumed all children
         }
 
         @Test
@@ -116,11 +119,11 @@ class ObjectDecoderTest {
             context.currentLine = 1;
 
             // When
-            Map<String, Object> result = ObjectDecoder.parseNestedObject(0, context);
+            final Map<String, Object> result = ObjectDecoder.parseNestedObject(0, context);
 
             // Then
             assertEquals("OK", result.get("child"));
-            assertEquals(3, context.currentLine);
+            assertEquals(CONSUMED_CHILD_LINES, context.currentLine);
         }
     }
 
@@ -149,14 +152,14 @@ class ObjectDecoderTest {
                 b: 20
                   nested: IGNORE
                 """);
-            Map<String, Object> root = new LinkedHashMap<>();
+            final Map<String, Object> root = new LinkedHashMap<>();
 
             // When
             ObjectDecoder.parseRootObjectFields(root, 0, context);
 
             // Then
-            assertEquals(10L, root.get("a"));
-            assertEquals(3, context.currentLine);
+            assertEquals(ROOT_A_VALUE, root.get("a"));
+            assertEquals(CONSUMED_CHILD_LINES, context.currentLine);
         }
 
         @Test
@@ -167,10 +170,11 @@ class ObjectDecoderTest {
                 b: 20
                   nested: IGNORE
                 """);
-            Map<String, Object> root = new LinkedHashMap<>();
+            final Map<String, Object> root = new LinkedHashMap<>();
+            final int wrongDepth = 25;
 
             // When
-            ObjectDecoder.parseRootObjectFields(root, 25, context);
+            ObjectDecoder.parseRootObjectFields(root, wrongDepth, context);
 
             // Then
             assertNull(root.get("a"));
@@ -204,10 +208,10 @@ class ObjectDecoderTest {
             setUpContext("123");
 
             // When
-            Object result = ObjectDecoder.parseBareScalarValue("123", 0, context);
+            final Object result = ObjectDecoder.parseBareScalarValue("123", 0, context);
 
             // Then
-            assertEquals(123L, result);
+            assertEquals(TEST_NUMBER_VALUE, result);
             assertEquals(1, context.currentLine);
         }
 
@@ -256,12 +260,12 @@ class ObjectDecoderTest {
             context.currentLine = 0;
 
             // When
-            Object value = ObjectDecoder.parseFieldValue("", 0, context);
+            final Object value = ObjectDecoder.parseFieldValue("", 0, context);
 
             // Then
             assertInstanceOf(Map.class, value);
 
-            Map<String, Object> map = (Map<String, Object>) value;
+            final Map<String, Object> map = (Map<String, Object>) value;
             assertEquals(1L, map.get("a"));
             assertEquals(2L, map.get("b"));
         }
@@ -275,10 +279,10 @@ class ObjectDecoderTest {
             context.currentLine = 0;
 
             // When
-            Object parseFieldValue = ObjectDecoder.parseFieldValue("15", 0, context);
+            final Object parseFieldValue = ObjectDecoder.parseFieldValue("15", 0, context);
 
             // Then
-            assertEquals(15L, parseFieldValue);
+            assertEquals(SCALAR_PARSE_VALUE, parseFieldValue);
             assertEquals(1L, context.currentLine);
         }
 
@@ -293,7 +297,7 @@ class ObjectDecoderTest {
             context.currentLine = 0;
 
             // When
-            Object parseFieldValue = ObjectDecoder.parseFieldValue("", 0, context);
+            final Object parseFieldValue = ObjectDecoder.parseFieldValue("", 0, context);
 
             // Then
             assertInstanceOf(Map.class, parseFieldValue);
@@ -308,14 +312,15 @@ class ObjectDecoderTest {
                 key:
                 next
                 """);
-            context.currentLine = 25;
+            final int offset = 25;
+            context.currentLine = offset;
 
             // When
-            Object parseFieldValue = ObjectDecoder.parseFieldValue("", 0, context);
+            final Object parseFieldValue = ObjectDecoder.parseFieldValue("", 0, context);
 
             // Then
             assertInstanceOf(Map.class, parseFieldValue);
-            assertEquals(26, context.currentLine);
+            assertEquals(offset + 1, context.currentLine);
         }
     }
 
@@ -348,11 +353,11 @@ class ObjectDecoderTest {
             context.currentLine = 0;
 
             // When
-            Object parseObjectItemValue = ObjectDecoder.parseObjectItemValue("", 0, context);
+            final Object parseObjectItemValue = ObjectDecoder.parseObjectItemValue("", 0, context);
 
             // Then
             assertInstanceOf(Map.class, parseObjectItemValue);
-            Map<String, Object> map = (Map<String, Object>) parseObjectItemValue;
+            final Map<String, Object> map = (Map<String, Object>) parseObjectItemValue;
             assertNull(map.get("a"));
         }
 
@@ -364,7 +369,7 @@ class ObjectDecoderTest {
             context.currentLine = 0;
 
             // When
-            Object parseObjectItemValue = ObjectDecoder.parseObjectItemValue("value", 0, context);
+            final Object parseObjectItemValue = ObjectDecoder.parseObjectItemValue("value", 0, context);
 
             // Then
             assertEquals("value", parseObjectItemValue);
@@ -381,7 +386,7 @@ class ObjectDecoderTest {
             context.currentLine = 0;
 
             // When
-            Object parseObjectItemValue = ObjectDecoder.parseObjectItemValue("", 0, context);
+            final Object parseObjectItemValue = ObjectDecoder.parseObjectItemValue("", 0, context);
 
             // Then
             assertInstanceOf(Map.class, parseObjectItemValue);
@@ -395,7 +400,7 @@ class ObjectDecoderTest {
             context.currentLine = 0;
 
             // When
-            Object parseObjectItemValue = ObjectDecoder.parseObjectItemValue("", 0, context);
+            final Object parseObjectItemValue = ObjectDecoder.parseObjectItemValue("", 0, context);
 
             // Then
             assertInstanceOf(Map.class, parseObjectItemValue);
@@ -405,16 +410,17 @@ class ObjectDecoderTest {
     @Test
     void testExpandPathIntoMapCalledForDottedKey() throws Exception {
         // Given
-        Map<String, Object> objectMap = new LinkedHashMap<>();
-        String content = "user.name[1]: Alice";
+        final Map<String, Object> objectMap = new LinkedHashMap<>();
+        final String content = "user.name[1]: Alice";
 
-        int depth = 0;
+        final int depth = 0;
 
         setUpContext(content);
 
         // When
         invokePrivateStatic(
-            "processRootKeyedArrayLine", new Class[]{Map.class, String.class, String.class, int.class, DecodeContext.class},
+            "processRootKeyedArrayLine",
+            new Class[]{Map.class, String.class, String.class, int.class, DecodeContext.class},
             objectMap, content, "user.name", depth, context);
 
         // Then
@@ -423,13 +429,14 @@ class ObjectDecoderTest {
     }
 
     // Reflection helpers for invoking private static methods
-    private static Object invokePrivateStatic(String methodName, Class<?>[] paramTypes, Object... args) throws Exception {
-        Method declaredMethod = ObjectDecoder.class.getDeclaredMethod(methodName, paramTypes);
+    private static Object invokePrivateStatic(final String methodName, final Class<?>[] paramTypes,
+            final Object... args) throws Exception {
+        final Method declaredMethod = ObjectDecoder.class.getDeclaredMethod(methodName, paramTypes);
         declaredMethod.setAccessible(true);
         return declaredMethod.invoke(null, args);
     }
 
-    private void setUpContext(String toon) {
+    private void setUpContext(final String toon) {
         this.context.lines = toon.split("\n");
         this.context.options = DecodeOptions.DEFAULT;
         this.context.delimiter = DecodeOptions.DEFAULT.delimiter();

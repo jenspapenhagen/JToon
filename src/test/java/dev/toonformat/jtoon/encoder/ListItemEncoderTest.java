@@ -1,5 +1,10 @@
 package dev.toonformat.jtoon.encoder;
 
+import static org.junit.jupiter.api.Assertions.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashSet;
+import java.util.Set;
 import dev.toonformat.jtoon.EncodeOptions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -7,13 +12,6 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.ObjectNode;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashSet;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class ListItemEncoderTest {
     private static final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
@@ -39,8 +37,8 @@ class ListItemEncoderTest {
     @Test
     void givenEmptyObject_whenEncoded_thenWritesDashOnly() {
         // Given
-        ObjectNode objectNode = jsonNodeFactory.objectNode();
-        LineWriter writer = new LineWriter(options.indent());
+        final ObjectNode objectNode = jsonNodeFactory.objectNode();
+        final LineWriter writer = new LineWriter(options.indent());
 
         // When
         ListItemEncoder.encodeObjectAsListItem(objectNode, writer, 1, options);
@@ -53,10 +51,10 @@ class ListItemEncoderTest {
     @Test
     void givenPrimitiveValue_whenEncoded_thenWritesInlinePrimitive() {
         // Given
-        ObjectNode objectNode = jsonNodeFactory.objectNode();
+        final ObjectNode objectNode = jsonNodeFactory.objectNode();
         objectNode.put("name", "John");
 
-        LineWriter writer = new LineWriter(options.indent());
+        final LineWriter writer = new LineWriter(options.indent());
 
         // When
         ListItemEncoder.encodeObjectAsListItem(objectNode, writer, 0, options);
@@ -68,11 +66,11 @@ class ListItemEncoderTest {
     @Test
     void givenArrayOfPrimitives_whenEncoded_thenWritesInlineArray() {
         // Given
-        ObjectNode objectNode = jsonNodeFactory.objectNode();
-        ArrayNode arrayNode = jsonNodeFactory.arrayNode().add(1).add(2).add(3);
+        final ObjectNode objectNode = jsonNodeFactory.objectNode();
+        final ArrayNode arrayNode = jsonNodeFactory.arrayNode().add(1).add(2).add(3);
         objectNode.set("nums", arrayNode);
 
-        LineWriter writer = new LineWriter(options.indent());
+        final LineWriter writer = new LineWriter(options.indent());
 
         // When
         ListItemEncoder.encodeObjectAsListItem(objectNode, writer, 0, options);
@@ -84,12 +82,13 @@ class ListItemEncoderTest {
     @Test
     void givenObjectValue_whenEncoded_thenWritesNestedObject() {
         // Given
-        ObjectNode objectNode = jsonNodeFactory.objectNode();
-        ObjectNode child = jsonNodeFactory.objectNode();
-        child.put("age", 30);
+        final int testAge = 30;
+        final ObjectNode objectNode = jsonNodeFactory.objectNode();
+        final ObjectNode child = jsonNodeFactory.objectNode();
+        child.put("age", testAge);
         objectNode.set("person", child);
 
-        LineWriter writer = new LineWriter(options.indent());
+        final LineWriter writer = new LineWriter(options.indent());
 
 
         // When
@@ -103,11 +102,11 @@ class ListItemEncoderTest {
     @Test
     void givenMultipleFields_whenEncoded_thenRemainingFieldsAreDelegated() {
         // Given
-        ObjectNode objectNode = jsonNodeFactory.objectNode();
+        final ObjectNode objectNode = jsonNodeFactory.objectNode();
         objectNode.put("a", 1);
         objectNode.put("b", 2);
 
-        LineWriter writer = new LineWriter(options.indent());
+        final LineWriter writer = new LineWriter(options.indent());
 
 
         // When
@@ -121,19 +120,20 @@ class ListItemEncoderTest {
     @Test
     void usesTabularFormatForNestedUniformObjectArrays() {
         // Given
-        String json = "[\n" +
-            "          { \"users\": [{ \"id\": 1, \"name\": \"Ada\" }, { \"id\": 2, \"name\": \"Bob\" }], \"status\": \"active\" }\n" +
+        final String json = "[\n" +
+            "          { \"users\": [{ \"id\": 1, \"name\": \"Ada\" },"
+                    + " { \"id\": 2, \"name\": \"Bob\" }], \"status\": \"active\" }\n" +
             "        ]";
-        ArrayNode node = (ArrayNode) new ObjectMapper().readTree(json);
+        final ArrayNode node = (ArrayNode) new ObjectMapper().readTree(json);
 
-        EncodeOptions options = EncodeOptions.DEFAULT;
-        LineWriter writer = new LineWriter(options.indent());
+        final EncodeOptions opts = EncodeOptions.DEFAULT;
+        final LineWriter writer = new LineWriter(opts.indent());
 
         // When
-        ArrayEncoder.encodeArray("items",node, writer, 0, options);
+        ArrayEncoder.encodeArray("items",node, writer, 0, opts);
 
         // Then
-        String expected = String.join("\n",
+        final String expected = String.join("\n",
                                       "items[1]:",
                                       "  - users[2]{id,name}:",
                                       "      1,Ada",
@@ -145,20 +145,20 @@ class ListItemEncoderTest {
     @Test
     void usesListFormatForNestedObjectArraysWithMismatchedKeys() {
         // Given
-        String json = "[\n" +
+        final String json = "[\n" +
                 "          { \"users\": [{ \"id\": 1, \"name\": \"Ada\" }, { \"id\": 2 }], \"status\": \"active\" }\n" +
                 "        ]";
-        ArrayNode node = (ArrayNode) new ObjectMapper().readTree(json);
+        final ArrayNode node = (ArrayNode) new ObjectMapper().readTree(json);
 
-        EncodeOptions options = EncodeOptions.DEFAULT;
-        LineWriter writer = new LineWriter(options.indent());
+        final EncodeOptions opts = EncodeOptions.DEFAULT;
+        final LineWriter writer = new LineWriter(opts.indent());
 
         // When
-        ArrayEncoder.encodeArray("items", node, writer, 0, options);
+        ArrayEncoder.encodeArray("items", node, writer, 0, opts);
 
 
         // Then
-        String expected = String.join("\n",
+        final String expected = String.join("\n",
                                       "items[1]:",
                                       "  - users[2]:",
                                       "      - id: 1",
@@ -172,25 +172,28 @@ class ListItemEncoderTest {
     @DisplayName("given mixed-type array as first value when encoded then writes complex list format")
     void givenMixedTypeArrayAsFirstValue_whenEncoded_thenWritesComplexListFormat() {
         // Given
-        ObjectNode obj = jsonNodeFactory.objectNode();
-        ArrayNode mixed = jsonNodeFactory.arrayNode();
+        final int firstValue = 10;
+        final int secondValue = 11;
+        final int nestedValue = 5;
+        final ObjectNode obj = jsonNodeFactory.objectNode();
+        final ArrayNode mixed = jsonNodeFactory.arrayNode();
         // primitive
         mixed.add(1);
         // array of primitives
-        mixed.add(jsonNodeFactory.arrayNode().add(10).add(11));
+        mixed.add(jsonNodeFactory.arrayNode().add(firstValue).add(secondValue));
         // object
-        ObjectNode nested = jsonNodeFactory.objectNode();
-        nested.put("a", 5);
+        final ObjectNode nested = jsonNodeFactory.objectNode();
+        nested.put("a", nestedValue);
         mixed.add(nested);
         obj.set("mixed", mixed);
 
-        LineWriter writer = new LineWriter(options.indent());
+        final LineWriter writer = new LineWriter(options.indent());
 
         // When
         ListItemEncoder.encodeObjectAsListItem(obj, writer, 0, options);
 
         // Then
-        String expected = String.join("\n",
+        final String expected = String.join("\n",
                 "- mixed[3]:",
                 "    - 1",
                 "    - [2]: 10,11",

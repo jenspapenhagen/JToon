@@ -1,20 +1,21 @@
 package dev.toonformat.jtoon.decoder;
 
+import static org.junit.jupiter.api.Assertions.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.List;
 import dev.toonformat.jtoon.DecodeOptions;
 import dev.toonformat.jtoon.Delimiter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 @Tag("unit")
 class ArrayDecoderTest {
+
+    private static final int EXPECTED_PARSE_COUNT = 3;
+    private static final int MAX_ARRAY_SIZE = 10_000_000;
 
     private final DecodeContext context = new DecodeContext();
 
@@ -36,8 +37,9 @@ class ArrayDecoderTest {
     }
 
     // Reflection helpers for invoking private static methods
-    private static Object invokePrivateStatic(String methodName, Class<?>[] paramTypes, Object... args) throws Exception {
-        Method declaredMethod = ArrayDecoder.class.getDeclaredMethod(methodName, paramTypes);
+    private static Object invokePrivateStatic(final String methodName, final Class<?>[] paramTypes,
+            final Object... args) throws Exception {
+        final Method declaredMethod = ArrayDecoder.class.getDeclaredMethod(methodName, paramTypes);
         declaredMethod.setAccessible(true);
         return declaredMethod.invoke(null, args);
     }
@@ -49,7 +51,7 @@ class ArrayDecoderTest {
         setUpContext("[3]: 1,2,3");
 
         // When
-        List<Object> result = ArrayDecoder.parseArray("[3]: 1,2,3", 0, context);
+        final List<Object> result = ArrayDecoder.parseArray("[3]: 1,2,3", 0, context);
 
         // Then
         assertEquals("[1, 2, 3]", result.toString());
@@ -62,7 +64,7 @@ class ArrayDecoderTest {
         setUpContext("[3]: reading,gaming,coding");
 
         // When
-        List<Object> result = ArrayDecoder.parseArray("[3]: reading,gaming,coding", 0, context);
+        final List<Object> result = ArrayDecoder.parseArray("[3]: reading,gaming,coding", 0, context);
 
         // Then
         assertEquals("[reading, gaming, coding]", result.toString());
@@ -75,7 +77,8 @@ class ArrayDecoderTest {
         setUpContext("[2]{sku,qty,price}:\n  A1,2,9.99\n  B2,1,14.5");
 
         // When
-        List<Object> result = ArrayDecoder.parseArray("[2]{sku,qty,price}:\n  A1,2,9.99\n  B2,1,14.5", 0, context);
+        final List<Object> result = ArrayDecoder.parseArray(
+                "[2]{sku,qty,price}:\n  A1,2,9.99\n  B2,1,14.5", 0, context);
 
         // Then
         assertEquals("[{sku=A1, qty=2, price=9.99}, {sku=B2, qty=1, price=14.5}]", result.toString());
@@ -88,7 +91,7 @@ class ArrayDecoderTest {
         setUpContext("[1]:\n  - first\n  - second\n  -");
 
         // When
-        List<Object> result = ArrayDecoder.parseArray("[1]:\n  - first\n  - second\n  -", 0, context);
+        final List<Object> result = ArrayDecoder.parseArray("[1]:\n  - first\n  - second\n  -", 0, context);
 
         // Then
         assertEquals("""
@@ -104,7 +107,7 @@ class ArrayDecoderTest {
         setUpContext("items[3]: a,b,c");
 
         // When
-        Delimiter result = ArrayDecoder.extractDelimiterFromHeader("items[3]: a,b,c", context);
+        final Delimiter result = ArrayDecoder.extractDelimiterFromHeader("items[3]: a,b,c", context);
 
         // Then
         assertEquals(",", result.toString());
@@ -117,7 +120,7 @@ class ArrayDecoderTest {
         setUpContext("items[3|]: a|b|c");
 
         // When
-        Delimiter result = ArrayDecoder.extractDelimiterFromHeader("[3|]", context);
+        final Delimiter result = ArrayDecoder.extractDelimiterFromHeader("[3|]", context);
 
         // Then
         assertEquals(Delimiter.PIPE.toString(), result.toString());
@@ -126,28 +129,29 @@ class ArrayDecoderTest {
     @Test
     @DisplayName("Should validate array length")
     void validateArrayLength() {
-        assertThrows(IllegalArgumentException.class, () -> ArrayDecoder.validateArrayLength("[2]: 1,2,3", 3, 10));
+        assertThrows(IllegalArgumentException.class,
+                () -> ArrayDecoder.validateArrayLength("[2]: 1,2,3", EXPECTED_PARSE_COUNT, MAX_ARRAY_SIZE));
     }
 
     @Test
     @DisplayName("Should validate array length")
     void validateArrayLengthWithoutException() {
-        assertDoesNotThrow(() -> ArrayDecoder.validateArrayLength("[2]: 1,2,3", 2, 10));
+        assertDoesNotThrow(() -> ArrayDecoder.validateArrayLength("[2]: 1,2,3", 2, MAX_ARRAY_SIZE));
     }
 
     @Test
     @DisplayName("Should split a array")
     void parseDelimitedValues() {
         // When
-        List<String> strings = ArrayDecoder.parseDelimitedValues("1,2,3", Delimiter.COMMA);
+        final List<String> strings = ArrayDecoder.parseDelimitedValues("1,2,3", Delimiter.COMMA);
         // Then
-        assertEquals(3, strings.size());
+        assertEquals(EXPECTED_PARSE_COUNT, strings.size());
     }
 
     @Test
     void shouldAddEmptyFinalValueWhenInputEndsWithDelimiter() {
         // When
-        List<String> result = ArrayDecoder.parseDelimitedValues("a,b,", Delimiter.COMMA);
+        final List<String> result = ArrayDecoder.parseDelimitedValues("a,b,", Delimiter.COMMA);
 
         // Then
         assertEquals(List.of("a", "b", ""), result);
@@ -156,7 +160,7 @@ class ArrayDecoderTest {
     @Test
     void shouldReturnEmptyListWhenInputIsEmpty() {
         // When
-        List<String> result = ArrayDecoder.parseDelimitedValues("", Delimiter.COMMA);
+        final List<String> result = ArrayDecoder.parseDelimitedValues("", Delimiter.COMMA);
 
         // Then
         assertTrue(result.isEmpty());
@@ -166,10 +170,11 @@ class ArrayDecoderTest {
     @DisplayName("extract length from the Header")
     void extractLengthFromHeader() throws Exception {
         // Given
-        String input = "[2]{sku,qty,price}:\n  A1,2,9.99\n  B2,1,14.5";
+        final String input = "[2]{sku,qty,price}:\n  A1,2,9.99\n  B2,1,14.5";
 
         // When
-        Integer extractLengthFromHeader = (Integer) invokePrivateStatic("extractLengthFromHeader", new Class[]{String.class, int.class}, input, 10_000_000);
+        final Integer extractLengthFromHeader = (Integer) invokePrivateStatic(
+                "extractLengthFromHeader", new Class[]{String.class, int.class}, input, 10_000_000);
 
         // Then
         assertEquals(2, extractLengthFromHeader);
@@ -179,10 +184,11 @@ class ArrayDecoderTest {
     @DisplayName("extract length from the Header, for a Header without a number")
     void extractLengthFromHeaderNullReturn() throws Exception {
         // Given
-        String input = "[T]{sku,qty,price}:\n  A1,2,9.99\n  B2,1,14.5";
+        final String input = "[T]{sku,qty,price}:\n  A1,2,9.99\n  B2,1,14.5";
 
         // When
-        Integer extractLengthFromHeader = (Integer) invokePrivateStatic("extractLengthFromHeader", new Class[]{String.class, int.class}, input, 10_000_000);
+        final Integer extractLengthFromHeader = (Integer) invokePrivateStatic(
+                "extractLengthFromHeader", new Class[]{String.class, int.class}, input, 10_000_000);
 
         // Then
         assertNull(extractLengthFromHeader);
@@ -195,13 +201,15 @@ class ArrayDecoderTest {
         setUpContext("items[3]: a,b,c");
 
         // When
-        boolean terminateListArray = (boolean) invokePrivateStatic("shouldTerminateListArray", new Class[]{int.class, int.class, String.class, DecodeContext.class}, 3, 1, "    - item", this.context);
+        final boolean terminateListArray = (boolean) invokePrivateStatic("shouldTerminateListArray",
+                new Class[]{int.class, int.class, String.class, DecodeContext.class},
+                3, 1, "    - item", this.context);
 
         // Then
         assertFalse(terminateListArray);
     }
 
-    private void setUpContext(String toon) {
+    private void setUpContext(final String toon) {
         this.context.lines = toon.split("\n", -1);
         this.context.options = DecodeOptions.DEFAULT;
         this.context.delimiter = DecodeOptions.DEFAULT.delimiter();

@@ -1,5 +1,9 @@
 package dev.toonformat.jtoon.encoder;
 
+import static org.junit.jupiter.api.Assertions.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
@@ -7,17 +11,14 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
- * Test for Flatten
+ * Test for Flatten.
  */
 class FlattenTest {
 
+    private static final int FOLD_VALUE = 123;
+    private static final int PAYLOAD_VALUE = 42;
+    private static final int EXPECTED_SEGMENT_COUNT = 3;
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Test
@@ -40,16 +41,16 @@ class FlattenTest {
     @Test
     void givenValidSingleKeyChain_whenTryFold_thenFoldsSuccessfully() {
         // Given
-        ObjectNode root = MAPPER.createObjectNode();
-        ObjectNode a = root.putObject("a");
-        ObjectNode b = a.putObject("b");
-        b.put("c", 123);
+        final ObjectNode root = MAPPER.createObjectNode();
+        final ObjectNode a = root.putObject("a");
+        final ObjectNode b = a.putObject("b");
+        b.put("c", FOLD_VALUE);
 
-        Set<String> siblings = Set.of();
-        Set<String> rootLiteral = Set.of();
+        final Set<String> siblings = Set.of();
+        final Set<String> rootLiteral = Set.of();
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, siblings, rootLiteral, null, 10
         );
 
@@ -57,17 +58,17 @@ class FlattenTest {
         assertNotNull(result);
         assertEquals("a.b.c", result.foldedKey());
         assertNull(result.remainder());
-        assertEquals(123, result.leafValue().asInt());
-        assertEquals(3, result.segmentCount());
+        assertEquals(FOLD_VALUE, result.leafValue().asInt());
+        assertEquals(EXPECTED_SEGMENT_COUNT, result.segmentCount());
     }
 
     @Test
     void givenNonObjectValue_whenTryFold_thenReturnsNull() {
         // Given
-        JsonNode value = MAPPER.valueToTree(10);
+        final JsonNode value = MAPPER.valueToTree(10);
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "x", value, Set.of(), Set.of(), null, 10
         );
 
@@ -78,11 +79,12 @@ class FlattenTest {
     @Test
     void givenSingleSegmentChain_whenTryFold_thenReturnsNull() {
         // Given
-        ObjectNode node = MAPPER.createObjectNode();
-        node.put("a", 5);
+        final int singleValue = 5;
+        final ObjectNode node = MAPPER.createObjectNode();
+        node.put("a", singleValue);
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", node.get("a"), Set.of(), Set.of(), null, 10
         );
 
@@ -93,12 +95,12 @@ class FlattenTest {
     @Test
     void givenChainWithInvalidIdentifier_whenTryFold_thenReturnsNull() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode inner = a.putObject("invalid-key");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode inner = a.putObject("invalid-key");
         inner.put("x", 1);
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), Set.of(), null, 10
         );
 
@@ -109,14 +111,14 @@ class FlattenTest {
     @Test
     void givenSiblingCollision_whenTryFold_thenReturnsNull() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
         b.put("x", true);
 
-        Set<String> siblings = Set.of("a.b");
+        final Set<String> siblings = Set.of("a.b");
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, siblings, Set.of(), null, 2
         );
 
@@ -127,14 +129,14 @@ class FlattenTest {
     @Test
     void givenRootLiteralCollision_whenTryFold_thenReturnsNull() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
         b.put("c", 1);
 
-        Set<String> rootLiteral = Set.of("root.a.b.c");
+        final Set<String> rootLiteral = Set.of("root.a.b.c");
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), rootLiteral, "root", 10
         );
 
@@ -145,12 +147,13 @@ class FlattenTest {
     @Test
     void givenDepthLimitReached_whenTryFold_thenReturnsNull() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
-        b.putObject("c").put("x", 10);
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
+        final int dfltReachedValue = 10;
+        b.putObject("c").put("x", dfltReachedValue);
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), Set.of(), null, 1
         );
 
@@ -161,10 +164,10 @@ class FlattenTest {
     @Test
     void testTryFoldKeyChainWithArrayNode() {
         // Given
-        ArrayNode a = MAPPER.createArrayNode();
+        final ArrayNode a = MAPPER.createArrayNode();
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain("a", a, Set.of(), Set.of(), null, 10);
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain("a", a, Set.of(), Set.of(), null, 10);
 
         // Then
         assertNull(result);
@@ -173,13 +176,13 @@ class FlattenTest {
     @Test
     void testTryFoldKeyChainWithSmallRemainingDepth() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
         b.put("x", 1);
         b.put("y", 2);
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), Set.of(), null, 0
         );
 
@@ -190,13 +193,13 @@ class FlattenTest {
     @Test
     void testTryFoldKeyChainWithPathPrefix() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
         b.put("x", 1);
         b.put("y", 2);
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), Set.of(), "items", 10
         );
 
@@ -211,13 +214,13 @@ class FlattenTest {
     @Test
     void testTryFoldKeyChainWithDotsInKey() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
         b.put("x", 1);
         b.put("y", 2);
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "c.d", a, Set.of(), Set.of(), null, 10
         );
 
@@ -232,11 +235,11 @@ class FlattenTest {
     @Test
     void testTryFoldKeyChainWithSimpleObjectNode() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
-        a.put("item", 42);
+        final ObjectNode a = MAPPER.createObjectNode();
+        a.put("item", PAYLOAD_VALUE);
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), Set.of(), null, 10
         );
 
@@ -245,20 +248,20 @@ class FlattenTest {
         assertEquals("a.item", result.foldedKey());
         assertNull(result.remainder());
         assertNotNull(result.leafValue());
-        assertEquals(42, result.leafValue().asInt());
+        assertEquals(PAYLOAD_VALUE, result.leafValue().asInt());
         assertEquals(2, result.segmentCount());
     }
 
     @Test
     void givenTailObjectWithMultipleKeys_whenTryFold_thenReturnsTailInResult() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
         b.put("x", 1);
         b.put("y", 2);
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), Set.of(), null, 10
         );
 
@@ -273,11 +276,11 @@ class FlattenTest {
     @Test
     void givenEmptyObjectLeaf_whenTryFold_thenLeafIsReturned() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode a = MAPPER.createObjectNode();
         a.putObject("b"); // empty obj → leaf
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), Set.of(), null, 10
         );
 
@@ -292,12 +295,12 @@ class FlattenTest {
     @Test
     void givenNullRootLiteralKeys_whenTryFold_thenDoesNotThrow() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
         b.put("c", 1);
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), null, null, 10
         );
 
@@ -309,12 +312,12 @@ class FlattenTest {
     @Test
     void givenPathPrefixWithDot_whenTryFold_thenUsesCorrectPath() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
         b.put("c", 1);
 
         // When - using pathPrefix with dot
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), Set.of(), "prefix.data", 10
         );
 
@@ -326,13 +329,13 @@ class FlattenTest {
     @Test
     void givenDeepSingleKeyChainWithArrayLeaf_whenTryFold_thenReturnsLeaf() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
-        ObjectNode c = b.putObject("c");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
+        final ObjectNode c = b.putObject("c");
         c.putArray("items"); // array leaf
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), Set.of(), null, 10
         );
 
@@ -346,12 +349,12 @@ class FlattenTest {
     @Test
     void givenSingleKeyChainAtMaxDepth_whenTryFold_thenReturnsNull() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
         b.putObject("c").put("x", 1);
 
         // When - depth limit of 2
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), Set.of(), null, 2
         );
 
@@ -363,14 +366,14 @@ class FlattenTest {
     @Test
     void givenDeeplyNestedWithEmptyIntermediate_whenTryFold_thenHandles() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
-        ObjectNode c = b.putObject("c");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
+        final ObjectNode c = b.putObject("c");
         c.putObject("d"); // empty object
         c.put("e", 1);
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), Set.of(), null, 10
         );
 
@@ -381,15 +384,15 @@ class FlattenTest {
     @Test
     void givenMultipleLevelsOfSingleKeyObjects_whenTryFold_thenFolds() {
         // Given - deep chain
-        ObjectNode root = MAPPER.createObjectNode();
-        ObjectNode level1 = root.putObject("a");
-        ObjectNode level2 = level1.putObject("b");
-        ObjectNode level3 = level2.putObject("c");
-        ObjectNode level4 = level3.putObject("d");
-        level4.put("value", 42);
+        final ObjectNode root = MAPPER.createObjectNode();
+        final ObjectNode level1 = root.putObject("a");
+        final ObjectNode level2 = level1.putObject("b");
+        final ObjectNode level3 = level2.putObject("c");
+        final ObjectNode level4 = level3.putObject("d");
+        level4.put("value", PAYLOAD_VALUE);
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", level1, Set.of(), Set.of(), null, 10
         );
 
@@ -401,14 +404,14 @@ class FlattenTest {
     @Test
     void givenSiblingCollisionWithFoldedKey_whenTryFold_thenReturnsNull() {
         // Given - existing folded key that would collide
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
         b.put("x", 1);
 
-        Set<String> siblings = Set.of("a.b.x");
+        final Set<String> siblings = Set.of("a.b.x");
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, siblings, Set.of(), null, 10
         );
 
@@ -419,12 +422,12 @@ class FlattenTest {
     @Test
     void givenNumericKeySegment_whenTryFold_thenFolds() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("123");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("123");
         b.put("x", 1);
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), Set.of(), null, 10
         );
 
@@ -435,12 +438,12 @@ class FlattenTest {
     @Test
     void givenUnderscoreKeySegment_whenTryFold_thenFolds() {
         // Given
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("_private");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("_private");
         b.put("x", 1);
 
         // When
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), Set.of(), null, 10
         );
 
@@ -452,12 +455,12 @@ class FlattenTest {
     @DisplayName("given valid object but remainingDepth is 1 when tryFold then returns null")
     void givenValidObjectButRemainingDepthIsOne_whenTryFold_thenReturnsNull() {
         // Given - valid object chain but remainingDepth <= 1
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
-        b.put("c", 123);
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
+        b.put("c", FOLD_VALUE);
 
         // When - remainingDepth is 1 (not enough to fold)
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), Set.of(), null, 1
         );
 
@@ -469,30 +472,30 @@ class FlattenTest {
     @DisplayName("given simple key without dots when collectChain then uses key directly")
     void givenSimpleKeyWithoutDots_whenCollectChain_thenUsesKeyDirectly() {
         // Given - simple key without dots
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
-        b.put("c", 123);
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
+        b.put("c", FOLD_VALUE);
 
         // When - call collectSingleKeyChain directly with simple key
-        Flatten.ChainResult result = Flatten.collectSingleKeyChain("simpleKey", a, 10);
+        final Flatten.ChainResult result = Flatten.collectSingleKeyChain("simpleKey", a, 10);
 
         // Then - first segment should be the key as-is (no dot processing)
         assertNotNull(result);
         assertEquals("simpleKey", result.segments().get(0));
-        assertEquals(3, result.segments().size()); // simpleKey, b, c
+        assertEquals(EXPECTED_SEGMENT_COUNT, result.segments().size()); // simpleKey, b, c
     }
 
     @Test
     @DisplayName("given single key object at max depth when collectChain then treats as leaf")
     void givenSingleKeyObjectAtMaxDepth_whenCollectChain_thenTreatsAsLeaf() {
         // Given - single-key object at exact max depth
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
-        b.put("c", 123);
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
+        b.put("c", FOLD_VALUE);
 
         // When - depth limit of 2 means we can collect "a" and "b", but "b" has 1 key "c"
         // At depthCounter == maxDepth, single-key object should be treated as leaf
-        Flatten.ChainResult result = Flatten.collectSingleKeyChain("a", a, 2);
+        final Flatten.ChainResult result = Flatten.collectSingleKeyChain("a", a, 2);
 
         // Then - should stop at "b" with single key and treat as leaf
         assertNotNull(result);
@@ -505,18 +508,18 @@ class FlattenTest {
     @DisplayName("given max depth reached with single key chain when collectChain then returns tail")
     void givenMaxDepthReachedWithSingleKeyChain_whenCollectChain_thenReturnsTail() {
         // Given - chain deeper than max depth
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
-        ObjectNode c = b.putObject("c");
-        ObjectNode d = c.putObject("d");
-        d.put("value", 42);
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
+        final ObjectNode c = b.putObject("c");
+        final ObjectNode d = c.putObject("d");
+        d.put("value", PAYLOAD_VALUE);
 
         // When - maxDepth of 3 means we stop at "c" which has 1 key "d"
-        Flatten.ChainResult result = Flatten.collectSingleKeyChain("a", a, 3);
+        final Flatten.ChainResult result = Flatten.collectSingleKeyChain("a", a, 3);
 
         // Then - should have a, b, c as segments, and c (single key object) is the leaf
         assertNotNull(result);
-        assertEquals(3, result.segments().size());
+        assertEquals(EXPECTED_SEGMENT_COUNT, result.segments().size());
         assertEquals("c", result.segments().get(2));
         assertNotNull(result.leafValue());
     }
@@ -525,12 +528,12 @@ class FlattenTest {
     @DisplayName("given empty path prefix when tryFold then uses folded key directly")
     void givenEmptyPathPrefix_whenTryFold_thenUsesFoldedKeyDirectly() {
         // Given - empty string pathPrefix (not null, but empty)
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
-        b.put("c", 123);
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
+        b.put("c", FOLD_VALUE);
 
         // When - pathPrefix is empty string (tests line 109 branch)
-        Flatten.FoldResult result = Flatten.tryFoldKeyChain(
+        final Flatten.FoldResult result = Flatten.tryFoldKeyChain(
             "a", a, Set.of(), Set.of(), "", 10
         );
 
@@ -543,12 +546,12 @@ class FlattenTest {
     @DisplayName("given empty object at depth when collectChain then returns leaf")
     void givenEmptyObjectAtDepth_whenCollectChain_thenReturnsLeaf() {
         // Given - empty object encountered during chain collection
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
         b.putObject("c"); // empty object as leaf
 
         // When - collect chain that ends with empty object (tests line 180)
-        Flatten.ChainResult result = Flatten.collectSingleKeyChain("a", a, 10);
+        final Flatten.ChainResult result = Flatten.collectSingleKeyChain("a", a, 10);
 
         // Then - empty object should be treated as leaf
         assertNotNull(result);
@@ -562,13 +565,13 @@ class FlattenTest {
     @DisplayName("given multi key object at max depth when collectChain then returns tail")
     void givenMultiKeyObjectAtMaxDepth_whenCollectChain_thenReturnsTail() {
         // Given - chain where intermediate object becomes multi-key after depth reached
-        ObjectNode a = MAPPER.createObjectNode();
-        ObjectNode b = a.putObject("b");
+        final ObjectNode a = MAPPER.createObjectNode();
+        final ObjectNode b = a.putObject("b");
         b.put("x", 1);
         b.put("y", 2); // b has 2 keys - should be tail when maxDepth reached
 
         // When - maxDepth of 2 allows processing "a" then stops, b has 2 keys (tests line 192)
-        Flatten.ChainResult result = Flatten.collectSingleKeyChain("a", a, 2);
+        final Flatten.ChainResult result = Flatten.collectSingleKeyChain("a", a, 2);
 
         // Then - should have a, b as segments, b is tail with 2 keys
         assertNotNull(result);
