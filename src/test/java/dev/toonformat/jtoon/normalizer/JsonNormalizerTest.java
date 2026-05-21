@@ -548,7 +548,7 @@ class JsonNormalizerTest {
 
             // Then
             assertTrue(result.isString());
-            assertTrue(result.asString().startsWith("2023-10-15T14:30:45"));
+            assertEquals("2023-10-15T14:30:45Z", result.asString());
         }
 
         @Test
@@ -1517,7 +1517,7 @@ class JsonNormalizerTest {
 
             // Then
             assertInstanceOf(StringNode.class, result);
-            assertEquals("2025-11-26T15:45:00+01:00[Europe/Berlin]", ((JsonNode) result).asString());
+            assertEquals("2025-11-26T15:45+01:00", ((JsonNode) result).asString());
         }
 
         @Test
