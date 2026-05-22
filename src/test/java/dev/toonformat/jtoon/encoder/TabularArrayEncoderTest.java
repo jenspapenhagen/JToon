@@ -179,17 +179,17 @@ class TabularArrayEncoderTest {
     @Test
     void givenHeaderAndRows_whenWriteTabularRows_thenWritesValuesWithIndent() {
         // Given
-        final int nodeA_X = 10;
-        final int nodeA_Y = 20;
-        final int nodeB_X = 11;
-        final int nodeB_Y = 21;
+        final int nodeAx = 10;
+        final int nodeAy = 20;
+        final int nodeBx = 11;
+        final int nodeBy = 21;
         final ObjectNode a = jsonNodeFactory.objectNode();
-        a.put("x", nodeA_X);
-        a.put("y", nodeA_Y);
+        a.put("x", nodeAx);
+        a.put("y", nodeAy);
 
         final ObjectNode b = jsonNodeFactory.objectNode();
-        b.put("x", nodeB_X);
-        b.put("y", nodeB_Y);
+        b.put("x", nodeBx);
+        b.put("y", nodeBy);
 
         final ArrayNode rows = jsonNodeFactory.arrayNode().add(a).add(b);
         final List<String> header = List.of("x", "y");
@@ -261,15 +261,15 @@ class TabularArrayEncoderTest {
     @Test
     void testDetectTabularHeaderWithUnevenObjectInTheList() {
         // Given
-        final int objA_X = 10;
-        final int objA_Y = 20;
-        final int objB_X = 11;
+        final int objAx = 10;
+        final int objAy = 20;
+        final int objBx = 11;
         final ObjectNode a = jsonNodeFactory.objectNode();
-        a.put("x", objA_X);
-        a.put("y", objA_Y);
+        a.put("x", objAx);
+        a.put("y", objAy);
 
         final ObjectNode b = jsonNodeFactory.objectNode();
-        b.put("x", objB_X);
+        b.put("x", objBx);
 
         final ArrayNode rows = jsonNodeFactory.arrayNode().add(a).add(b);
         final List<String> header = List.of("x", "y");
@@ -288,13 +288,13 @@ class TabularArrayEncoderTest {
     @Test
     void testDetectTabularHeaderWithUnevenObjectArrayMixInTheList() {
         // Given
-        final int mixObj_X = 10;
-        final int mixObj_Y = 20;
+        final int mixObjX = 10;
+        final int mixObjY = 20;
         final int mixArr1 = 11;
         final int mixArr2 = 12;
         final ObjectNode a = jsonNodeFactory.objectNode();
-        a.put("x", mixObj_X);
-        a.put("y", mixObj_Y);
+        a.put("x", mixObjX);
+        a.put("y", mixObjY);
 
         final ArrayNode b = jsonNodeFactory.arrayNode();
         b.add(mixArr1);

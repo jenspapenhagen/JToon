@@ -118,10 +118,10 @@ class KeyDecoderTest {
         assertTrue(target.containsKey("a"));
         final Object a = target.get("a");
         assertInstanceOf(Map.class, a);
-        final @SuppressWarnings("unchecked") Map<String, Object> aMap = (Map<String, Object>) a;
+        @SuppressWarnings("unchecked") final Map<String, Object> aMap = (Map<String, Object>) a;
         final Object b = aMap.get("b");
         assertInstanceOf(Map.class, b);
-        final @SuppressWarnings("unchecked") Map<String, Object> bMap = (Map<String, Object>) b;
+        @SuppressWarnings("unchecked") final Map<String, Object> bMap = (Map<String, Object>) b;
         assertEquals(1, bMap.get("c"));
     }
 
@@ -213,7 +213,7 @@ class KeyDecoderTest {
 
         // Then
         assertTrue(result.containsKey("user"));
-        final @SuppressWarnings("unchecked") Map<String, Object> user = (Map<String, Object>) result.get("user");
+        @SuppressWarnings("unchecked") final Map<String, Object> user = (Map<String, Object>) result.get("user");
         final List<Object> expected = Arrays.asList("dev", "test");
         assertEquals(expected, user.get("tags"));
     }
@@ -305,7 +305,7 @@ class KeyDecoderTest {
 
         // Then
         assertTrue(result.containsKey("user"));
-        final @SuppressWarnings("unchecked") Map<String, Object> user = (Map<String, Object>) result.get("user");
+        @SuppressWarnings("unchecked") final Map<String, Object> user = (Map<String, Object>) result.get("user");
         assertEquals("Ada", user.get("name"));
     }
 
@@ -362,8 +362,8 @@ class KeyDecoderTest {
 
         // Then
         assertInstanceOf(Map.class, obj);
-        final @SuppressWarnings("unchecked") Map<String, Object> map = (Map<String, Object>) obj;
-        final @SuppressWarnings("unchecked") Map<String, Object> a = (Map<String, Object>) map.get("a");
+        @SuppressWarnings("unchecked") final Map<String, Object> map = (Map<String, Object>) obj;
+        @SuppressWarnings("unchecked") final Map<String, Object> a = (Map<String, Object>) map.get("a");
         assertEquals(1L, a.get("b"));
     }
 

@@ -100,6 +100,9 @@ class PrimitiveEncoderTest {
             // Given
             final String result = PrimitiveEncoder.encodePrimitive(
                 DoubleNode.valueOf(3.14), Delimiter.COMMA.toString());
+
+            // Then
+            assertEquals("3.14", result);
         }
 
         @Test
@@ -164,14 +167,20 @@ class PrimitiveEncoderTest {
             // Given
             final String result = PrimitiveEncoder.encodePrimitive(
                 StringNode.valueOf("hello"), Delimiter.COMMA.toString());
+
+            // Then
+            assertEquals("hello", result);
         }
 
         @Test
         @DisplayName("should quote string with comma when using comma delimiter")
         void testStringWithComma() {
-            //give
+            // Given
             final String result = PrimitiveEncoder.encodePrimitive(
                 StringNode.valueOf("a,b"), Delimiter.COMMA.toString());
+
+            // Then
+            assertEquals("\"a,b\"", result);
         }
 
         @Test

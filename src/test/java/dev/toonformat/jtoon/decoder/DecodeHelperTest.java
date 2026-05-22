@@ -664,7 +664,7 @@ class DecodeHelperTest {
         DecodeContext ctxStrict2 = new DecodeContext();
         DecodeContext ctxNonStrict2 = new DecodeContext();
         DecodeContext ctxStrict4 = new DecodeContext();
-        final int strictIndent4 = 4;
+        static final int strictIndent4 = 4;
 
         @BeforeEach
         void setup() {
