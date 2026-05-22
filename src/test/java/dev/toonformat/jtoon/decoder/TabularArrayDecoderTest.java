@@ -1,5 +1,12 @@
 package dev.toonformat.jtoon.decoder;
 
+import static org.junit.jupiter.api.Assertions.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import dev.toonformat.jtoon.DecodeOptions;
 import dev.toonformat.jtoon.Delimiter;
 import dev.toonformat.jtoon.PathExpansion;
@@ -8,15 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("unit")
 class TabularArrayDecoderTest {
@@ -59,7 +57,7 @@ class TabularArrayDecoderTest {
         setUpContext("[2]{id,value}:\n  1,null\n  2,\"test\"");
 
         // When
-        List<Object> result = TabularArrayDecoder.parseTabularArray(
+        final List<Object> result = TabularArrayDecoder.parseTabularArray(
             "[2]{id,value}:\n  1,null\n  2,\"test\"", 0,
             Delimiter.COMMA, context);
 
@@ -82,21 +80,21 @@ class TabularArrayDecoderTest {
     @DisplayName("processTabularRow: deeper-than-expected line is skipped (else-if branch)")
     void processTabularRow_skipsDeeperIndentedLine() {
         // Given
-        String toon = "[2]{id,name}:\n  1,Ada\n    nested: true\n  2,Bob";
+        final String toon = "[2]{id,name}:\n  1,Ada\n    nested: true\n  2,Bob";
 
         setUpContext(toon);
 
         // When
-        List<Object> result = TabularArrayDecoder.parseTabularArray(toon, 0,
+        final List<Object> result = TabularArrayDecoder.parseTabularArray(toon, 0,
             Delimiter.COMMA, context);
 
         // Then
         assertEquals(2, result.size(), "Should parse exactly two rows, skipping the deeper-indented line");
 
         @SuppressWarnings("unchecked")
-        Map<String, Object> row1 = (Map<String, Object>) result.get(0);
+        final Map<String, Object> row1 = (Map<String, Object>) result.get(0);
         @SuppressWarnings("unchecked")
-        Map<String, Object> row2 = (Map<String, Object>) result.get(1);
+        final Map<String, Object> row2 = (Map<String, Object>) result.get(1);
 
         assertEquals("1", String.valueOf(row1.get("id")));
         assertEquals("Ada", String.valueOf(row1.get("name")));
@@ -108,19 +106,22 @@ class TabularArrayDecoderTest {
     @Test
     void testReturnsTrueWhenLineDepthLessThanExpected() throws Exception {
         // Given
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
 
 
-        String line = "  some text";   // Content irrelevant for this branch
-        int lineDepth = 1;             // LESS than expectedRowDepth
-        int expectedRowDepth = 3;       // Ensures we fall to final return
+        final String line = "  some text";   // Content irrelevant for this branch
+        final int lineDepth = 1;             // LESS than expectedRowDepth
+        final int expectedRowDepth = 3;       // Ensures we fall to final return
 
-        List<String> keys = List.of("a", "b", "c");
-        List<Object> result = new ArrayList<>();
+        final List<String> keys = List.of("a", "b", "c");
+        final List<Object> result = new ArrayList<>();
 
         // When
-        boolean processed = (boolean) invokePrivateStatic("processTabularRow",
-            new Class[]{String.class, int.class, int.class, List.class, Delimiter.class, List.class, DecodeContext.class},
+        final boolean processed = (boolean) invokePrivateStatic("processTabularRow",
+            new Class[]{String.class, int.class, int.class, List.class,
+                Delimiter.class, List.class, DecodeContext.class},
             line, lineDepth, expectedRowDepth,
             keys, Delimiter.COMMA, result, context
         );
@@ -137,20 +138,22 @@ class TabularArrayDecoderTest {
         // Lines in context:
         // line 0: blank
         // line 1: next non-blank line, with depth <= headerDepth
-        String[] lines = {
+        final String[] lines = {
             "",            // current line (blank)
             "key: value"   // next non-blank (depth 0)
         };
 
-        context.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        context.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.lines = lines;
         context.currentLine = 0;
 
-        int expectedRowDepth = 2;
+        final int expectedRowDepth = 2;
 
 
         // When
-        boolean result = (boolean) invokePrivateStatic("handleBlankLineInTabularArray",
+        final boolean result = (boolean) invokePrivateStatic("handleBlankLineInTabularArray",
             new Class[]{int.class, DecodeContext.class},
             expectedRowDepth, context);
 
@@ -162,22 +165,24 @@ class TabularArrayDecoderTest {
     @DisplayName("validateKeysDelimiter get called and branches will be checked")
     void validateKeysDelimiter() throws Exception {
         // Given
-        String keysStr = "sad\\a\"sd";
+        final String keysStr = "sad\\a\"sd";
 
         // When / Then
-        invokePrivateStatic("validateKeysDelimiter", new Class[]{String.class, Delimiter.class}, keysStr, Delimiter.COMMA);
+        invokePrivateStatic("validateKeysDelimiter",
+                new Class[]{String.class, Delimiter.class}, keysStr, Delimiter.COMMA);
     }
 
     @Test
     @DisplayName("validateKeysDelimiter get called and branches will be checked")
     void checkDelimiterMismatchExecution() {
         // Given
-        String expectedChar = Delimiter.PIPE.toString();
-        String actualChar = Delimiter.COMMA.toString();
+        final String expectedChar = Delimiter.PIPE.toString();
+        final String actualChar = Delimiter.COMMA.toString();
 
         // When
-        InvocationTargetException exception = assertThrows(InvocationTargetException.class,
-            () -> invokePrivateStatic("checkDelimiterMismatch", new Class[]{char.class, char.class}, expectedChar.charAt(0), actualChar.charAt(0)));
+        final InvocationTargetException exception = assertThrows(InvocationTargetException.class,
+            () -> invokePrivateStatic("checkDelimiterMismatch",
+                    new Class[]{char.class, char.class}, expectedChar.charAt(0), actualChar.charAt(0)));
 
         // Then
         assertNotNull(exception);
@@ -187,12 +192,13 @@ class TabularArrayDecoderTest {
     @DisplayName("validateKeysDelimiter get called and branches will be checked")
     void checkDelimiterMismatchExecutionWithComa() {
         // Given
-        String expectedChar = Delimiter.COMMA.toString();
-        String actualChar = Delimiter.PIPE.toString();
+        final String expectedChar = Delimiter.COMMA.toString();
+        final String actualChar = Delimiter.PIPE.toString();
 
         // When
-        InvocationTargetException exception = assertThrows(InvocationTargetException.class,
-            () -> invokePrivateStatic("checkDelimiterMismatch", new Class[]{char.class, char.class}, expectedChar.charAt(0), actualChar.charAt(0)));
+        final InvocationTargetException exception = assertThrows(InvocationTargetException.class,
+            () -> invokePrivateStatic("checkDelimiterMismatch",
+                    new Class[]{char.class, char.class}, expectedChar.charAt(0), actualChar.charAt(0)));
 
         // Then
         assertNotNull(exception);
@@ -201,14 +207,16 @@ class TabularArrayDecoderTest {
     @Test
     void testTerminateWhenLineDepthLessThanExpected() throws Exception {
         // Given
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
 
-        String line = "    some value"; // Any line works; we won't reach colon logic.
-        int lineDepth = 1;              // < expectedRowDepth
-        int expectedRowDepth = 3;       // Must be > lineDepth
+        final String line = "    some value"; // Any line works; we won't reach colon logic.
+        final int lineDepth = 1;              // < expectedRowDepth
+        final int expectedRowDepth = 3;       // Must be > lineDepth
 
         // When
-        boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
+        final boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
             new Class[]{String.class, int.class, int.class, DecodeContext.class},
             line, lineDepth, expectedRowDepth, context);
 
@@ -220,14 +228,16 @@ class TabularArrayDecoderTest {
     @DisplayName("should NOT terminate when delimiter found before colon (§9.3)")
     void testDisambiguation_DelimiterBeforeColon_continuesRow() throws Exception {
         // Given — "10,active:done" has comma at index 2, colon at index 9
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.delimiter = context.options.delimiter();
-        String line = "  10,active:done";
-        int lineDepth = 1;
-        int expectedRowDepth = 1;
+        final String line = "  10,active:done";
+        final int lineDepth = 1;
+        final int expectedRowDepth = 1;
 
         // When
-        boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
+        final boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
             new Class[]{String.class, int.class, int.class, DecodeContext.class},
             line, lineDepth, expectedRowDepth, context);
 
@@ -239,14 +249,16 @@ class TabularArrayDecoderTest {
     @DisplayName("should terminate when colon found before delimiter (§9.3)")
     void testDisambiguation_ColonBeforeDelimiter_terminates() throws Exception {
         // Given — "time: 10,active" has colon at index 4, comma nowhere relevant
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.delimiter = context.options.delimiter();
-        String line = "  time: 10,active";
-        int lineDepth = 1;
-        int expectedRowDepth = 1;
+        final String line = "  time: 10,active";
+        final int lineDepth = 1;
+        final int expectedRowDepth = 1;
 
         // When
-        boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
+        final boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
             new Class[]{String.class, int.class, int.class, DecodeContext.class},
             line, lineDepth, expectedRowDepth, context);
 
@@ -258,14 +270,16 @@ class TabularArrayDecoderTest {
     @DisplayName("should terminate when line has colon but no delimiter (§9.3)")
     void testDisambiguation_ColonOnly_terminates() throws Exception {
         // Given — "done: true" has colon but no comma delimiter
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.delimiter = context.options.delimiter();
-        String line = "  done: true";
-        int lineDepth = 1;
-        int expectedRowDepth = 1;
+        final String line = "  done: true";
+        final int lineDepth = 1;
+        final int expectedRowDepth = 1;
 
         // When
-        boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
+        final boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
             new Class[]{String.class, int.class, int.class, DecodeContext.class},
             line, lineDepth, expectedRowDepth, context);
 
@@ -277,14 +291,16 @@ class TabularArrayDecoderTest {
     @DisplayName("should NOT terminate when line has delimiter but no colon (§9.3)")
     void testDisambiguation_DelimiterOnly_continuesRow() throws Exception {
         // Given — "10,active" has comma but no colon → tabular row
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.delimiter = context.options.delimiter();
-        String line = "  10,active";
-        int lineDepth = 1;
-        int expectedRowDepth = 1;
+        final String line = "  10,active";
+        final int lineDepth = 1;
+        final int expectedRowDepth = 1;
 
         // When
-        boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
+        final boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
             new Class[]{String.class, int.class, int.class, DecodeContext.class},
             line, lineDepth, expectedRowDepth, context);
 
@@ -296,14 +312,16 @@ class TabularArrayDecoderTest {
     @DisplayName("should handle tab pipe delimiter in disambiguation (§9.3)")
     void testDisambiguation_PipeDelimiter_continuesRow() throws Exception {
         // Given — pipe-delimited row, pipe before colon
-        context.options = new DecodeOptions(2, Delimiter.PIPE, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        context.options = new DecodeOptions(2, Delimiter.PIPE, true, PathExpansion.OFF,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.delimiter = context.options.delimiter();
-        String line = "  10|active:done";
-        int lineDepth = 1;
-        int expectedRowDepth = 1;
+        final String line = "  10|active:done";
+        final int lineDepth = 1;
+        final int expectedRowDepth = 1;
 
         // When
-        boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
+        final boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
             new Class[]{String.class, int.class, int.class, DecodeContext.class},
             line, lineDepth, expectedRowDepth, context);
 
@@ -314,12 +332,14 @@ class TabularArrayDecoderTest {
     @Test
     void testParseTabularArray_ReturnsEmptyList_WhenHeaderDoesNotMatchPattern() {
         // Given
-        context.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        context.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.lines = new String[]{"ignored"};
         context.currentLine = 0;
 
         // When
-        List<Object> result = TabularArrayDecoder.parseTabularArray(
+        final List<Object> result = TabularArrayDecoder.parseTabularArray(
             "not a header", // DOES NOT MATCH pattern
             0,
             Delimiter.COMMA,
@@ -331,15 +351,16 @@ class TabularArrayDecoderTest {
         assertTrue(result.isEmpty(), "Expected empty list for non-matching header");
     }
 
-    private void setUpContext(String toon) {
+    private void setUpContext(final String toon) {
         this.context.lines = toon.split("\n", -1);
         this.context.options = DecodeOptions.DEFAULT;
         this.context.delimiter = DecodeOptions.DEFAULT.delimiter();
     }
 
     // Reflection helpers for invoking private static methods
-    private static Object invokePrivateStatic(String methodName, Class<?>[] paramTypes, Object... args) throws Exception {
-        Method declaredMethod = TabularArrayDecoder.class.getDeclaredMethod(methodName, paramTypes);
+    private static Object invokePrivateStatic(final String methodName, final Class<?>[] paramTypes,
+            final Object... args) throws Exception {
+        final Method declaredMethod = TabularArrayDecoder.class.getDeclaredMethod(methodName, paramTypes);
         declaredMethod.setAccessible(true);
         return declaredMethod.invoke(null, args);
     }

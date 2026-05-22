@@ -1,22 +1,6 @@
 package dev.toonformat.jtoon.normalizer;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.ArrayNode;
-import tools.jackson.databind.node.BooleanNode;
-import tools.jackson.databind.node.DecimalNode;
-import tools.jackson.databind.node.DoubleNode;
-import tools.jackson.databind.node.FloatNode;
-import tools.jackson.databind.node.IntNode;
-import tools.jackson.databind.node.LongNode;
-import tools.jackson.databind.node.NullNode;
-import tools.jackson.databind.node.ObjectNode;
-import tools.jackson.databind.node.ShortNode;
-import tools.jackson.databind.node.StringNode;
-
+import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -43,14 +27,49 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.DecimalNode;
+import tools.jackson.databind.node.DoubleNode;
+import tools.jackson.databind.node.FloatNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.LongNode;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ShortNode;
+import tools.jackson.databind.node.StringNode;
 
 /**
  * JUnit 5 test class for JsonNormalizer utility.
  */
 @Tag("unit")
 class JsonNormalizerTest {
+
+    private static final int TEST_INT_VALUE = 42;
+    private static final long TEST_LONG_VALUE = 9223372036854775807L;
+    private static final short TEST_SHORT_VALUE = 32767;
+    private static final byte TEST_BYTE_VALUE = 127;
+    private static final float TEST_FLOAT_VALUE = 3.14f;
+    private static final double TEST_DOUBLE_VALUE = 3.14159;
+    private static final float TEST_FLOAT_DELTA = 0.001f;
+    private static final double TEST_DOUBLE_DELTA = 0.00001;
+    private static final long TEST_BIG_LONG = 123456789L;
+    private static final int TEST_MAP_SIZE = 3;
+    private static final int TEST_ARRAY_SIZE = 3;
+    private static final int TEST_MAX_DEPTH = 256;
+    private static final int DEEP_NESTING_DEPTH = 600;
+    private static final double DOUBLE_DELTA = 0.001;
+    private static final int TEST_AGE = 30;
+    private static final int EXPECTED_SIZE_FOUR = 4;
+    private static final int EXPECTED_SIZE_FIVE = 5;
+    private static final int EXPECTED_SIZE_SEVEN = 7;
+    private static final double EDGE_CASE_DOUBLE = 3.14;
+    private static final long CONVERTIBLE_LONG_VALUE = 1_000_000L;
 
     @Nested
     @DisplayName("Null and JsonNode")
@@ -60,8 +79,7 @@ class JsonNormalizerTest {
         @DisplayName("should return NullNode for null input")
         void testNullInput() {
             // Given
-            JsonNode result = JsonNormalizer.normalize(null);
-
+            final JsonNode result = JsonNormalizer.normalize(null);
             // Then
             assertTrue(result.isNull());
             assertInstanceOf(NullNode.class, result);
@@ -71,11 +89,9 @@ class JsonNormalizerTest {
         @DisplayName("should pass through JsonNode unchanged")
         void testJsonNodePassthrough() {
             // Given
-            JsonNode textNode = StringNode.valueOf("test");
-
+            final JsonNode textNode = StringNode.valueOf("test");
             // When
-            JsonNode result = JsonNormalizer.normalize(textNode);
-
+            final JsonNode result = JsonNormalizer.normalize(textNode);
             // Then
             assertSame(textNode, result);
         }
@@ -83,11 +99,9 @@ class JsonNormalizerTest {
         @Test
         void testJsonNodePassthrough2() {
             // Given
-            JsonNode intNode = IntNode.valueOf(42);
-
+            final JsonNode intNode = IntNode.valueOf(TEST_INT_VALUE);
             // When
-            JsonNode result = JsonNormalizer.normalize(intNode);
-
+            final JsonNode result = JsonNormalizer.normalize(intNode);
             // Then
             assertSame(intNode, result);
         }
@@ -95,11 +109,9 @@ class JsonNormalizerTest {
         @Test
         void testJsonNodePassthrough3() {
             // Given
-            JsonNode boolNode = BooleanNode.TRUE;
-
+            final JsonNode boolNode = BooleanNode.TRUE;
             // When
-            JsonNode result = JsonNormalizer.normalize(boolNode);
-
+            final JsonNode result = JsonNormalizer.normalize(boolNode);
             // Then
             assertSame(boolNode, result);
         }
@@ -113,8 +125,7 @@ class JsonNormalizerTest {
         @DisplayName("should normalize String to StringNode")
         void testString() {
             // Given
-            JsonNode result = JsonNormalizer.normalize("hello");
-
+            final JsonNode result = JsonNormalizer.normalize("hello");
             // Then
             assertTrue(result.isString());
             assertEquals("hello", result.asString());
@@ -125,8 +136,7 @@ class JsonNormalizerTest {
         @DisplayName("should normalize empty String to StringNode")
         void testEmptyString() {
             // Given
-            JsonNode result = JsonNormalizer.normalize("");
-
+            final JsonNode result = JsonNormalizer.normalize("");
             // Then
             assertTrue(result.isString());
             assertEquals("", result.asString());
@@ -136,8 +146,7 @@ class JsonNormalizerTest {
         @DisplayName("should normalize Boolean to BooleanNode")
         void testBoolean() {
             // Given
-            JsonNode resultTrue = JsonNormalizer.normalize(Boolean.TRUE);
-
+            final JsonNode resultTrue = JsonNormalizer.normalize(Boolean.TRUE);
             // Then
             assertTrue(resultTrue.isBoolean());
             assertTrue(resultTrue.asBoolean());
@@ -148,8 +157,7 @@ class JsonNormalizerTest {
         @DisplayName("should normalize Boolean to BooleanNode")
         void testBoolean2() {
             // Given
-            JsonNode resultFalse = JsonNormalizer.normalize(Boolean.FALSE);
-
+            final JsonNode resultFalse = JsonNormalizer.normalize(Boolean.FALSE);
             // Then
             assertTrue(resultFalse.isBoolean());
             assertFalse(resultFalse.asBoolean());
@@ -159,11 +167,10 @@ class JsonNormalizerTest {
         @DisplayName("should normalize Integer to IntNode")
         void testInteger() {
             // Given
-            JsonNode result = JsonNormalizer.normalize(42);
-
+            final JsonNode result = JsonNormalizer.normalize(TEST_INT_VALUE);
             // Then
             assertTrue(result.isInt());
-            assertEquals(42, result.asInt());
+            assertEquals(TEST_INT_VALUE, result.asInt());
             assertInstanceOf(IntNode.class, result);
         }
 
@@ -171,11 +178,10 @@ class JsonNormalizerTest {
         @DisplayName("should normalize Long to LongNode")
         void testLong() {
             // Given
-            JsonNode result = JsonNormalizer.normalize(9223372036854775807L);
-
+            final JsonNode result = JsonNormalizer.normalize(TEST_LONG_VALUE);
             // Then
             assertTrue(result.isLong());
-            assertEquals(9223372036854775807L, result.asLong());
+            assertEquals(TEST_LONG_VALUE, result.asLong());
             assertInstanceOf(LongNode.class, result);
         }
 
@@ -183,11 +189,10 @@ class JsonNormalizerTest {
         @DisplayName("should normalize Short to ShortNode")
         void testShort() {
             // Given
-            JsonNode result = JsonNormalizer.normalize((short) 32767);
-
+            final JsonNode result = JsonNormalizer.normalize(TEST_SHORT_VALUE);
             // Then
             assertTrue(result.isShort());
-            assertEquals(32767, result.asInt());
+            assertEquals(TEST_SHORT_VALUE, result.asInt());
             assertInstanceOf(ShortNode.class, result);
         }
 
@@ -195,11 +200,10 @@ class JsonNormalizerTest {
         @DisplayName("should normalize Byte to IntNode")
         void testByte() {
             // Given
-            JsonNode result = JsonNormalizer.normalize((byte) 127);
-
+            final JsonNode result = JsonNormalizer.normalize(TEST_BYTE_VALUE);
             // Then
             assertTrue(result.isInt());
-            assertEquals(127, result.asInt());
+            assertEquals(TEST_BYTE_VALUE, result.asInt());
             assertInstanceOf(IntNode.class, result);
         }
 
@@ -207,11 +211,10 @@ class JsonNormalizerTest {
         @DisplayName("should normalize Float to FloatNode")
         void testFloat() {
             // Given
-            JsonNode result = JsonNormalizer.normalize(3.14f);
-
+            final JsonNode result = JsonNormalizer.normalize(TEST_FLOAT_VALUE);
             // Then
             assertTrue(result.isFloat());
-            assertEquals(3.14f, result.floatValue(), 0.001);
+            assertEquals(TEST_FLOAT_VALUE, result.floatValue(), TEST_FLOAT_DELTA);
             assertInstanceOf(FloatNode.class, result);
         }
 
@@ -219,11 +222,10 @@ class JsonNormalizerTest {
         @DisplayName("should normalize Double to DoubleNode")
         void testDouble() {
             // Given
-            JsonNode result = JsonNormalizer.normalize(3.14159);
-
+            final JsonNode result = JsonNormalizer.normalize(TEST_DOUBLE_VALUE);
             // Then
             assertTrue(result.isDouble());
-            assertEquals(3.14159, result.asDouble(), 0.00001);
+            assertEquals(TEST_DOUBLE_VALUE, result.asDouble(), TEST_DOUBLE_DELTA);
             assertInstanceOf(DoubleNode.class, result);
         }
     }
@@ -236,8 +238,7 @@ class JsonNormalizerTest {
         @DisplayName("should convert NaN to NullNode")
         void testNaN() {
             // Given
-            JsonNode result = JsonNormalizer.normalize(Double.NaN);
-
+            final JsonNode result = JsonNormalizer.normalize(Double.NaN);
             // Then
             assertTrue(result.isNull());
             assertInstanceOf(NullNode.class, result);
@@ -247,8 +248,7 @@ class JsonNormalizerTest {
         @DisplayName("should convert positive Infinity to NullNode")
         void testPositiveInfinity() {
             // Given
-            JsonNode result = JsonNormalizer.normalize(Double.POSITIVE_INFINITY);
-
+            final JsonNode result = JsonNormalizer.normalize(Double.POSITIVE_INFINITY);
             // Then
             assertTrue(result.isNull());
             assertInstanceOf(NullNode.class, result);
@@ -258,8 +258,7 @@ class JsonNormalizerTest {
         @DisplayName("should convert negative Infinity to NullNode")
         void testNegativeInfinity() {
             // Given
-            JsonNode result = JsonNormalizer.normalize(Double.NEGATIVE_INFINITY);
-
+            final JsonNode result = JsonNormalizer.normalize(Double.NEGATIVE_INFINITY);
             // Then
             assertTrue(result.isNull());
             assertInstanceOf(NullNode.class, result);
@@ -269,8 +268,7 @@ class JsonNormalizerTest {
         @DisplayName("should canonicalize -0.0 to IntNode(0)")
         void testNegativeZero() {
             // Given
-            JsonNode result = JsonNormalizer.normalize(-0.0);
-
+            final JsonNode result = JsonNormalizer.normalize(-0.0);
             // Then
             assertTrue(result.isInt());
             assertEquals(0, result.asInt());
@@ -281,8 +279,7 @@ class JsonNormalizerTest {
         @DisplayName("should canonicalize +0.0 to IntNode(0)")
         void testPositiveZero() {
             // Given
-            JsonNode result = JsonNormalizer.normalize(0.0);
-
+            final JsonNode result = JsonNormalizer.normalize(0.0);
             // Then
             assertTrue(result.isInt());
             assertEquals(0, result.asInt());
@@ -293,10 +290,11 @@ class JsonNormalizerTest {
         @DisplayName("should convert whole numbers to LongNode when in range")
         void testWholeNumbers() {
             // Given
-            JsonNode result = JsonNormalizer.normalize(42.0);
+            final double wholeNumber = 42.0;
+            final JsonNode result = JsonNormalizer.normalize(wholeNumber);
             // Then
             assertTrue(result.isIntegralNumber());
-            assertEquals(42, result.asLong());
+            assertEquals(TEST_INT_VALUE, result.asLong());
             assertInstanceOf(LongNode.class, result);
         }
 
@@ -304,22 +302,21 @@ class JsonNormalizerTest {
         @DisplayName("should convert whole numbers to LongNode when in range")
         void testWholeNumbers2() {
             // Given
-            JsonNode result = JsonNormalizer.normalize(1000000.0);
-
+            final double million = 1000000.0;
+            final JsonNode result = JsonNormalizer.normalize(million);
             // Then
             assertTrue(result.isIntegralNumber());
-            assertEquals(1000000, result.asLong());
+            assertEquals((long) million, result.asLong());
         }
 
         @Test
         @DisplayName("should keep regular decimals as DoubleNode")
         void testRegularDecimals() {
             // Given
-            JsonNode result = JsonNormalizer.normalize(3.14159);
-
+            final JsonNode result = JsonNormalizer.normalize(TEST_DOUBLE_VALUE);
             // Then
             assertTrue(result.isDouble());
-            assertEquals(3.14159, result.asDouble(), 0.00001);
+            assertEquals(TEST_DOUBLE_VALUE, result.asDouble(), TEST_DOUBLE_DELTA);
             assertInstanceOf(DoubleNode.class, result);
         }
 
@@ -327,8 +324,7 @@ class JsonNormalizerTest {
         @DisplayName("should convert Float NaN to NullNode")
         void testFloatNaN() {
             // Given
-            JsonNode result = JsonNormalizer.normalize(Float.NaN);
-
+            final JsonNode result = JsonNormalizer.normalize(Float.NaN);
             // Then
             assertTrue(result.isNull());
         }
@@ -337,8 +333,7 @@ class JsonNormalizerTest {
         @DisplayName("should convert Float Infinity to NullNode")
         void testFloatInfinity() {
             // Given
-            JsonNode result = JsonNormalizer.normalize(Float.POSITIVE_INFINITY);
-
+            final JsonNode result = JsonNormalizer.normalize(Float.POSITIVE_INFINITY);
             // Then
             assertTrue(result.isNull());
         }
@@ -347,8 +342,7 @@ class JsonNormalizerTest {
         @DisplayName("should convert Float Infinity to NullNode")
         void testFloatInfinity2() {
             // Given
-            JsonNode result = JsonNormalizer.normalize(Float.NEGATIVE_INFINITY);
-
+            final JsonNode result = JsonNormalizer.normalize(Float.NEGATIVE_INFINITY);
             // Then
             assertTrue(result.isNull());
         }
@@ -362,14 +356,12 @@ class JsonNormalizerTest {
         @DisplayName("should convert BigInteger within Long range to LongNode")
         void testBigIntegerInRange() {
             // Given
-            BigInteger bigInt = BigInteger.valueOf(123456789L);
-
+            final BigInteger bigInt = BigInteger.valueOf(TEST_BIG_LONG);
             // When
-            JsonNode result = JsonNormalizer.normalize(bigInt);
-
+            final JsonNode result = JsonNormalizer.normalize(bigInt);
             // Then
             assertTrue(result.isLong());
-            assertEquals(123456789L, result.asLong());
+            assertEquals(TEST_BIG_LONG, result.asLong());
             assertInstanceOf(LongNode.class, result);
         }
 
@@ -377,11 +369,9 @@ class JsonNormalizerTest {
         @DisplayName("should convert BigInteger at Long.MAX_VALUE to LongNode")
         void testBigIntegerAtMaxLong() {
             // Given
-            BigInteger bigInt = BigInteger.valueOf(Long.MAX_VALUE);
-
+            final BigInteger bigInt = BigInteger.valueOf(Long.MAX_VALUE);
             // When
-            JsonNode result = JsonNormalizer.normalize(bigInt);
-
+            final JsonNode result = JsonNormalizer.normalize(bigInt);
             // Then
             assertTrue(result.isLong());
             assertEquals(Long.MAX_VALUE, result.asLong());
@@ -391,11 +381,9 @@ class JsonNormalizerTest {
         @DisplayName("should convert BigInteger at Long.MIN_VALUE to LongNode")
         void testBigIntegerAtMinLong() {
             // Given
-            BigInteger bigInt = BigInteger.valueOf(Long.MIN_VALUE);
-
+            final BigInteger bigInt = BigInteger.valueOf(Long.MIN_VALUE);
             // When
-            JsonNode result = JsonNormalizer.normalize(bigInt);
-
+            final JsonNode result = JsonNormalizer.normalize(bigInt);
             // Then
             assertTrue(result.isLong());
             assertEquals(Long.MIN_VALUE, result.asLong());
@@ -405,11 +393,9 @@ class JsonNormalizerTest {
         @DisplayName("should convert BigInteger outside Long range to StringNode")
         void testBigIntegerOutOfRange() {
             // Given
-            BigInteger bigInt = new BigInteger("99999999999999999999999999999999");
-
+            final BigInteger bigInt = new BigInteger("99999999999999999999999999999999");
             // When
-            JsonNode result = JsonNormalizer.normalize(bigInt);
-
+            final JsonNode result = JsonNormalizer.normalize(bigInt);
             // Then
             assertTrue(result.isString());
             assertEquals("99999999999999999999999999999999", result.asString());
@@ -420,11 +406,9 @@ class JsonNormalizerTest {
         @DisplayName("should convert BigDecimal to DecimalNode")
         void testBigDecimal() {
             // Given
-            BigDecimal bigDec = new BigDecimal("123.456");
-
+            final BigDecimal bigDec = new BigDecimal("123.456");
             // When
-            JsonNode result = JsonNormalizer.normalize(bigDec);
-
+            final JsonNode result = JsonNormalizer.normalize(bigDec);
             // Then
             assertTrue(result.isBigDecimal());
             assertEquals(new BigDecimal("123.456"), result.decimalValue());
@@ -435,11 +419,9 @@ class JsonNormalizerTest {
         @DisplayName("should convert large BigDecimal to DecimalNode")
         void testLargeBigDecimal() {
             // Given
-            BigDecimal bigDec = new BigDecimal("999999999999999999999.999999999999999999");
-
+            final BigDecimal bigDec = new BigDecimal("999999999999999999999.999999999999999999");
             // When
-            JsonNode result = JsonNormalizer.normalize(bigDec);
-
+            final JsonNode result = JsonNormalizer.normalize(bigDec);
             // Then
             assertTrue(result.isBigDecimal());
             assertInstanceOf(DecimalNode.class, result);
@@ -454,11 +436,9 @@ class JsonNormalizerTest {
         @DisplayName("should convert LocalDateTime to ISO formatted StringNode")
         void testLocalDateTime() {
             // Given
-            LocalDateTime dateTime = LocalDateTime.of(2023, 10, 15, 14, 30, 45);
-
+            final LocalDateTime dateTime = LocalDateTime.of(2023, 10, 15, 14, 30, 45);
             // When
-            JsonNode result = JsonNormalizer.normalize(dateTime);
-
+            final JsonNode result = JsonNormalizer.normalize(dateTime);
             // Then
             assertTrue(result.isString());
             assertEquals("2023-10-15T14:30:45", result.asString());
@@ -466,13 +446,11 @@ class JsonNormalizerTest {
 
         @Test
         @DisplayName("should convert java.sql.Date to ISO formatted StringNode")
-        void testSQLDate() {
+        void testSqlDate() {
             // Given
-            java.sql.Date dateTime = new java.sql.Date(1766419274);
-
+            final java.sql.Date dateTime = new java.sql.Date(1766419274);
             // When
-            JsonNode result = JsonNormalizer.normalize(dateTime);
-
+            final JsonNode result = JsonNormalizer.normalize(dateTime);
             // Then
             assertTrue(result.isString());
             assertEquals("1970-01-21", result.asString());
@@ -480,31 +458,27 @@ class JsonNormalizerTest {
 
         @Test
         @DisplayName("should convert java.sql.Time to ISO formatted StringNode")
-        void testSQLTime() {
+        void testSqlTime() {
             // Given
-            java.sql.Time time = new java.sql.Time(1766419274);
-
+            final java.sql.Time time = new java.sql.Time(1766419274);
             // When
-            JsonNode result = JsonNormalizer.normalize(time);
-
+            final JsonNode result = JsonNormalizer.normalize(time);
             // Then
             assertTrue(result.isString());
-            String expected = time.toLocalTime().format(DateTimeFormatter.ISO_LOCAL_TIME);
+            final String expected = time.toLocalTime().format(DateTimeFormatter.ISO_LOCAL_TIME);
             assertEquals(expected, result.asString());
         }
 
         @Test
         @DisplayName("should convert java.sql.Timestamp to ISO formatted StringNode")
-        void testSQLTimeStamp() {
+        void testSqlTimeStamp() {
             // Given
-            java.sql.Timestamp dateTime = new java.sql.Timestamp(1766419274);
-
+            final java.sql.Timestamp dateTime = new java.sql.Timestamp(1766419274);
             // When
-            JsonNode result = JsonNormalizer.normalize(dateTime);
-
+            final JsonNode result = JsonNormalizer.normalize(dateTime);
             // Then
             assertTrue(result.isString());
-            String expected = dateTime.toLocalDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            final String expected = dateTime.toLocalDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
             assertEquals(expected, result.asString());
         }
 
@@ -513,11 +487,9 @@ class JsonNormalizerTest {
         @DisplayName("should convert LocalDate to ISO formatted StringNode")
         void testLocalDate() {
             // Given
-            LocalDate date = LocalDate.of(2023, 10, 15);
-
+            final LocalDate date = LocalDate.of(2023, 10, 15);
             // When
-            JsonNode result = JsonNormalizer.normalize(date);
-
+            final JsonNode result = JsonNormalizer.normalize(date);
             // Then
             assertTrue(result.isString());
             assertEquals("2023-10-15", result.asString());
@@ -527,11 +499,9 @@ class JsonNormalizerTest {
         @DisplayName("should convert LocalTime to ISO formatted StringNode")
         void testLocalTime() {
             // Given
-            LocalTime time = LocalTime.of(14, 30, 45);
-
+            final LocalTime time = LocalTime.of(14, 30, 45);
             // When
-            JsonNode result = JsonNormalizer.normalize(time);
-
+            final JsonNode result = JsonNormalizer.normalize(time);
             // Then
             assertTrue(result.isString());
             assertEquals("14:30:45", result.asString());
@@ -541,11 +511,9 @@ class JsonNormalizerTest {
         @DisplayName("should convert ZonedDateTime to ISO formatted StringNode")
         void testZonedDateTime() {
             // Given
-            ZonedDateTime zonedDateTime = ZonedDateTime.of(2023, 10, 15, 14, 30, 45, 0, ZoneId.of("UTC"));
-
+            final ZonedDateTime zonedDateTime = ZonedDateTime.of(2023, 10, 15, 14, 30, 45, 0, ZoneId.of("UTC"));
             // When
-            JsonNode result = JsonNormalizer.normalize(zonedDateTime);
-
+            final JsonNode result = JsonNormalizer.normalize(zonedDateTime);
             // Then
             assertTrue(result.isString());
             assertEquals("2023-10-15T14:30:45Z", result.asString());
@@ -555,11 +523,9 @@ class JsonNormalizerTest {
         @DisplayName("should convert OffsetDateTime to ISO formatted StringNode")
         void testOffsetDateTime() {
             // Given
-            OffsetDateTime offsetDateTime = OffsetDateTime.of(2023, 10, 15, 14, 30, 45, 0, ZoneOffset.UTC);
-
+            final OffsetDateTime offsetDateTime = OffsetDateTime.of(2023, 10, 15, 14, 30, 45, 0, ZoneOffset.UTC);
             // When
-            JsonNode result = JsonNormalizer.normalize(offsetDateTime);
-
+            final JsonNode result = JsonNormalizer.normalize(offsetDateTime);
             // Then
             assertTrue(result.isString());
             assertEquals("2023-10-15T14:30:45Z", result.asString());
@@ -569,11 +535,9 @@ class JsonNormalizerTest {
         @DisplayName("should convert Instant to ISO formatted StringNode")
         void testInstant() {
             // Given
-            Instant instant = Instant.parse("2023-10-15T14:30:45.123Z");
-
+            final Instant instant = Instant.parse("2023-10-15T14:30:45.123Z");
             // When
-            JsonNode result = JsonNormalizer.normalize(instant);
-
+            final JsonNode result = JsonNormalizer.normalize(instant);
             // Then
             assertTrue(result.isString());
             assertEquals("2023-10-15T14:30:45.123Z", result.asString());
@@ -583,11 +547,9 @@ class JsonNormalizerTest {
         @DisplayName("should convert java.util.Date to ISO formatted StringNode")
         void testUtilDate() {
             // Given
-            Date date = Date.from(Instant.parse("2023-10-15T14:30:45.123Z"));
-
+            final Date date = Date.from(Instant.parse("2023-10-15T14:30:45.123Z"));
             // When
-            JsonNode result = JsonNormalizer.normalize(date);
-
+            final JsonNode result = JsonNormalizer.normalize(date);
             // Then
             assertTrue(result.isString());
             assertEquals("2023-10-15", result.asString());
@@ -595,36 +557,33 @@ class JsonNormalizerTest {
     }
 
     @Nested
-    @DisplayName("Collections")
-    class Collections {
+    @DisplayName("Lists")
+    class Lists {
 
         @Test
         @DisplayName("should convert List to ArrayNode")
         void testList() {
             // Given
-            List<Object> list = List.of(1, 2, 3, "four");
-
+            final int expectedSize = 4;
+            final List<Object> list = List.of(1, 2, TEST_ARRAY_SIZE, "four");
             // When
-            JsonNode result = JsonNormalizer.normalize(list);
-
+            final JsonNode result = JsonNormalizer.normalize(list);
             // Then
             assertTrue(result.isArray());
-            assertEquals(4, result.size());
+            assertEquals(expectedSize, result.size());
             assertEquals(1, result.get(0).asInt());
             assertEquals(2, result.get(1).asInt());
-            assertEquals(3, result.get(2).asInt());
-            assertEquals("four", result.get(3).asString());
+            assertEquals(TEST_ARRAY_SIZE, result.get(expectedSize - 2).asInt());
+            assertEquals("four", result.get(expectedSize - 1).asString());
         }
 
         @Test
         @DisplayName("should convert empty List to empty ArrayNode")
         void testEmptyList() {
             // Given
-            List<Object> list = List.of();
-
+            final List<Object> list = List.of();
             // When
-            JsonNode result = JsonNormalizer.normalize(list);
-
+            final JsonNode result = JsonNormalizer.normalize(list);
             // Then
             assertTrue(result.isArray());
             assertEquals(0, result.size());
@@ -634,33 +593,30 @@ class JsonNormalizerTest {
         @DisplayName("should convert Set to ArrayNode")
         void testSet() {
             // Given
-            Set<Integer> set = new LinkedHashSet<>(List.of(1, 2, 3));
-
+            final Set<Integer> set = new LinkedHashSet<>(List.of(1, 2, 3));
             // When
-            JsonNode result = JsonNormalizer.normalize(set);
-
+            final JsonNode result = JsonNormalizer.normalize(set);
             // Then
             assertTrue(result.isArray());
-            assertEquals(3, result.size());
+            assertEquals(TEST_ARRAY_SIZE, result.size());
         }
 
         @Test
         @DisplayName("should convert Map to ObjectNode")
         void testMap() {
             // Given
-            Map<String, Object> map = new LinkedHashMap<>();
+            final int testAge = 30;
+            final Map<String, Object> map = new LinkedHashMap<>();
             map.put("name", "John");
-            map.put("age", 30);
+            map.put("age", testAge);
             map.put("active", true);
-
             // When
-            JsonNode result = JsonNormalizer.normalize(map);
-
+            final JsonNode result = JsonNormalizer.normalize(map);
             // Then
             assertTrue(result.isObject());
-            assertEquals(3, result.size());
+            assertEquals(TEST_MAP_SIZE, result.size());
             assertEquals("John", result.get("name").asString());
-            assertEquals(30, result.get("age").asInt());
+            assertEquals(testAge, result.get("age").asInt());
             assertTrue(result.get("active").asBoolean());
         }
 
@@ -668,11 +624,9 @@ class JsonNormalizerTest {
         @DisplayName("should convert empty Map to empty ObjectNode")
         void testEmptyMap() {
             // Given
-            Map<String, Object> map = new HashMap<>();
-
+            final Map<String, Object> map = new HashMap<>();
             // When
-            JsonNode result = JsonNormalizer.normalize(map);
-
+            final JsonNode result = JsonNormalizer.normalize(map);
             // Then
             assertTrue(result.isObject());
             assertEquals(0, result.size());
@@ -682,17 +636,16 @@ class JsonNormalizerTest {
         @DisplayName("should handle nested collections")
         void testNestedCollections() {
             // Given
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("numbers", List.of(1, 2, 3));
+            final int listItemCount = 3;
+            final Map<String, Object> map = new LinkedHashMap<>();
+            map.put("numbers", List.of(1, 2, listItemCount));
             map.put("nested", Map.of("key", "value"));
-
             // When
-            JsonNode result = JsonNormalizer.normalize(map);
-
+            final JsonNode result = JsonNormalizer.normalize(map);
             // Then
             assertTrue(result.isObject());
             assertTrue(result.get("numbers").isArray());
-            assertEquals(3, result.get("numbers").size());
+            assertEquals(listItemCount, result.get("numbers").size());
             assertTrue(result.get("nested").isObject());
             assertEquals("value", result.get("nested").get("key").asString());
         }
@@ -701,13 +654,11 @@ class JsonNormalizerTest {
         @DisplayName("should convert non-String Map keys to String")
         void testMapWithNonStringKeys() {
             // Given
-            Map<Integer, String> map = new HashMap<>();
+            final Map<Integer, String> map = new HashMap<>();
             map.put(1, "one");
             map.put(2, "two");
-
             // When
-            JsonNode result = JsonNormalizer.normalize(map);
-
+            final JsonNode result = JsonNormalizer.normalize(map);
             // Then
             assertTrue(result.isObject());
             assertEquals("one", result.get("1").asString());
@@ -718,17 +669,16 @@ class JsonNormalizerTest {
         @DisplayName("should handle collections with null values")
         void testCollectionWithNulls() {
             // Given
-            List<Object> list = java.util.Arrays.asList(1, null, 3);
-
+            final int nullCollectionVal = TEST_ARRAY_SIZE;
+            final List<Object> list = java.util.Arrays.asList(1, null, nullCollectionVal);
             // When
-            JsonNode result = JsonNormalizer.normalize(list);
-
+            final JsonNode result = JsonNormalizer.normalize(list);
             // Then
             assertTrue(result.isArray());
-            assertEquals(3, result.size());
+            assertEquals(TEST_ARRAY_SIZE, result.size());
             assertEquals(1, result.get(0).asInt());
             assertTrue(result.get(1).isNull());
-            assertEquals(3, result.get(2).asInt());
+            assertEquals(TEST_ARRAY_SIZE, result.get(2).asInt());
         }
     }
 
@@ -740,95 +690,91 @@ class JsonNormalizerTest {
         @DisplayName("should convert int[] to ArrayNode")
         void testIntArray() {
             // Given
-            int[] array = {1, 2, 3, 4, 5};
-
+            final int arraySize = 5;
+            final int lastElementValue = arraySize;
+            final int lastIndex = arraySize - 1;
+            final int[] array = {1, 2, arraySize - 2, arraySize - 1, lastElementValue};
             // When
-            JsonNode result = JsonNormalizer.normalize(array);
-
+            final JsonNode result = JsonNormalizer.normalize(array);
             // Then
             assertTrue(result.isArray());
-            assertEquals(5, result.size());
+            assertEquals(arraySize, result.size());
             assertEquals(1, result.get(0).asInt());
-            assertEquals(5, result.get(4).asInt());
+            assertEquals(lastElementValue, result.get(lastIndex).asInt());
         }
 
         @Test
         @DisplayName("should convert long[] to ArrayNode")
         void testLongArray() {
             // Given
-            long[] array = {1L, 2L, 9223372036854775807L};
-
+            final long[] array = {1L, 2L, TEST_LONG_VALUE};
             // When
-            JsonNode result = JsonNormalizer.normalize(array);
-
+            final JsonNode result = JsonNormalizer.normalize(array);
             // Then
             assertTrue(result.isArray());
-            assertEquals(3, result.size());
-            assertEquals(9223372036854775807L, result.get(2).asLong());
+            assertEquals(TEST_ARRAY_SIZE, result.size());
+            assertEquals(TEST_LONG_VALUE, result.get(2).asLong());
         }
 
         @Test
         @DisplayName("should convert double[] to ArrayNode")
         void testDoubleArray() {
             // Given
-            double[] array = {1.1, 2.2, 3.3};
-
+            final double firstDoubleVal = 1.1;
+            final double[] array = {firstDoubleVal, 2.2, 3.3};
             // When
-            JsonNode result = JsonNormalizer.normalize(array);
-
+            final JsonNode result = JsonNormalizer.normalize(array);
             // Then
             assertTrue(result.isArray());
-            assertEquals(3, result.size());
-            assertEquals(1.1, result.get(0).asDouble(), 0.001);
+            assertEquals(TEST_ARRAY_SIZE, result.size());
+            assertEquals(firstDoubleVal, result.get(0).asDouble(), DOUBLE_DELTA);
         }
 
         @Test
         @DisplayName("should convert double[] with special values to ArrayNode with nulls")
         void testDoubleArrayWithSpecialValues() {
             // Given
-            double[] array = {1.0, Double.NaN, Double.POSITIVE_INFINITY, 4.0, Double.NEGATIVE_INFINITY};
-
+            final int specialArrSize = 5;
+            final int lastIndex = specialArrSize - 1;
+            final double fourthValue = 4.0;
+            final double[] array = {1.0, Double.NaN, Double.POSITIVE_INFINITY, fourthValue, Double.NEGATIVE_INFINITY};
             // When
-            JsonNode result = JsonNormalizer.normalize(array);
-
+            final JsonNode result = JsonNormalizer.normalize(array);
             // Then
             assertTrue(result.isArray());
-            assertEquals(5, result.size());
+            assertEquals(specialArrSize, result.size());
             assertEquals(1, result.get(0).asInt());
             assertTrue(result.get(1).isNull());
             assertTrue(result.get(2).isNull());
-            assertEquals(4, result.get(3).asInt());
-            assertTrue(result.get(4).isNull());
+            assertEquals((int) fourthValue, result.get(lastIndex - 1).asInt());
+            assertTrue(result.get(lastIndex).isNull());
         }
 
         @Test
         @DisplayName("should convert float[] to ArrayNode")
         void testFloatArray() {
             // Given
-            float[] array = {1.1f, 2.2f, 3.3f};
-
+            final float firstFloatVal = 1.1f;
+            final float[] array = {firstFloatVal, 2.2f, 3.3f};
             // When
-            JsonNode result = JsonNormalizer.normalize(array);
-
+            final JsonNode result = JsonNormalizer.normalize(array);
             // Then
             assertTrue(result.isArray());
-            assertEquals(3, result.size());
-            assertEquals(1.1f, result.get(0).floatValue(), 0.001);
+            assertEquals(TEST_ARRAY_SIZE, result.size());
+            assertEquals(firstFloatVal, result.get(0).floatValue(), TEST_FLOAT_DELTA);
         }
 
         @Test
         @DisplayName("should convert float[] with special values to ArrayNode with nulls")
         void testFloatArrayWithSpecialValues() {
             // Given
-            float[] array = {1.0f, Float.NaN, Float.POSITIVE_INFINITY};
-
+            final float[] array = {1.0f, Float.NaN, Float.POSITIVE_INFINITY};
             // When
-            JsonNode result = JsonNormalizer.normalize(array);
-
+            final JsonNode result = JsonNormalizer.normalize(array);
             // Then
             assertTrue(result.isArray());
-            assertEquals(3, result.size());
-            assertEquals(1.0f, result.get(0).floatValue(), 0.001);
+            assertEquals(TEST_ARRAY_SIZE, result.size());
+            assertEquals(1.0f, result.get(0).floatValue(), TEST_FLOAT_DELTA);
             assertTrue(result.get(1).isNull());
             assertTrue(result.get(2).isNull());
         }
@@ -837,14 +783,12 @@ class JsonNormalizerTest {
         @DisplayName("should convert boolean[] to ArrayNode")
         void testBooleanArray() {
             // Given
-            boolean[] array = {true, false, true};
-
+            final boolean[] array = {true, false, true};
             // When
-            JsonNode result = JsonNormalizer.normalize(array);
-
+            final JsonNode result = JsonNormalizer.normalize(array);
             // Then
             assertTrue(result.isArray());
-            assertEquals(3, result.size());
+            assertEquals(TEST_ARRAY_SIZE, result.size());
             assertTrue(result.get(0).asBoolean());
             assertFalse(result.get(1).asBoolean());
         }
@@ -853,44 +797,38 @@ class JsonNormalizerTest {
         @DisplayName("should convert byte[] to ArrayNode")
         void testByteArray() {
             // Given
-            byte[] array = {1, 2, 127};
-
+            final byte[] array = {1, 2, 127};
             // When
-            JsonNode result = JsonNormalizer.normalize(array);
-
+            final JsonNode result = JsonNormalizer.normalize(array);
             // Then
             assertTrue(result.isArray());
-            assertEquals(3, result.size());
-            assertEquals(127, result.get(2).asInt());
+            assertEquals(TEST_ARRAY_SIZE, result.size());
+            assertEquals(TEST_BYTE_VALUE, result.get(2).asInt());
         }
 
         @Test
         @DisplayName("should convert short[] to ArrayNode")
         void testShortArray() {
             // Given
-            short[] array = {1, 2, 32767};
-
+            final short[] array = {1, 2, TEST_SHORT_VALUE};
             // When
-            JsonNode result = JsonNormalizer.normalize(array);
-
+            final JsonNode result = JsonNormalizer.normalize(array);
             // Then
             assertTrue(result.isArray());
-            assertEquals(3, result.size());
-            assertEquals(32767, result.get(2).asInt());
+            assertEquals(TEST_ARRAY_SIZE, result.size());
+            assertEquals(TEST_SHORT_VALUE, result.get(2).asInt());
         }
 
         @Test
         @DisplayName("should convert char[] to ArrayNode of strings")
         void testCharArray() {
             // Given
-            char[] array = {'a', 'b', 'c'};
-
+            final char[] array = {'a', 'b', 'c'};
             // When
-            JsonNode result = JsonNormalizer.normalize(array);
-
+            final JsonNode result = JsonNormalizer.normalize(array);
             // Then
             assertTrue(result.isArray());
-            assertEquals(3, result.size());
+            assertEquals(TEST_ARRAY_SIZE, result.size());
             assertEquals("a", result.get(0).asString());
             assertEquals("b", result.get(1).asString());
             assertEquals("c", result.get(2).asString());
@@ -900,29 +838,26 @@ class JsonNormalizerTest {
         @DisplayName("should convert Object[] to ArrayNode")
         void testObjectArray() {
             // Given
-            Object[] array = {1, "two", true, 3.14};
-
+            final double objectArrPi = 3.14;
+            final Object[] array = {1, "two", true, objectArrPi};
             // When
-            JsonNode result = JsonNormalizer.normalize(array);
-
+            final JsonNode result = JsonNormalizer.normalize(array);
             // Then
             assertTrue(result.isArray());
-            assertEquals(4, result.size());
+            assertEquals(EXPECTED_SIZE_FOUR, result.size());
             assertEquals(1, result.get(0).asInt());
             assertEquals("two", result.get(1).asString());
             assertTrue(result.get(2).asBoolean());
-            assertEquals(3.14, result.get(3).asDouble(), 0.001);
+            assertEquals(objectArrPi, result.get(EXPECTED_SIZE_FOUR - 1).asDouble(), DOUBLE_DELTA);
         }
 
         @Test
         @DisplayName("should convert empty arrays to empty ArrayNode")
         void testEmptyArrays() {
             // Given
-            int[] intArray = {};
-
+            final int[] intArray = {};
             // When
-            JsonNode result = JsonNormalizer.normalize(intArray);
-
+            final JsonNode result = JsonNormalizer.normalize(intArray);
             // Then
             assertTrue(result.isArray());
             assertEquals(0, result.size());
@@ -932,11 +867,9 @@ class JsonNormalizerTest {
         @DisplayName("should convert empty arrays to empty ArrayNode")
         void testEmptyArraysOfObjects() {
             // Given
-            Object[] objArray = {};
-
+            final Object[] objArray = {};
             // When
-            JsonNode result = JsonNormalizer.normalize(objArray);
-
+            final JsonNode result = JsonNormalizer.normalize(objArray);
             // Then
             assertTrue(result.isArray());
             assertEquals(0, result.size());
@@ -946,14 +879,12 @@ class JsonNormalizerTest {
         @DisplayName("should handle nested arrays")
         void testNestedArrays() {
             // Given
-            Object[] array = {
+            final Object[] array = {
                 new int[]{1, 2},
                 new String[]{"a", "b"}
             };
-
             // When
-            JsonNode result = JsonNormalizer.normalize(array);
-
+            final JsonNode result = JsonNormalizer.normalize(array);
             // Then
             assertTrue(result.isArray());
             assertEquals(2, result.size());
@@ -972,11 +903,9 @@ class JsonNormalizerTest {
         @DisplayName("should convert Optional.empty() to NullNode")
         void testEmptyOptional() {
             // Given
-            Optional<String> optional = Optional.empty();
-
+            final Optional<String> optional = Optional.empty();
             // When
-            JsonNode result = JsonNormalizer.normalize(optional);
-
+            final JsonNode result = JsonNormalizer.normalize(optional);
             // Then
             assertTrue(result.isNull());
         }
@@ -985,11 +914,9 @@ class JsonNormalizerTest {
         @DisplayName("should unwrap Optional.of(value)")
         void testOptionalWithValue() {
             // Given
-            Optional<String> optional = Optional.of("hello");
-
+            final Optional<String> optional = Optional.of("hello");
             // When
-            JsonNode result = JsonNormalizer.normalize(optional);
-
+            final JsonNode result = JsonNormalizer.normalize(optional);
             // Then
             assertTrue(result.isString());
             assertEquals("hello", result.asString());
@@ -999,25 +926,21 @@ class JsonNormalizerTest {
         @DisplayName("should unwrap Optional.of(value)")
         void testOptionalWithValue2() {
             // Given
-            Optional<Integer> intOptional = Optional.of(42);
-
+            final Optional<Integer> intOptional = Optional.of(42);
             // When
-            JsonNode result = JsonNormalizer.normalize(intOptional);
-
+            final JsonNode result = JsonNormalizer.normalize(intOptional);
             // Then
             assertTrue(result.isInt());
-            assertEquals(42, result.asInt());
+            assertEquals(TEST_INT_VALUE, result.asInt());
         }
 
         @Test
         @DisplayName("should unwrap nested Optional")
         void testNestedOptional() {
             // Given
-            Optional<Optional<String>> nested = Optional.of(Optional.of("nested"));
-
+            final Optional<Optional<String>> nested = Optional.of(Optional.of("nested"));
             // When
-            JsonNode result = JsonNormalizer.normalize(nested);
-
+            final JsonNode result = JsonNormalizer.normalize(nested);
             // Then
             assertTrue(result.isString());
             assertEquals("nested", result.asString());
@@ -1027,27 +950,25 @@ class JsonNormalizerTest {
         @DisplayName("should convert Stream to ArrayNode")
         void testStream() {
             // Given
-            Stream<Integer> stream = Stream.of(1, 2, 3, 4, 5);
-
+            final int streamSize = 5;
+            final int lastStreamIdx = streamSize - 1;
+            final Stream<Integer> stream = Stream.of(1, 2, streamSize - 2, streamSize - 1, streamSize);
             // When
-            JsonNode result = JsonNormalizer.normalize(stream);
-
+            final JsonNode result = JsonNormalizer.normalize(stream);
             // Then
             assertTrue(result.isArray());
-            assertEquals(5, result.size());
+            assertEquals(streamSize, result.size());
             assertEquals(1, result.get(0).asInt());
-            assertEquals(5, result.get(4).asInt());
+            assertEquals(streamSize, result.get(lastStreamIdx).asInt());
         }
 
         @Test
         @DisplayName("should convert empty Stream to empty ArrayNode")
         void testEmptyStream() {
             // Given
-            Stream<String> stream = Stream.empty();
-
+            final Stream<String> stream = Stream.empty();
             // When
-            JsonNode result = JsonNormalizer.normalize(stream);
-
+            final JsonNode result = JsonNormalizer.normalize(stream);
             // Then
             assertTrue(result.isArray());
             assertEquals(0, result.size());
@@ -1057,23 +978,21 @@ class JsonNormalizerTest {
         @DisplayName("should handle Stream with null values")
         void testStreamWithNulls() {
             // Given
-            Stream<Object> stream = Stream.of(1, null, 3);
-
+            final Stream<Object> stream = Stream.of(1, null, TEST_ARRAY_SIZE);
             // When
-            JsonNode result = JsonNormalizer.normalize(stream);
-
+            final JsonNode result = JsonNormalizer.normalize(stream);
             // Then
             assertTrue(result.isArray());
-            assertEquals(3, result.size());
+            assertEquals(TEST_ARRAY_SIZE, result.size());
             assertEquals(1, result.get(0).asInt());
             assertTrue(result.get(1).isNull());
-            assertEquals(3, result.get(2).asInt());
+            assertEquals(TEST_ARRAY_SIZE, result.get(2).asInt());
         }
     }
 
     @Nested
     @DisplayName("POJOs")
-    class POJOs {
+    class Pojos {
 
         record SimplePojo(String name, int age) {
         }
@@ -1085,26 +1004,23 @@ class JsonNormalizerTest {
         @DisplayName("should convert simple POJO to ObjectNode")
         void testSimplePojo() {
             // Given
-            SimplePojo pojo = new SimplePojo("Alice", 25);
-
+            final int aliceAge = 25;
+            final SimplePojo pojo = new SimplePojo("Alice", aliceAge);
             // When
-            JsonNode result = JsonNormalizer.normalize(pojo);
-
+            final JsonNode result = JsonNormalizer.normalize(pojo);
             // Then
             assertTrue(result.isObject());
             assertEquals("Alice", result.get("name").asString());
-            assertEquals(25, result.get("age").asInt());
+            assertEquals(aliceAge, result.get("age").asInt());
         }
 
         @Test
         @DisplayName("should convert POJO with getters to ObjectNode")
         void testPojoWithGetters() {
             // Given
-            PojoWithGetters pojo = new PojoWithGetters("test");
-
+            final PojoWithGetters pojo = new PojoWithGetters("test");
             // When
-            JsonNode result = JsonNormalizer.normalize(pojo);
-
+            final JsonNode result = JsonNormalizer.normalize(pojo);
             // Then
             assertTrue(result.isObject());
             assertEquals("test", result.get("value").asString());
@@ -1114,32 +1030,30 @@ class JsonNormalizerTest {
         @DisplayName("should handle nested POJOs")
         void testNestedPojo() {
             // Given
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("pojo", new SimplePojo("Bob", 30));
-            map.put("id", 123);
-
+            final int bobAge = TEST_AGE;
+            final int nestedId = 123;
+            final Map<String, Object> map = new LinkedHashMap<>();
+            map.put("pojo", new SimplePojo("Bob", bobAge));
+            map.put("id", nestedId);
             // When
-            JsonNode result = JsonNormalizer.normalize(map);
-
+            final JsonNode result = JsonNormalizer.normalize(map);
             // Then
             assertTrue(result.isObject());
             assertTrue(result.get("pojo").isObject());
             assertEquals("Bob", result.get("pojo").get("name").asString());
-            assertEquals(123, result.get("id").asInt());
+            assertEquals(nestedId, result.get("id").asInt());
         }
 
         @Test
         @DisplayName("should handle collections of POJOs")
         void testCollectionOfPojos() {
             // Given
-            List<SimplePojo> pojos = List.of(
+            final List<SimplePojo> pojos = List.of(
                 new SimplePojo("Alice", 25),
                 new SimplePojo("Bob", 30)
             );
-
             // When
-            JsonNode result = JsonNormalizer.normalize(pojos);
-
+            final JsonNode result = JsonNormalizer.normalize(pojos);
             // Then
             assertTrue(result.isArray());
             assertEquals(2, result.size());
@@ -1152,11 +1066,9 @@ class JsonNormalizerTest {
         void testNonSerializableObject() {
             // Given
             // Thread is not easily serializable by Jackson
-            Thread thread = new Thread();
-
+            final Thread thread = new Thread();
             // When
-            JsonNode result = JsonNormalizer.normalize(thread);
-
+            final JsonNode result = JsonNormalizer.normalize(thread);
             // Then
             // Jackson may succeed or fail depending on version
             // Just verify it doesn't throw an exception
@@ -1172,22 +1084,21 @@ class JsonNormalizerTest {
         @DisplayName("should handle deeply nested structures")
         void testDeeplyNested() {
             // Given
-            Map<String, Object> level3 = Map.of("value", 42);
-            Map<String, Object> level2 = Map.of("level3", level3);
-            Map<String, Object> level1 = Map.of("level2", level2);
-
+            final Map<String, Object> level3 = Map.of("value", TEST_INT_VALUE);
+            final Map<String, Object> level2 = Map.of("level3", level3);
+            final Map<String, Object> level1 = Map.of("level2", level2);
             // When
-            JsonNode result = JsonNormalizer.normalize(level1);
-
+            final JsonNode result = JsonNormalizer.normalize(level1);
             // Then
-            assertEquals(42, result.get("level2").get("level3").get("value").asInt());
+            assertEquals(TEST_INT_VALUE, result.get("level2").get("level3").get("value").asInt());
         }
 
         @Test
         @DisplayName("should handle mixed types in collections")
         void testMixedTypes() {
             // Given
-            List<Object> mixed = java.util.Arrays.asList(
+            final int mixedSize = 7;
+            final List<Object> mixed = java.util.Arrays.asList(
                 1,
                 "text",
                 true,
@@ -1196,31 +1107,28 @@ class JsonNormalizerTest {
                 Map.of("key", "value"),
                 null
             );
-
             // When
-            JsonNode result = JsonNormalizer.normalize(mixed);
-
+            final JsonNode result = JsonNormalizer.normalize(mixed);
             // Then
             assertTrue(result.isArray());
-            assertEquals(7, result.size());
+            assertEquals(mixedSize, result.size());
             assertEquals(1, result.get(0).asInt());
             assertEquals("text", result.get(1).asString());
             assertTrue(result.get(2).asBoolean());
-            assertEquals(3.14, result.get(3).asDouble(), 0.001);
-            assertTrue(result.get(4).isArray());
-            assertTrue(result.get(5).isObject());
-            assertTrue(result.get(6).isNull());
+            assertEquals(EDGE_CASE_DOUBLE, result.get(EXPECTED_SIZE_FOUR - 1).asDouble(),
+                DOUBLE_DELTA);
+            assertTrue(result.get(EXPECTED_SIZE_FOUR).isArray());
+            assertTrue(result.get(EXPECTED_SIZE_FIVE).isObject());
+            assertTrue(result.get(EXPECTED_SIZE_SEVEN - 1).isNull());
         }
 
         @Test
         @DisplayName("should handle Optional with null value")
         void testOptionalOfNull() {
             // Given
-            Optional<String> optional = Optional.empty();
-
+            final Optional<String> optional = Optional.empty();
             // When
-            JsonNode result = JsonNormalizer.normalize(optional);
-
+            final JsonNode result = JsonNormalizer.normalize(optional);
             // Then
             assertTrue(result.isNull());
         }
@@ -1229,30 +1137,26 @@ class JsonNormalizerTest {
         @DisplayName("should handle arrays containing arrays")
         void testArrayOfArrays() {
             // Given
-            int[][] matrix = {{1, 2}, {3, 4}};
-
+            final int[][] matrix = {{1, 2}, {3, 4}};
             // When
-            JsonNode result = JsonNormalizer.normalize(matrix);
-
+            final JsonNode result = JsonNormalizer.normalize(matrix);
             // Then
             assertTrue(result.isArray());
             assertEquals(2, result.size());
             assertTrue(result.get(0).isArray());
             assertEquals(1, result.get(0).get(0).asInt());
-            assertEquals(4, result.get(1).get(1).asInt());
+            assertEquals(EXPECTED_SIZE_FOUR, result.get(1).get(1).asInt());
         }
 
         @Test
         @DisplayName("should handle Map with null values")
         void testMapWithNullValues() {
             // Given
-            Map<String, Object> map = new LinkedHashMap<>();
+            final Map<String, Object> map = new LinkedHashMap<>();
             map.put("key1", "value");
             map.put("key2", null);
-
             // When
-            JsonNode result = JsonNormalizer.normalize(map);
-
+            final JsonNode result = JsonNormalizer.normalize(map);
             // Then
             assertTrue(result.isObject());
             assertEquals("value", result.get("key1").asString());
@@ -1266,11 +1170,9 @@ class JsonNormalizerTest {
         // Given
         final Constructor<JsonNormalizer> constructor = JsonNormalizer.class.getDeclaredConstructor();
         constructor.setAccessible(true);
-
         // When
         final InvocationTargetException thrown =
             assertThrows(InvocationTargetException.class, constructor::newInstance);
-
         // Then
         final Throwable cause = thrown.getCause();
         assertInstanceOf(UnsupportedOperationException.class, cause);
@@ -1278,8 +1180,9 @@ class JsonNormalizerTest {
     }
 
     // Reflection helpers for invoking private static methods
-    private static Object invokePrivateStatic(String methodName, Class<?>[] paramTypes, Object... args) throws Exception {
-        Method declaredMethod = JsonNormalizer.class.getDeclaredMethod(methodName, paramTypes);
+    private static Object invokePrivateStatic(final String methodName, final Class<?>[] paramTypes,
+            final Object... args) throws Exception {
+        final Method declaredMethod = JsonNormalizer.class.getDeclaredMethod(methodName, paramTypes);
         declaredMethod.setAccessible(true);
         return declaredMethod.invoke(null, args);
     }
@@ -1293,25 +1196,21 @@ class JsonNormalizerTest {
         @DisplayName("Given an Integer value, When tryNormalizePrimitive is called, Then an IntNode is returned")
         void givenInteger_whenTryNormalizePrimitive_thenIntNode() throws Exception {
             // Given
-            Integer input = 42;
-
+            final Integer input = TEST_INT_VALUE;
             // When
-            Object result = invokePrivateStatic("tryNormalizePrimitive", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizePrimitive", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(IntNode.class, result);
-            assertEquals(42, ((JsonNode) result).asInt());
+            assertEquals(TEST_INT_VALUE, ((JsonNode) result).asInt());
         }
 
         @Test
         @DisplayName("Given an unsupported type, When tryNormalizePrimitive is called, Then null is returned")
         void givenUnsupported_whenTryNormalizePrimitive_thenNull() throws Exception {
             // Given
-            Object input = new Object();
-
+            final Object input = new Object();
             // When
-            Object result = invokePrivateStatic("tryNormalizePrimitive", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizePrimitive", new Class[]{Object.class}, input);
             // Then
             assertNull(result);
         }
@@ -1320,11 +1219,9 @@ class JsonNormalizerTest {
         @DisplayName("Given an String value, When tryNormalizePrimitive is called, Then an StringNode is returned")
         void givenString_whenTryNormalizePrimitive_thenStringNode() throws Exception {
             // Given
-            String input = "hello world";
-
+            final String input = "hello world";
             // When
-            Object result = invokePrivateStatic("tryNormalizePrimitive", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizePrimitive", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(StringNode.class, result);
             assertEquals("hello world", ((JsonNode) result).asString());
@@ -1334,11 +1231,9 @@ class JsonNormalizerTest {
         @DisplayName("Given an Boolean value, When tryNormalizePrimitive is called, Then an BooleanNode is returned")
         void givenBoolean_whenTryNormalizePrimitive_thenBooleanNode() throws Exception {
             // Given
-            Boolean input = Boolean.TRUE;
-
+            final Boolean input = Boolean.TRUE;
             // When
-            Object result = invokePrivateStatic("tryNormalizePrimitive", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizePrimitive", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(BooleanNode.class, result);
             assertTrue(((JsonNode) result).asBoolean());
@@ -1348,11 +1243,9 @@ class JsonNormalizerTest {
         @DisplayName("Given an Long value, When tryNormalizePrimitive is called, Then an LongNode is returned")
         void givenLong_whenTryNormalizePrimitive_thenLongNode() throws Exception {
             // Given
-            Long input = Long.MAX_VALUE;
-
+            final Long input = Long.MAX_VALUE;
             // When
-            Object result = invokePrivateStatic("tryNormalizePrimitive", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizePrimitive", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(LongNode.class, result);
             assertEquals(Long.MAX_VALUE, ((JsonNode) result).asLong());
@@ -1362,11 +1255,9 @@ class JsonNormalizerTest {
         @DisplayName("Given an Short value, When tryNormalizePrimitive is called, Then an ShortNode is returned")
         void givenShort_whenTryNormalizePrimitive_thenShortNode() throws Exception {
             // Given
-            Short input = Short.MAX_VALUE;
-
+            final Short input = Short.MAX_VALUE;
             // When
-            Object result = invokePrivateStatic("tryNormalizePrimitive", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizePrimitive", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(ShortNode.class, result);
             assertEquals(Short.MAX_VALUE, ((JsonNode) result).asShort());
@@ -1376,14 +1267,12 @@ class JsonNormalizerTest {
         @DisplayName("Given an Byte value, When tryNormalizePrimitive is called, Then an ByteNode is returned")
         void givenByte_whenTryNormalizePrimitive_thenByteNode() throws Exception {
             // Given
-            byte input = 42;
-
+            final byte input = TEST_INT_VALUE;
             // When
-            Object result = invokePrivateStatic("tryNormalizePrimitive", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizePrimitive", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(IntNode.class, result);
-            assertEquals(42, ((JsonNode) result).intValue());
+            assertEquals(TEST_INT_VALUE, ((JsonNode) result).intValue());
         }
     }
 
@@ -1392,28 +1281,26 @@ class JsonNormalizerTest {
     class TryNormalizeBigNumber {
 
         @Test
-        @DisplayName("Given BigInteger within long range, When tryNormalizeBigNumber is called, Then a LongNode is returned")
+        @DisplayName("Given BigInteger within long range, When tryNormalizeBigNumber is called,"
+                + " Then a LongNode is returned")
         void givenBigIntegerInRange_whenTryNormalizeBigNumber_thenLongNode() throws Exception {
             // Given
-            BigInteger input = BigInteger.valueOf(Long.MAX_VALUE);
-
+            final BigInteger input = BigInteger.valueOf(Long.MAX_VALUE);
             // When
-            Object result = invokePrivateStatic("tryNormalizeBigNumber", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeBigNumber", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(LongNode.class, result);
             assertEquals(Long.MAX_VALUE, ((JsonNode) result).longValue());
         }
 
         @Test
-        @DisplayName("Given BigInteger outside long range, When tryNormalizeBigNumber is called, Then a StringNode is returned")
+        @DisplayName("Given BigInteger outside long range, When tryNormalizeBigNumber is called,"
+                + " Then a StringNode is returned")
         void givenBigIntegerOutOfRange_whenTryNormalizeBigNumber_thenStringNode() throws Exception {
             // Given
-            BigInteger input = new BigInteger("99999999999999999999999999999999");
-
+            final BigInteger input = new BigInteger("99999999999999999999999999999999");
             // When
-            Object result = invokePrivateStatic("tryNormalizeBigNumber", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeBigNumber", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(StringNode.class, result);
             assertEquals(input.toString(), ((JsonNode) result).asString());
@@ -1423,11 +1310,9 @@ class JsonNormalizerTest {
         @DisplayName("Given BigDecimal value, When tryNormalizeBigNumber is called, Then a DecimalNode is returned")
         void givenBigDecimal_whenTryNormalizeBigNumber_thenDecimalNode() throws Exception {
             // Given
-            BigDecimal input = new BigDecimal("123.456");
-
+            final BigDecimal input = new BigDecimal("123.456");
             // When
-            Object result = invokePrivateStatic("tryNormalizeBigNumber", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeBigNumber", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(DecimalNode.class, result);
             assertEquals(input, ((JsonNode) result).decimalValue());
@@ -1437,11 +1322,9 @@ class JsonNormalizerTest {
         @DisplayName("Given non big-number type, When tryNormalizeBigNumber is called, Then null is returned")
         void givenOther_whenTryNormalizeBigNumber_thenNull() throws Exception {
             // Given
-            String input = "not-a-number";
-
+            final String input = "not-a-number";
             // When
-            Object result = invokePrivateStatic("tryNormalizeBigNumber", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeBigNumber", new Class[]{Object.class}, input);
             // Then
             assertNull(result);
         }
@@ -1455,11 +1338,9 @@ class JsonNormalizerTest {
         @DisplayName("Given LocalDate, When tryNormalizeTemporal is called, Then an ISO date StringNode is returned")
         void givenLocalDate_whenTryNormalizeTemporal_thenIsoStringNode() throws Exception {
             // Given
-            LocalDate input = LocalDate.of(2024, 2, 29);
-
+            final LocalDate input = LocalDate.of(2024, 2, 29);
             // When
-            Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(StringNode.class, result);
             assertEquals("2024-02-29", ((JsonNode) result).asString());
@@ -1469,24 +1350,21 @@ class JsonNormalizerTest {
         @DisplayName("Given non temporal type, When tryNormalizeTemporal is called, Then null is returned")
         void givenOther_whenTryNormalizeTemporal_thenNull() throws Exception {
             // Given
-            Object input = 10;
-
+            final Object input = 10;
             // When
-            Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
             // Then
             assertNull(result);
         }
 
         @Test
-        @DisplayName("Given LocalDateTime, When tryNormalizeTemporal is called, Then an ISO date StringNode is returned")
+        @DisplayName("Given LocalDateTime, When tryNormalizeTemporal is called,"
+                + " Then an ISO date StringNode is returned")
         void givenLocalDateTime_whenTryNormalizeTemporal_thenIsoStringNode() throws Exception {
             // Given
-            LocalDateTime input = LocalDateTime.of(2024, 2, 29, 14, 45, 12);
-
+            final LocalDateTime input = LocalDateTime.of(2024, 2, 29, 14, 45, 12);
             // When
-            Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(StringNode.class, result);
             assertEquals("2024-02-29T14:45:12", ((JsonNode) result).asString());
@@ -1496,41 +1374,40 @@ class JsonNormalizerTest {
         @DisplayName("Given LocalTime, When tryNormalizeTemporal is called, Then an ISO date StringNode is returned")
         void givenLocalTime_whenTryNormalizeTemporal_thenIsoStringNode() throws Exception {
             // Given
-            LocalTime input = LocalTime.of(14, 45, 12);
-
+            final LocalTime input = LocalTime.of(14, 45, 12);
             // When
-            Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(StringNode.class, result);
             assertEquals("14:45:12", ((JsonNode) result).asString());
         }
 
         @Test
-        @DisplayName("Given ZoneDateTime, When tryNormalizeTemporal is called, Then an ISO date StringNode is returned")
+        @DisplayName("Given ZoneDateTime, When tryNormalizeTemporal is called,"
+                + " Then an ISO date StringNode is returned")
         void givenZoneDateTime_whenTryNormalizeTemporal_thenIsoStringNode() throws Exception {
             // Given
-            ZonedDateTime input = ZonedDateTime.of(LocalDate.of(2025, 11, 26), LocalTime.of(15, 45), ZoneId.of("Europe/Berlin"));
-
+            final ZonedDateTime input = ZonedDateTime.of(
+                    LocalDate.of(2025, 11, 26), LocalTime.of(15, 45),
+                    ZoneId.of("Europe/Berlin"));
             // When
-            Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(StringNode.class, result);
             assertEquals("2025-11-26T15:45+01:00", ((JsonNode) result).asString());
         }
 
         @Test
-        @DisplayName("Given OffsetDateTime, When tryNormalizeTemporal is called, Then an ISO date StringNode is returned")
+        @DisplayName("Given OffsetDateTime, When tryNormalizeTemporal is called,"
+                + " Then an ISO date StringNode is returned")
         void givenOffsetDateTime_whenTryNormalizeTemporal_thenIsoStringNode() throws Exception {
             // Given
-            ZoneId zone = ZoneId.of("Europe/Berlin");
-            ZoneOffset zoneOffSet = zone.getRules().getOffset(LocalDateTime.of(2025, 11, 26, 15, 45, 36));
-            OffsetDateTime input = OffsetDateTime.of(LocalDate.of(2025, 11, 26), LocalTime.of(15, 45), zoneOffSet);
-
+            final ZoneId zone = ZoneId.of("Europe/Berlin");
+            final ZoneOffset zoneOffSet = zone.getRules().getOffset(LocalDateTime.of(2025, 11, 26, 15, 45, 36));
+            final OffsetDateTime input = OffsetDateTime.of(
+                    LocalDate.of(2025, 11, 26), LocalTime.of(15, 45), zoneOffSet);
             // When
-            Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(StringNode.class, result);
             assertEquals("2025-11-26T15:45:00+01:00", ((JsonNode) result).asString());
@@ -1540,13 +1417,19 @@ class JsonNormalizerTest {
         @DisplayName("Given Instant, When tryNormalizeTemporal is called, Then an ISO date StringNode is returned")
         void givenInstant_whenTryNormalizeTemporal_thenIsoStringNode() throws Exception {
             // Given
-            ZoneId zone = ZoneId.of("Europe/Berlin");
-            ZoneOffset zoneOffSet = zone.getRules().getOffset(LocalDateTime.of(2025, 11, 26, 15, 45, 36));
-            Instant input = LocalDateTime.of(2025, 11, 26, 15, 45, 36).toInstant(zoneOffSet);
-
+            final int testYear = 2025;
+            final int testMonth = 11;
+            final int testDay = 26;
+            final int testHour = 15;
+            final int testMinute = 45;
+            final int testSecond = 36;
+            final ZoneId zone = ZoneId.of("Europe/Berlin");
+            final LocalDateTime localDateTime = LocalDateTime.of(
+                testYear, testMonth, testDay, testHour, testMinute, testSecond);
+            final ZoneOffset zoneOffSet = zone.getRules().getOffset(localDateTime);
+            final Instant input = localDateTime.toInstant(zoneOffSet);
             // When
-            Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(StringNode.class, result);
             assertEquals("2025-11-26T14:45:36Z", ((JsonNode) result).asString());
@@ -1556,31 +1439,33 @@ class JsonNormalizerTest {
         @DisplayName("Given Calendar, When tryNormalizeTemporal is called, Then an ISO date StringNode is returned")
         void givenCalendar_whenTryNormalizeTemporal_thenIsoStringNode() throws Exception {
             // Given
-            Calendar input = Calendar.getInstance();
-            input.set(2017, Calendar.FEBRUARY, 16, 20, 22, 28);
+            final int calYear = 2017;
+            final int calDay = 16;
+            final int calHour = 20;
+            final int calMinute = 22;
+            final int calSecond = 28;
+            final Calendar input = Calendar.getInstance();
+            input.set(calYear, Calendar.FEBRUARY, calDay, calHour, calMinute, calSecond);
             input.set(Calendar.MILLISECOND, 0);
-
             // When
-            Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(StringNode.class, result);
-            String expected = input.toInstant().toString();
+            final String expected = input.toInstant().toString();
             assertEquals(expected, ((JsonNode) result).asString());
         }
 
         @Test
-        @DisplayName("Given GregorianCalendar, When tryNormalizeTemporal is called, Then an ISO date StringNode is returned")
+        @DisplayName("Given GregorianCalendar, When tryNormalizeTemporal is called,"
+                + " Then an ISO date StringNode is returned")
         void givenGregorianCalendar_whenTryNormalizeTemporal_thenIsoStringNode() throws Exception {
             // Given
-            GregorianCalendar input = new GregorianCalendar(2017, Calendar.FEBRUARY, 16, 20, 22, 28);
-
+            final GregorianCalendar input = new GregorianCalendar(2017, Calendar.FEBRUARY, 16, 20, 22, 28);
             // When
-            Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(StringNode.class, result);
-            String expected = input.toInstant().toString();
+            final String expected = input.toInstant().toString();
             assertEquals(expected, ((JsonNode) result).asString());
         }
 
@@ -1588,11 +1473,9 @@ class JsonNormalizerTest {
         @DisplayName("Given Date, When tryNormalizeTemporal is called, Then an ISO date StringNode is returned")
         void givenDate_whenTryNormalizeTemporal_thenIsoStringNode() throws Exception {
             // Given
-            Date input = new Date(1764362004);
-
+            final Date input = new Date(1764362004);
             // When
-            Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeTemporal", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(StringNode.class, result);
             assertEquals("1970-01-21", ((JsonNode) result).asString());
@@ -1604,59 +1487,55 @@ class JsonNormalizerTest {
     class TryConvertToLong {
 
         @Test
-        @DisplayName("Given whole double within long range, When tryConvertToLong is called, Then Optional with LongNode is returned")
+        @DisplayName("Given whole double within long range, When tryConvertToLong is called,"
+                + " Then Optional with LongNode is returned")
         void givenWholeDoubleInRange_whenTryConvertToLong_thenOptionalLongNode() throws Exception {
             // Given
-            Double input = 1_000_000d;
-
+            final double million = 1_000_000d;
+            final Double input = million;
             // When
-            Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
-
+            final Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
             // Then
             assertInstanceOf(Optional.class, result);
-            Optional<?> opt = (Optional<?>) result;
+            final Optional<?> opt = (Optional<?>) result;
             assertTrue(opt.isPresent());
             assertInstanceOf(LongNode.class, opt.get());
-            assertEquals(1_000_000L, ((JsonNode) opt.get()).longValue());
+            assertEquals(CONVERTIBLE_LONG_VALUE, ((JsonNode) opt.get()).longValue());
         }
 
         @Test
         @DisplayName("Given fractional double, When tryConvertToLong is called, Then Optional.empty is returned")
         void givenFractionalDouble_whenTryConvertToLong_thenEmpty() throws Exception {
             // Given
-            Double input = 3.14;
-
+            final Double input = 3.14;
             // When
-            Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
-
+            final Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
             // Then
             assertInstanceOf(Optional.class, result);
             assertTrue(((Optional<?>) result).isEmpty());
         }
 
         @Test
-        @DisplayName("Given whole double outside long range (max), When tryConvertToLong is called, Then Optional.empty is returned")
+        @DisplayName("Given whole double outside long range (max),"
+                + " When tryConvertToLong is called, Then Optional.empty is returned")
         void givenWholeDoubleOutOfRangeMax_whenTryConvertToLong_thenEmpty() throws Exception {
             // Given
-            Double input = (double) Long.MAX_VALUE + 1000d;
-
+            final Double input = (double) Long.MAX_VALUE + 1000d;
             // When
-            Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
-
+            final Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
             // Then
             assertInstanceOf(Optional.class, result);
             assertFalse(((Optional<?>) result).isEmpty());
         }
 
         @Test
-        @DisplayName("Given whole double outside long range (min), When tryConvertToLong is called, Then Optional.empty is returned")
+        @DisplayName("Given whole double outside long range (min),"
+                + " When tryConvertToLong is called, Then Optional.empty is returned")
         void givenWholeDoubleOutOfRangeMin_whenTryConvertToLong_thenEmpty() throws Exception {
             // Given
-            Double input = (double) Long.MIN_VALUE - 1000d;
-
+            final Double input = (double) Long.MIN_VALUE - 1000d;
             // When
-            Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
-
+            final Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
             // Then
             assertInstanceOf(Optional.class, result);
             assertFalse(((Optional<?>) result).isEmpty());
@@ -1666,11 +1545,9 @@ class JsonNormalizerTest {
         @DisplayName("Given NonInteger, When tryConvertToLong is called, Then Optional.empty is returned")
         void testNonIntegerValueReturnsEmpty_whenTryConvertToLong() throws Exception {
             // Given
-            Double input = (double) 3.14;
-
+            final Double input = (double) 3.14;
             // When
-            Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
-
+            final Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
             // Then
             assertInstanceOf(Optional.class, result);
             assertTrue(((Optional<?>) result).isEmpty());
@@ -1680,11 +1557,9 @@ class JsonNormalizerTest {
         @DisplayName("Given Integer, When tryConvertToLong is called, Then Optional is returned")
         void testIntegerValueReturnsOptional_whenTryConvertToLong() throws Exception {
             // Given
-            Double input = (double) 10.0;
-
+            final Double input = (double) 10.0;
             // When
-            Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
-
+            final Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
             // Then
             assertInstanceOf(Optional.class, result);
             assertFalse(((Optional<?>) result).isEmpty());
@@ -1694,11 +1569,9 @@ class JsonNormalizerTest {
         @DisplayName("Given Long Max Value, When tryConvertToLong is called, Then Optional is returned")
         void testLongMaxValueReturnsOptional_whenTryConvertToLong() throws Exception {
             // Given
-            Double input = (double) Long.MAX_VALUE + 1;
-
+            final Double input = (double) Long.MAX_VALUE + 1;
             // When
-            Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
-
+            final Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
             // Then
             assertInstanceOf(Optional.class, result);
             assertFalse(((Optional<?>) result).isEmpty());
@@ -1708,11 +1581,9 @@ class JsonNormalizerTest {
         @DisplayName("Given Long Min Value, When tryConvertToLong is called, Then Optional is returned")
         void testLongMinValueReturnsOptional_whenTryConvertToLong() throws Exception {
             // Given
-            Double input = (double) Long.MIN_VALUE - 1;
-
+            final Double input = (double) Long.MIN_VALUE - 1;
             // When
-            Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
-
+            final Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
             // Then
             assertInstanceOf(Optional.class, result);
             assertFalse(((Optional<?>) result).isEmpty());
@@ -1722,11 +1593,9 @@ class JsonNormalizerTest {
         @DisplayName("Given Long Min Value, When tryConvertToLong is called, Then Optional is returned")
         void testLongNormalizeBigInteger() throws Exception {
             // Given
-            BigInteger input = BigInteger.valueOf(Long.MIN_VALUE - 1);
-
+            final BigInteger input = BigInteger.valueOf(Long.MIN_VALUE - 1);
             // When
-            Object result = invokePrivateStatic("normalizeBigInteger", new Class[]{BigInteger.class}, input);
-
+            final Object result = invokePrivateStatic("normalizeBigInteger", new Class[]{BigInteger.class}, input);
             // Then
             assertInstanceOf(JsonNode.class, result);
             assertFalse(((JsonNode) result).isBigDecimal());
@@ -1736,11 +1605,9 @@ class JsonNormalizerTest {
         @DisplayName("Given negative NonInteger, When tryConvertToLong is called, Then Optional.empty is returned")
         void testNegativeNonIntegerValueReturnsEmptyWhenTryConvertToLong() throws Exception {
             // Given
-            Double input = (double) -5.7;
-
+            final Double input = (double) -5.7;
             // When
-            Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
-
+            final Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
             // Then
             assertInstanceOf(Optional.class, result);
             assertTrue(((Optional<?>) result).isEmpty());
@@ -1750,11 +1617,9 @@ class JsonNormalizerTest {
         @DisplayName("Given negative Integer, When tryConvertToLong is called, Then Optional is returned")
         void testNegativeIntegerValueReturnsOptionalWhenTryConvertToLong() throws Exception {
             // Given
-            Double input = (double) -8.0;
-
+            final Double input = (double) -8.0;
             // When
-            Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
-
+            final Object result = invokePrivateStatic("tryConvertToLong", new Class[]{Double.class}, input);
             // Then
             assertInstanceOf(Optional.class, result);
             assertFalse(((Optional<?>) result).isEmpty());
@@ -1769,15 +1634,13 @@ class JsonNormalizerTest {
         @DisplayName("Given List, When tryNormalizeCollection is called, Then ArrayNode is returned")
         void givenList_whenTryNormalizeCollection_thenArrayNode() throws Exception {
             // Given
-            List<Object> input = java.util.Arrays.asList(1, "two", true);
-
+            final List<Object> input = java.util.Arrays.asList(1, "two", true);
             // When
-            Object result = invokePrivateStatic("tryNormalizeCollection", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeCollection", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(ArrayNode.class, result);
-            ArrayNode array = (ArrayNode) result;
-            assertEquals(3, array.size());
+            final ArrayNode array = (ArrayNode) result;
+            assertEquals(TEST_ARRAY_SIZE, array.size());
             assertEquals(1, array.get(0).asInt());
             assertEquals("two", array.get(1).asString());
             assertTrue(array.get(2).asBoolean());
@@ -1787,16 +1650,14 @@ class JsonNormalizerTest {
         @DisplayName("Given Map, When tryNormalizeCollection is called, Then ObjectNode is returned")
         void givenMap_whenTryNormalizeCollection_thenObjectNode() throws Exception {
             // Given
-            Map<String, Object> input = new LinkedHashMap<>();
+            final Map<String, Object> input = new LinkedHashMap<>();
             input.put("a", 1);
             input.put("b", "two");
-
             // When
-            Object result = invokePrivateStatic("tryNormalizeCollection", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeCollection", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(ObjectNode.class, result);
-            ObjectNode object = (ObjectNode) result;
+            final ObjectNode object = (ObjectNode) result;
             assertEquals(1, object.get("a").asInt());
             assertEquals("two", object.get("b").asString());
         }
@@ -1805,11 +1666,9 @@ class JsonNormalizerTest {
         @DisplayName("Given non-collection, When tryNormalizeCollection is called, Then null is returned")
         void givenOther_whenTryNormalizeCollection_thenNull() throws Exception {
             // Given
-            Object input = 10.0;
-
+            final Object input = 10.0;
             // When
-            Object result = invokePrivateStatic("tryNormalizeCollection", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizeCollection", new Class[]{Object.class}, input);
             // Then
             assertNull(result);
         }
@@ -1820,33 +1679,31 @@ class JsonNormalizerTest {
     class NormalizeCollection {
 
         @Test
-        @DisplayName("Given mixed-type list, When normalizeCollection is called, Then items are normalized in an ArrayNode")
+        @DisplayName("Given mixed-type list, When normalizeCollection is called,"
+                + " Then items are normalized in an ArrayNode")
         void givenMixedList_whenNormalizeCollection_thenArrayNode() throws Exception {
             // Given
-            List<Object> input = java.util.Arrays.asList(1, 2L, 3.0, "four");
-
+            final double threePointZero = 3.0;
+            final List<Object> input = java.util.Arrays.asList(1, 2L, threePointZero, "four");
             // When
-            Object result = invokePrivateStatic("normalizeCollection", new Class[]{Collection.class}, input);
-
+            final Object result = invokePrivateStatic("normalizeCollection", new Class[]{Collection.class}, input);
             // Then
             assertInstanceOf(ArrayNode.class, result);
-            ArrayNode array = (ArrayNode) result;
-            assertEquals(4, array.size());
+            final ArrayNode array = (ArrayNode) result;
+            assertEquals(EXPECTED_SIZE_FOUR, array.size());
             assertEquals(1, array.get(0).asInt());
             assertEquals(2L, array.get(1).asLong());
-            assertEquals(3.0, array.get(2).asDouble());
-            assertEquals("four", array.get(3).asString());
+            assertEquals(threePointZero, array.get(2).asDouble());
+            assertEquals("four", array.get(EXPECTED_SIZE_FOUR - 1).asString());
         }
 
         @Test
         @DisplayName("Given empty list, When normalizeCollection is called, Then an empty ArrayNode is returned")
         void givenEmptyList_whenNormalizeCollection_thenEmptyArrayNode() throws Exception {
             // Given
-            List<Object> input = java.util.Collections.emptyList();
-
+            final List<Object> input = java.util.Collections.emptyList();
             // When
-            Object result = invokePrivateStatic("normalizeCollection", new Class[]{Collection.class}, input);
-
+            final Object result = invokePrivateStatic("normalizeCollection", new Class[]{Collection.class}, input);
             // Then
             assertInstanceOf(ArrayNode.class, result);
             assertEquals(0, ((ArrayNode) result).size());
@@ -1861,11 +1718,9 @@ class JsonNormalizerTest {
         @DisplayName("Given Object, When normalizeArray is called, Then ArrayNode get return")
         void NormalizeArray_thenNullNode() throws Exception {
             // Given
-            Object input = new Object();
-
+            final Object input = new Object();
             // When
-            Object result = invokePrivateStatic("normalizeArray", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("normalizeArray", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(ArrayNode.class, result);
         }
@@ -1884,11 +1739,9 @@ class JsonNormalizerTest {
         @DisplayName("Given Object, When tryNormalizePojo is called, Then ArrayNode get return")
         void tryNormalizePojo_thenNullNode() throws Exception {
             // Given
-            Object input = new Object();
-
+            final Object input = new Object();
             // When
-            Object result = invokePrivateStatic("tryNormalizePojo", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizePojo", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(ObjectNode.class, result);
         }
@@ -1896,11 +1749,9 @@ class JsonNormalizerTest {
         @Test
         void returnsNullNodeWhenJacksonExceptionOccurs() throws Exception {
             // Given
-            Object input = new ExplodingPojo();
-
+            final Object input = new ExplodingPojo();
             // When
-            Object result = invokePrivateStatic("tryNormalizePojo", new Class[]{Object.class}, input);
-
+            final Object result = invokePrivateStatic("tryNormalizePojo", new Class[]{Object.class}, input);
             // Then
             assertInstanceOf(NullNode.class, result);
         }
@@ -1908,17 +1759,14 @@ class JsonNormalizerTest {
 
     @Nested
     @DisplayName("parse")
-    class parse {
+    class Parse {
         @Test
         void parseNullAsString() {
             // Given
-            String input = null;
-
+            final String input = null;
             // When
             final IllegalArgumentException thrown =
                 assertThrows(IllegalArgumentException.class, () -> JsonNormalizer.parse(input));
-
-
             // Then
             assertEquals("JSON string cannot be null", thrown.getMessage());
         }
@@ -1927,13 +1775,10 @@ class JsonNormalizerTest {
         @Test
         void parseEmptyString() {
             // Given
-            String input = " ";
-
+            final String input = " ";
             // When
             final IllegalArgumentException thrown =
                 assertThrows(IllegalArgumentException.class, () -> JsonNormalizer.parse(input));
-
-
             // Then
             assertEquals("JSON string cannot be blank", thrown.getMessage());
         }
@@ -1947,7 +1792,8 @@ class JsonNormalizerTest {
         @Test
         @DisplayName("MAX_ALLOWED_NESTING_DEPTH constant should be 256")
         void constantShouldBe256() {
-            assertEquals(256, JsonNormalizer.MAX_ALLOWED_NESTING_DEPTH);
+            final int expectedDepth = 256;
+            assertEquals(expectedDepth, JsonNormalizer.MAX_ALLOWED_NESTING_DEPTH);
         }
 
         @Test
@@ -1956,15 +1802,15 @@ class JsonNormalizerTest {
             // Given - create deeply nested structure that exceeds MAX_DEPTH
             // We'll use reflection to test this by creating a custom scenario
             // For practical testing, we verify the constant exists and logic works
-            Map<String, Object> deepMap = new HashMap<>();
+            final Map<String, Object> deepMap = new HashMap<>();
             Map<String, Object> current = deepMap;
-            for (int i = 0; i < 600; i++) {
-                Map<String, Object> next = new HashMap<>();
+            final int testDepth = 600;
+            for (int i = 0; i < testDepth; i++) {
+                final Map<String, Object> next = new HashMap<>();
                 next.put("value", "test");
                 current.put("nested", next);
                 current = next;
             }
-
             // When/Then - should throw due to depth limit
             assertThrows(IllegalArgumentException.class, () -> JsonNormalizer.normalize(deepMap));
         }
@@ -1972,15 +1818,16 @@ class JsonNormalizerTest {
         @Test
         @DisplayName("Should include MAX_DEPTH in exception message")
         void exceptionMessageIncludesMaxDepth() {
-            Map<String, Object> deepMap = new HashMap<>();
+            final Map<String, Object> deepMap = new HashMap<>();
             Map<String, Object> current = deepMap;
-            for (int i = 0; i < 600; i++) {
-                Map<String, Object> next = new HashMap<>();
+            final int testDepth = 600;
+            for (int i = 0; i < testDepth; i++) {
+                final Map<String, Object> next = new HashMap<>();
                 current.put("nested", next);
                 current = next;
             }
 
-            IllegalArgumentException thrown = assertThrows(
+            final IllegalArgumentException thrown = assertThrows(
                 IllegalArgumentException.class,
                 () -> JsonNormalizer.normalize(deepMap)
             );
@@ -1998,13 +1845,12 @@ class JsonNormalizerTest {
         @DisplayName("Should detect circular reference in Map")
         void detectsCircularMapReference() {
             // Given - create circular reference in Map
-            Map<String, Object> map1 = new HashMap<>();
-            Map<String, Object> map2 = new HashMap<>();
+            final Map<String, Object> map1 = new HashMap<>();
+            final Map<String, Object> map2 = new HashMap<>();
             map1.put("key", map2);
             map2.put("key", map1); // circular!
-
             // When/Then
-            IllegalArgumentException thrown = assertThrows(
+            final IllegalArgumentException thrown = assertThrows(
                 IllegalArgumentException.class,
                 () -> JsonNormalizer.normalize(map1)
             );
@@ -2016,13 +1862,12 @@ class JsonNormalizerTest {
         @DisplayName("Should detect circular reference in List")
         void detectsCircularListReference() {
             // Given - create circular reference in List
-            List<Object> list1 = new java.util.ArrayList<>();
-            List<Object> list2 = new java.util.ArrayList<>();
+            final List<Object> list1 = new java.util.ArrayList<>();
+            final List<Object> list2 = new java.util.ArrayList<>();
             list1.add(list2);
             list2.add(list1); // circular!
-
             // When/Then
-            IllegalArgumentException thrown = assertThrows(
+            final IllegalArgumentException thrown = assertThrows(
                 IllegalArgumentException.class,
                 () -> JsonNormalizer.normalize(list1)
             );
@@ -2034,11 +1879,10 @@ class JsonNormalizerTest {
         @DisplayName("Should detect self-referential object")
         void detectsSelfReference() {
             // Given - self-referential object
-            Map<String, Object> map = new HashMap<>();
+            final Map<String, Object> map = new HashMap<>();
             map.put("self", map);
-
             // When/Then
-            IllegalArgumentException thrown = assertThrows(
+            final IllegalArgumentException thrown = assertThrows(
                 IllegalArgumentException.class,
                 () -> JsonNormalizer.normalize(map)
             );
@@ -2055,25 +1899,22 @@ class JsonNormalizerTest {
         @DisplayName("Stream should be materialized to List")
         void streamMaterializedToList() {
             // Given
-            Stream<String> stream = Stream.of("a", "b", "c");
-
+            final int streamSize = 3;
+            final Stream<String> stream = Stream.of("a", "b", "c");
             // When
-            JsonNode result = JsonNormalizer.normalize(stream);
-
+            final JsonNode result = JsonNormalizer.normalize(stream);
             // Then
             assertInstanceOf(ArrayNode.class, result);
-            assertEquals(3, result.size());
+            assertEquals(streamSize, result.size());
         }
 
         @Test
         @DisplayName("Empty stream should return empty array")
         void emptyStreamReturnsEmptyArray() {
             // Given
-            Stream<String> stream = Stream.empty();
-
+            final Stream<String> stream = Stream.empty();
             // When
-            JsonNode result = JsonNormalizer.normalize(stream);
-
+            final JsonNode result = JsonNormalizer.normalize(stream);
             // Then
             assertInstanceOf(ArrayNode.class, result);
             assertEquals(0, result.size());

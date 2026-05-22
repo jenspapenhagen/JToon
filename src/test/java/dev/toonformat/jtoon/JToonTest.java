@@ -1,10 +1,7 @@
 package dev.toonformat.jtoon;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-
+import static dev.toonformat.jtoon.TestPojos.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
@@ -15,9 +12,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import static dev.toonformat.jtoon.TestPojos.*;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * JUnit 5 test class for JToon encoder, converted from TypeScript vitest tests.
@@ -25,9 +23,14 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag("unit")
 class JToonTest {
 
+    private static final double EXPECTED_ENCODE_PI = 3.14;
+    private static final double NEG_SEVEN = -7.0;
+    private static final double EXPECTED_ENCODE_SMALL = 0.000001;
+    private static final long EXPECTED_ENCODE_LARGE_LONG = 9007199254740991L;
+
     // Helper to create a LinkedHashMap for objects, preserving insertion order
-    private static Map<String, Object> obj(Object... kvs) {
-        Map<String, Object> map = new LinkedHashMap<>();
+    private static Map<String, Object> obj(final Object... kvs) {
+        final Map<String, Object> map = new LinkedHashMap<>();
         for (int i = 0; i < kvs.length; i += 2) {
             map.put((String) kvs[i], kvs[i + 1]);
         }
@@ -36,17 +39,17 @@ class JToonTest {
 
     // Helper for simple list creation
     @SafeVarargs
-    private static <T> List<T> list(T... values) {
+    private static <T> List<T> list(final T... values) {
         return List.of(values);
     }
 
     // Helper for encode with default options
-    private static String encode(Object input) {
+    private static String encode(final Object input) {
         return JToon.encode(input);
     }
 
     // Helper for encode with custom options
-    private static String encode(Object input, EncodeOptions options) {
+    private static String encode(final Object input, final EncodeOptions options) {
         return JToon.encode(input, options);
     }
 
@@ -96,7 +99,7 @@ class JToonTest {
         @DisplayName("escapes non-printable control chars as unicode")
         void escapesUnicodeControlChars() {
             // Then
-            assertEquals("val: \"a\\u0004b\"", encode(obj("val", "a\u0004b")));
+            assertEquals("val: \"a\\u0004b\"", encode(obj("val", "a\004b")));
         }
 
         @Test
@@ -123,9 +126,11 @@ class JToonTest {
         @DisplayName("encodes numbers")
         void encodesNumbers() {
             // Then
-            assertEquals("42", encode(42));
-            assertEquals("3.14", encode(3.14));
-            assertEquals("-7", encode(-7));
+            final int encodeIntValue = 42;
+            assertEquals("42", encode(encodeIntValue));
+            assertEquals("3.14", encode(EXPECTED_ENCODE_PI));
+            final int negSeven = -7;
+            assertEquals("-7", encode(negSeven));
             assertEquals("0", encode(0));
         }
 
@@ -133,12 +138,16 @@ class JToonTest {
         @DisplayName("handles special numeric values")
         void handlesSpecialNumericValues() {
             // Then
-            assertEquals("0", encode(-0.0));
-            assertEquals("1000000", encode(1e6));
-            assertEquals("0.000001", encode(1e-6));
-            assertEquals("100000000000000000000", encode(1e20));
-            assertEquals("0.000001", encode(0.000001));
-            assertEquals("9007199254740991", encode(9007199254740991L));
+            final double negZero = -0.0;
+            assertEquals("0", encode(negZero));
+            final double million = 1e6;
+            final double millionth = 1e-6;
+            final double largeExp = 1e20;
+            assertEquals("1000000", encode(million));
+            assertEquals("0.000001", encode(millionth));
+            assertEquals("100000000000000000000", encode(largeExp));
+            assertEquals("0.000001", encode(EXPECTED_ENCODE_SMALL));
+            assertEquals("9007199254740991", encode(EXPECTED_ENCODE_LARGE_LONG));
         }
 
         @Test
@@ -165,7 +174,7 @@ class JToonTest {
         @DisplayName("preserves key order in objects")
         void preservesKeyOrder() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "id", 123,
                 "name", "Ada",
                 "active", true);
@@ -178,7 +187,7 @@ class JToonTest {
         @DisplayName("encodes null values in objects")
         void encodesNullValues() {
             // Given
-            Map<String, Object> obj = obj("id", 123, "value", null);
+            final Map<String, Object> obj = obj("id", 123, "value", null);
 
             // Then
             assertEquals("id: 123\nvalue: null", encode(obj));
@@ -227,9 +236,11 @@ class JToonTest {
         @DisplayName("quotes keys with special characters")
         void quotesKeysWithSpecialChars() {
             // Then
-            assertEquals("\"order:id\": 7", encode(obj("order:id", 7)));
-            assertEquals("\"[index]\": 5", encode(obj("[index]", 5)));
-            assertEquals("\"{key}\": 5", encode(obj("{key}", 5)));
+            final int keyValue7 = 7;
+            final int keyValue5 = 5;
+            assertEquals("\"order:id\": 7", encode(obj("order:id", keyValue7)));
+            assertEquals("\"[index]\": 5", encode(obj("[index]", keyValue5)));
+            assertEquals("\"{key}\": 5", encode(obj("{key}", keyValue5)));
             assertEquals("\"a,b\": 1", encode(obj("a,b", 1)));
         }
 
@@ -246,7 +257,7 @@ class JToonTest {
         @DisplayName("quotes numeric keys")
         void quotesNumericKeys() {
             // Given
-            Map<String, Object> map = new LinkedHashMap<>();
+            final Map<String, Object> map = new LinkedHashMap<>();
             map.put("123", "x");
 
             // Then
@@ -284,7 +295,7 @@ class JToonTest {
         @DisplayName("encodes deeply nested objects")
         void encodesDeeplyNested() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "a", obj(
                     "b", obj(
                         "c", "deep")));
@@ -309,7 +320,7 @@ class JToonTest {
         @DisplayName("encodes string arrays inline")
         void encodesStringArrays() {
             // Given
-            Map<String, Object> obj = obj("tags", list("reading", "gaming"));
+            final Map<String, Object> obj = obj("tags", list("reading", "gaming"));
 
             // Then
             assertEquals("tags[2]: reading,gaming", encode(obj));
@@ -319,7 +330,7 @@ class JToonTest {
         @DisplayName("encodes number arrays inline")
         void encodesNumberArrays() {
             // Given
-            Map<String, Object> obj = obj("nums", list(1, 2, 3));
+            final Map<String, Object> obj = obj("nums", list(1, 2, 3));
 
             // Then
             assertEquals("nums[3]: 1,2,3", encode(obj));
@@ -329,7 +340,7 @@ class JToonTest {
         @DisplayName("encodes mixed primitive arrays inline")
         void encodesMixedPrimitiveArrays() {
             // Given
-            Map<String, Object> obj = obj("data", list("x", "y", true, 10));
+            final Map<String, Object> obj = obj("data", list("x", "y", true, 10));
 
             // Then
             assertEquals("data[4]: x,y,true,10", encode(obj));
@@ -339,7 +350,7 @@ class JToonTest {
         @DisplayName("encodes empty arrays")
         void encodesEmptyArrays() {
             // Given
-            Map<String, Object> obj = obj("items", List.of());
+            final Map<String, Object> obj = obj("items", List.of());
 
             // Then
             assertEquals("items: []", encode(obj));
@@ -349,7 +360,7 @@ class JToonTest {
         @DisplayName("handles empty string in arrays")
         void handlesEmptyStringInArrays() {
             // Given
-            Map<String, Object> obj = obj("items", list(""));
+            final Map<String, Object> obj = obj("items", list(""));
 
             // Then
             assertEquals("items[1]: \"\"", encode(obj));
@@ -359,7 +370,7 @@ class JToonTest {
         @DisplayName("handles empty string in arrays")
         void handlesEmptyStringInArrays2() {
             // Given
-            Map<String, Object> obj2 = obj("items", list("a", "", "b"));
+            final Map<String, Object> obj2 = obj("items", list("a", "", "b"));
 
             // Then
             assertEquals("items[3]: a,\"\",b", encode(obj2));
@@ -369,7 +380,7 @@ class JToonTest {
         @DisplayName("handles whitespace-only strings in arrays")
         void handlesWhitespaceOnlyStrings() {
             // Given
-            Map<String, Object> obj = obj("items", list(" ", "  "));
+            final Map<String, Object> obj = obj("items", list(" ", "  "));
 
             // Then
             assertEquals("items[2]: \" \",\"  \"", encode(obj));
@@ -379,7 +390,7 @@ class JToonTest {
         @DisplayName("quotes array strings with special characters")
         void quotesArrayStringsWithSpecialChars() {
             // Given
-            Map<String, Object> obj = obj("items", list("a", "b,c", "d:e"));
+            final Map<String, Object> obj = obj("items", list("a", "b,c", "d:e"));
 
             // Then
             assertEquals("items[3]: a,\"b,c\",\"d:e\"", encode(obj));
@@ -389,7 +400,7 @@ class JToonTest {
         @DisplayName("quotes strings that look like booleans/numbers in arrays")
         void quotesAmbiguousInArrays() {
             // Given
-            Map<String, Object> obj = obj("items", list("x", "true", "42", "-3.14"));
+            final Map<String, Object> obj = obj("items", list("x", "true", "42", "-3.14"));
 
             // Then
             assertEquals("items[4]: x,\"true\",\"42\",\"-3.14\"", encode(obj));
@@ -399,7 +410,7 @@ class JToonTest {
         @DisplayName("quotes strings with structural meanings in arrays")
         void quotesStructuralInArrays() {
             // Given
-            Map<String, Object> obj = obj("items", list("[5]", "- item", "{key}"));
+            final Map<String, Object> obj = obj("items", list("[5]", "- item", "{key}"));
 
             // Then
             assertEquals("items[3]: \"[5]\",\"- item\",\"{key}\"", encode(obj));
@@ -414,7 +425,7 @@ class JToonTest {
         @DisplayName("encodes arrays of similar objects in tabular format")
         void encodesTabularFormat() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "items", list(
                     obj("sku", "A1", "qty", 2, "price", 9.99),
                     obj("sku", "B2", "qty", 1, "price", 14.5)));
@@ -427,7 +438,7 @@ class JToonTest {
         @DisplayName("handles null values in tabular format")
         void handlesNullInTabular() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "items", list(
                     obj("id", 1, "value", null),
                     obj("id", 2, "value", "test")));
@@ -440,7 +451,7 @@ class JToonTest {
         @DisplayName("quotes strings containing delimiters in tabular rows")
         void quotesDelimitersInTabular() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "items", list(
                     obj("sku", "A,1", "desc", "cool", "qty", 2),
                     obj("sku", "B2", "desc", "wip: test", "qty", 1)));
@@ -453,7 +464,7 @@ class JToonTest {
         @DisplayName("quotes ambiguous strings in tabular rows")
         void quotesAmbiguousInTabular() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "items", list(
                     obj("id", 1, "status", "true"),
                     obj("id", 2, "status", "false")));
@@ -466,7 +477,7 @@ class JToonTest {
         @DisplayName("handles tabular arrays with keys needing quotes")
         void handlesQuotedKeysInTabular() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "items", list(
                     obj("order:id", 1, "full name", "Ada"),
                     obj("order:id", 2, "full name", "Bob")));
@@ -479,7 +490,7 @@ class JToonTest {
         @DisplayName("uses list format for objects with different fields")
         void usesListForDifferentFields() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "items", list(
                     obj("id", 1, "name", "First"),
                     obj("id", 2, "name", "Second", "extra", true)));
@@ -500,7 +511,7 @@ class JToonTest {
         @DisplayName("uses list format for objects with nested values")
         void usesListForNestedValues() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "items", list(
                     obj("id", 1, "nested", obj("x", 1))));
 
@@ -518,7 +529,7 @@ class JToonTest {
         @DisplayName("preserves field order in list items")
         void preservesFieldOrderInListItems() {
             // Given
-            Map<String, Object> obj = obj("items", list(obj("nums", list(1, 2, 3), "name", "test")));
+            final Map<String, Object> obj = obj("items", list(obj("nums", list(1, 2, 3), "name", "test")));
 
             // Then
             assertEquals(
@@ -533,7 +544,7 @@ class JToonTest {
         @DisplayName("preserves field order when primitive appears first")
         void preservesFieldOrderPrimitiveFirst() {
             // Given
-            Map<String, Object> obj = obj("items", list(obj("name", "test", "nums", list(1, 2, 3))));
+            final Map<String, Object> obj = obj("items", list(obj("name", "test", "nums", list(1, 2, 3))));
 
             // Then
             assertEquals(
@@ -548,7 +559,7 @@ class JToonTest {
         @DisplayName("uses list format for objects containing arrays of arrays")
         void usesListForArrayOfArrays() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "items", list(
                     obj("matrix", list(list(1, 2), list(3, 4)), "name", "grid")));
 
@@ -567,7 +578,7 @@ class JToonTest {
         @DisplayName("uses tabular format for nested uniform object arrays")
         void usesTabularForNestedUniformArrays() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "items", list(
                     obj("users", list(obj("id", 1, "name", "Ada"), obj("id", 2, "name", "Bob")), "status",
                         "active")));
@@ -587,7 +598,7 @@ class JToonTest {
         @DisplayName("uses list format for nested object arrays with mismatched keys")
         void usesListForMismatchedKeys() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "items", list(
                     obj("users", list(obj("id", 1, "name", "Ada"), obj("id", 2)), "status", "active")));
 
@@ -607,7 +618,7 @@ class JToonTest {
         @DisplayName("uses list format for objects with multiple array fields")
         void usesListForMultipleArrays() {
             // Given
-            Map<String, Object> obj = obj("items",
+            final Map<String, Object> obj = obj("items",
                 list(obj("nums", list(1, 2), "tags", list("a", "b"), "name", "test")));
 
             // Then
@@ -624,7 +635,7 @@ class JToonTest {
         @DisplayName("uses list format for objects with only array fields")
         void usesListForOnlyArrayFields() {
             // Given
-            Map<String, Object> obj = obj("items", list(obj("nums", list(1, 2, 3), "tags", list("a", "b"))));
+            final Map<String, Object> obj = obj("items", list(obj("nums", list(1, 2, 3), "tags", list("a", "b"))));
 
             // Then
             assertEquals(
@@ -639,7 +650,7 @@ class JToonTest {
         @DisplayName("handles objects with empty arrays in list format")
         void handlesEmptyArraysInList() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "items", list(
                     obj("name", "test", "data", List.of())));
 
@@ -656,7 +667,8 @@ class JToonTest {
         @DisplayName("places first field of nested tabular arrays on hyphen line")
         void placesTabularOnHyphenLine() {
             // Given
-            Map<String, Object> obj = obj("items", list(obj("users", list(obj("id", 1), obj("id", 2)), "note", "x")));
+            final Map<String, Object> obj = obj("items", list(
+                    obj("users", list(obj("id", 1), obj("id", 2)), "note", "x")));
 
             // Then
             assertEquals(
@@ -673,7 +685,7 @@ class JToonTest {
         @DisplayName("places empty arrays on hyphen line when first")
         void placesEmptyArrayOnHyphenLine() {
             // Given
-            Map<String, Object> obj = obj("items", list(obj("data", List.of(), "name", "x")));
+            final Map<String, Object> obj = obj("items", list(obj("data", List.of(), "name", "x")));
 
             // Then
             assertEquals(
@@ -688,7 +700,7 @@ class JToonTest {
         @DisplayName("uses field order from first object for tabular headers")
         void usesFirstObjectFieldOrder() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "items", list(
                     obj("a", 1, "b", 2, "c", 3),
                     obj("c", 30, "b", 20, "a", 10)));
@@ -701,7 +713,7 @@ class JToonTest {
         @DisplayName("uses list format for one object with nested column")
         void usesListForNestedColumn() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "items", list(
                     obj("id", 1, "data", "string"),
                     obj("id", 2, "data", obj("nested", true))));
@@ -727,7 +739,7 @@ class JToonTest {
         @DisplayName("encodes nested arrays of primitives")
         void encodesNestedArrays() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "pairs", list(list("a", "b"), list("c", "d")));
 
             // Then
@@ -738,7 +750,7 @@ class JToonTest {
         @DisplayName("quotes strings containing delimiters in nested arrays")
         void quotesDelimitersInNested() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "pairs", list(list("a", "b"), list("c,d", "e:f", "true")));
 
             // Then
@@ -749,7 +761,7 @@ class JToonTest {
         @DisplayName("handles empty inner arrays")
         void handlesEmptyInnerArrays() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "pairs", list(List.of(), List.of()));
 
             // Then
@@ -760,7 +772,7 @@ class JToonTest {
         @DisplayName("handles mixed-length inner arrays")
         void handlesMixedLengthArrays() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "pairs", list(list(1), list(2, 3)));
 
             // Then
@@ -776,7 +788,7 @@ class JToonTest {
         @DisplayName("encodes arrays of primitives at root level")
         void encodesPrimitivesAtRoot() {
             // Given
-            List<Object> arr = list("x", "y", "true", true, 10);
+            final List<Object> arr = list("x", "y", "true", true, 10);
 
             // Then
             assertEquals("[5]: x,y,\"true\",true,10", encode(arr));
@@ -786,7 +798,7 @@ class JToonTest {
         @DisplayName("encodes arrays of similar objects in tabular format")
         void encodesTabularAtRoot() {
             // Given
-            List<Object> arr = list(obj("id", 1), obj("id", 2));
+            final List<Object> arr = list(obj("id", 1), obj("id", 2));
 
             // Then
             assertEquals("[2]{id}:\n  1\n  2", encode(arr));
@@ -796,7 +808,7 @@ class JToonTest {
         @DisplayName("encodes arrays of different objects in list format")
         void encodesListAtRoot() {
             // Given
-            List<Object> arr = list(obj("id", 1), obj("id", 2, "name", "Ada"));
+            final List<Object> arr = list(obj("id", 1), obj("id", 2, "name", "Ada"));
 
             // Then
             assertEquals("[2]:\n  - id: 1\n  - id: 2\n    name: Ada", encode(arr));
@@ -813,7 +825,7 @@ class JToonTest {
         @DisplayName("encodes arrays of arrays at root level")
         void encodesArrayOfArraysAtRoot() {
             // Given
-            List<Object> arr = list(list(1, 2), List.of());
+            final List<Object> arr = list(list(1, 2), List.of());
 
             // Then
             assertEquals("[2]:\n  - [2]: 1,2\n  - [0]:", encode(arr));
@@ -828,7 +840,7 @@ class JToonTest {
         @DisplayName("encodes objects with mixed arrays and nested objects")
         void encodesMixedStructures() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "user", obj(
                     "id", 123,
                     "name", "Ada",
@@ -857,7 +869,7 @@ class JToonTest {
         @DisplayName("uses list format for arrays mixing primitives and objects")
         void mixesPrimitivesAndObjects() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "items", list(1, obj("a", 1), "text"));
 
             // Then
@@ -874,7 +886,7 @@ class JToonTest {
         @DisplayName("uses list format for arrays mixing objects and arrays")
         void mixesObjectsAndArrays() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "items", list(obj("a", 1), list(1, 2)));
 
             // Then
@@ -895,17 +907,17 @@ class JToonTest {
         @DisplayName("produces no trailing spaces at end of lines")
         void noTrailingSpaces() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "user", obj(
                     "id", 123,
                     "name", "Ada"),
                 "items", list("a", "b"));
 
             // When
-            String result = encode(obj);
+            final String result = encode(obj);
 
             // Then
-            String[] lines = result.split("\n");
+            final String[] lines = result.split("\n");
             for (String line : lines) {
                 assertFalse(line.matches(".* $"), "Line has trailing space: '" + line + "'");
             }
@@ -915,10 +927,10 @@ class JToonTest {
         @DisplayName("produces no trailing newline at end of output")
         void noTrailingNewline() {
             // Given
-            Map<String, Object> obj = obj("id", 123);
+            final Map<String, Object> obj = obj("id", 123);
 
             // When
-            String result = encode(obj);
+            final String result = encode(obj);
 
             // Then
             assertFalse(result.matches(".*\\n$"), "Output has trailing newline");
@@ -933,15 +945,17 @@ class JToonTest {
         @DisplayName("converts BigInt to string")
         void convertsBigInt() {
             // Then
-            assertEquals("123", encode(BigInteger.valueOf(123)));
-            assertEquals("id: 456", encode(obj("id", BigInteger.valueOf(456))));
+            final int bigIntValue = 123;
+            final int bigIntIdValue = 456;
+            assertEquals("123", encode(BigInteger.valueOf(bigIntValue)));
+            assertEquals("id: 456", encode(obj("id", BigInteger.valueOf(bigIntIdValue))));
         }
 
         @Test
         @DisplayName("converts Date to ISO string")
         void convertsDate() {
             // Given
-            Instant date = Instant.parse("2025-01-01T00:00:00.000Z");
+            final Instant date = Instant.parse("2025-01-01T00:00:00.000Z");
 
             // Then
             assertEquals("\"2025-01-01T00:00:00Z\"", encode(date));
@@ -960,9 +974,9 @@ class JToonTest {
         @DisplayName("converts non-finite numbers to null")
         void convertsNonFiniteNumbers() {
             // Given
-            String positive = encode(Double.POSITIVE_INFINITY);
-            String negative = encode(Double.NEGATIVE_INFINITY);
-            String nan = encode(Double.NaN);
+            final String positive = encode(Double.POSITIVE_INFINITY);
+            final String negative = encode(Double.NEGATIVE_INFINITY);
+            final String nan = encode(Double.NaN);
 
             // Then
             assertNotNull(positive);
@@ -987,7 +1001,7 @@ class JToonTest {
             @DisplayName("encodes primitive arrays with tab")
             void encodesWithTab() {
                 // Given
-                Map<String, Object> obj = obj("tags", list("reading", "gaming", "coding"));
+                final Map<String, Object> obj = obj("tags", list("reading", "gaming", "coding"));
 
                 // Then
                 assertEquals("tags[3\t]: reading\tgaming\tcoding",
@@ -998,7 +1012,7 @@ class JToonTest {
             @DisplayName("encodes primitive arrays with pipe")
             void encodesWithPipe() {
                 // Given
-                Map<String, Object> obj = obj("tags", list("reading", "gaming", "coding"));
+                final Map<String, Object> obj = obj("tags", list("reading", "gaming", "coding"));
 
                 // Then
                 assertEquals("tags[3|]: reading|gaming|coding",
@@ -1009,7 +1023,7 @@ class JToonTest {
             @DisplayName("encodes primitive arrays with comma")
             void encodesWithComma() {
                 // Given
-                Map<String, Object> obj = obj("tags", list("reading", "gaming", "coding"));
+                final Map<String, Object> obj = obj("tags", list("reading", "gaming", "coding"));
 
                 // Then
                 assertEquals("tags[3]: reading,gaming,coding",
@@ -1020,7 +1034,7 @@ class JToonTest {
             @DisplayName("encodes tabular arrays with tab")
             void encodesTabularWithTab() {
                 // Given
-                Map<String, Object> obj = obj(
+                final Map<String, Object> obj = obj(
                     "items", list(
                         obj("sku", "A1", "qty", 2, "price", 9.99),
                         obj("sku", "B2", "qty", 1, "price", 14.5)));
@@ -1034,7 +1048,7 @@ class JToonTest {
             @DisplayName("encodes tabular arrays with pipe")
             void encodesTabularWithPipe() {
                 // Given
-                Map<String, Object> obj = obj(
+                final Map<String, Object> obj = obj(
                     "items", list(
                         obj("sku", "A1", "qty", 2, "price", 9.99),
                         obj("sku", "B2", "qty", 1, "price", 14.5)));
@@ -1048,7 +1062,7 @@ class JToonTest {
             @DisplayName("encodes nested arrays with tab")
             void encodesNestedWithTab() {
                 // Given
-                Map<String, Object> obj = obj("pairs", list(list("a", "b"), list("c", "d")));
+                final Map<String, Object> obj = obj("pairs", list(list("a", "b"), list("c", "d")));
 
                 // Then
                 assertEquals("pairs[2\t]:\n  - [2\t]: a\tb\n  - [2\t]: c\td",
@@ -1059,7 +1073,7 @@ class JToonTest {
             @DisplayName("encodes nested arrays with pipe")
             void encodesNestedWithPipe() {
                 // Given
-                Map<String, Object> obj = obj("pairs", list(list("a", "b"), list("c", "d")));
+                final Map<String, Object> obj = obj("pairs", list(list("a", "b"), list("c", "d")));
 
                 // Then
                 assertEquals("pairs[2|]:\n  - [2|]: a|b\n  - [2|]: c|d",
@@ -1070,40 +1084,48 @@ class JToonTest {
             @DisplayName("encodes root arrays with tab")
             void encodesRootWithTab() {
                 // Given
-                List<Object> arr = list("x", "y", "z");
+                final List<Object> arr = list("x", "y", "z");
 
                 // Then
-                assertEquals("[3\t]: x\ty\tz", encode(arr, new EncodeOptions(2, Delimiter.TAB, false, KeyFolding.OFF, Integer.MAX_VALUE)));
+                assertEquals("[3\t]: x\ty\tz",
+                    encode(arr, new EncodeOptions(2, Delimiter.TAB, false, KeyFolding.OFF,
+                            Integer.MAX_VALUE)));
             }
 
             @Test
             @DisplayName("encodes root arrays with pipe")
             void encodesRootWithPipe() {
                 // Given
-                List<Object> arr = list("x", "y", "z");
+                final List<Object> arr = list("x", "y", "z");
 
                 // Then
-                assertEquals("[3|]: x|y|z", encode(arr, new EncodeOptions(2, Delimiter.PIPE, false, KeyFolding.OFF, Integer.MAX_VALUE)));
+                assertEquals("[3|]: x|y|z",
+                    encode(arr, new EncodeOptions(2, Delimiter.PIPE, false, KeyFolding.OFF,
+                            Integer.MAX_VALUE)));
             }
 
             @Test
             @DisplayName("encodes root arrays of objects with tab")
             void encodesRootObjectsWithTab() {
                 // Given
-                List<Object> arr = list(obj("id", 1), obj("id", 2));
+                final List<Object> arr = list(obj("id", 1), obj("id", 2));
 
                 // Then
-                assertEquals("[2\t]{id}:\n  1\n  2", encode(arr, new EncodeOptions(2, Delimiter.TAB, false, KeyFolding.OFF, Integer.MAX_VALUE)));
+                assertEquals("[2\t]{id}:\n  1\n  2",
+                    encode(arr, new EncodeOptions(2, Delimiter.TAB, false, KeyFolding.OFF,
+                            Integer.MAX_VALUE)));
             }
 
             @Test
             @DisplayName("encodes root arrays of objects with pipe")
             void encodesRootObjectsWithPipe() {
                 // Given
-                List<Object> arr = list(obj("id", 1), obj("id", 2));
+                final List<Object> arr = list(obj("id", 1), obj("id", 2));
 
                 // Then
-                assertEquals("[2|]{id}:\n  1\n  2", encode(arr, new EncodeOptions(2, Delimiter.PIPE, false, KeyFolding.OFF, Integer.MAX_VALUE)));
+                assertEquals("[2|]{id}:\n  1\n  2",
+                    encode(arr, new EncodeOptions(2, Delimiter.PIPE, false, KeyFolding.OFF,
+                            Integer.MAX_VALUE)));
             }
         }
 
@@ -1115,68 +1137,78 @@ class JToonTest {
             @DisplayName("quotes strings containing tab")
             void quotesTab() {
                 // Given
-                List<Object> input = list("a", "b\tc", "d");
+                final List<Object> input = list("a", "b\tc", "d");
 
                 // Then
                 assertEquals("items[3\t]: a\t\"b\\tc\"\td",
-                    encode(obj("items", input), new EncodeOptions(2, Delimiter.TAB, false, KeyFolding.OFF, Integer.MAX_VALUE)));
+                    encode(obj("items", input),
+                        new EncodeOptions(2, Delimiter.TAB, false, KeyFolding.OFF, Integer.MAX_VALUE)));
             }
 
             @Test
             @DisplayName("quotes strings containing pipe")
             void quotesPipe() {
                 // Given
-                List<Object> input = list("a", "b|c", "d");
+                final List<Object> input = list("a", "b|c", "d");
 
                 // Then
                 assertEquals("items[3|]: a|\"b|c\"|d",
-                    encode(obj("items", input), new EncodeOptions(2, Delimiter.PIPE, false, KeyFolding.OFF, Integer.MAX_VALUE)));
+                    encode(obj("items", input),
+                        new EncodeOptions(2, Delimiter.PIPE, false, KeyFolding.OFF, Integer.MAX_VALUE)));
             }
 
             @Test
             @DisplayName("does not quote commas with tab")
             void doesNotQuoteCommasWithTab() {
                 // Given
-                List<Object> input = list("a,b", "c,d");
+                final List<Object> input = list("a,b", "c,d");
 
                 // Then
                 assertEquals("items[2\t]: a,b\tc,d",
-                    encode(obj("items", input), new EncodeOptions(2, Delimiter.TAB, false, KeyFolding.OFF, Integer.MAX_VALUE)));
+                    encode(obj("items", input),
+                        new EncodeOptions(2, Delimiter.TAB, false, KeyFolding.OFF, Integer.MAX_VALUE)));
             }
 
             @Test
             @DisplayName("does not quote commas with pipe")
             void doesNotQuoteCommasWithPipe() {
                 // Given
-                List<Object> input = list("a,b", "c,d");
+                final List<Object> input = list("a,b", "c,d");
 
                 // Then
                 assertEquals("items[2|]: a,b|c,d",
-                    encode(obj("items", input), new EncodeOptions(2, Delimiter.PIPE, false, KeyFolding.OFF, Integer.MAX_VALUE)));
+                    encode(obj("items", input),
+                        new EncodeOptions(2, Delimiter.PIPE, false, KeyFolding.OFF, Integer.MAX_VALUE)));
             }
 
             @Test
             @DisplayName("quotes tabular values containing the delimiter")
             void quotesTabularDelimiter() {
                 // Given
-                Map<String, Object> obj = obj(
+                final Map<String, Object> obj = obj(
                     "items", list(
                         obj("id", 1, "note", "a,b"),
                         obj("id", 2, "note", "c,d")));
 
                 // Then
                 assertEquals("items[2]{id,note}:\n  1,\"a,b\"\n  2,\"c,d\"",
-                    encode(obj, new EncodeOptions(2, Delimiter.COMMA, false, KeyFolding.OFF, Integer.MAX_VALUE)));
+                    encode(obj,
+                        new EncodeOptions(2, Delimiter.COMMA, false, KeyFolding.OFF, Integer.MAX_VALUE)));
                 assertEquals("items[2\t]{id\tnote}:\n  1\ta,b\n  2\tc,d",
-                    encode(obj, new EncodeOptions(2, Delimiter.TAB, false, KeyFolding.OFF, Integer.MAX_VALUE)));
+                    encode(obj,
+                        new EncodeOptions(2, Delimiter.TAB, false, KeyFolding.OFF, Integer.MAX_VALUE)));
             }
 
             @Test
             @DisplayName("does not quote commas in object values with non-comma delimiter")
             void doesNotQuoteCommasInValues() {
                 // Then
-                assertEquals("note: a,b", encode(obj("note", "a,b"), new EncodeOptions(2, Delimiter.PIPE, false, KeyFolding.OFF, Integer.MAX_VALUE)));
-                assertEquals("note: a,b", encode(obj("note", "a,b"), new EncodeOptions(2, Delimiter.TAB, false, KeyFolding.OFF, Integer.MAX_VALUE)));
+                assertEquals("note: a,b",
+                    encode(obj("note", "a,b"),
+                        new EncodeOptions(2, Delimiter.PIPE, false, KeyFolding.OFF, Integer.MAX_VALUE)));
+                assertEquals("note: a,b",
+                    encode(obj("note", "a,b"),
+                        new EncodeOptions(2, Delimiter.TAB, false, KeyFolding.OFF, Integer.MAX_VALUE)));
             }
 
             @Test
@@ -1184,9 +1216,11 @@ class JToonTest {
             void quotesNestedDelimiter() {
                 // Then
                 assertEquals("pairs[1|]:\n  - [2|]: a|\"b|c\"",
-                    encode(obj("pairs", list(list("a", "b|c"))), new EncodeOptions(2, Delimiter.PIPE, false, KeyFolding.OFF, Integer.MAX_VALUE)));
+                    encode(obj("pairs", list(list("a", "b|c"))),
+                        new EncodeOptions(2, Delimiter.PIPE, false, KeyFolding.OFF, Integer.MAX_VALUE)));
                 assertEquals("pairs[1\t]:\n  - [2\t]: a\t\"b\\tc\"",
-                    encode(obj("pairs", list(list("a", "b\tc"))), new EncodeOptions(2, Delimiter.TAB, false, KeyFolding.OFF, Integer.MAX_VALUE)));
+                    encode(obj("pairs", list(list("a", "b\tc"))),
+                        new EncodeOptions(2, Delimiter.TAB, false, KeyFolding.OFF, Integer.MAX_VALUE)));
             }
         }
     }
@@ -1199,24 +1233,28 @@ class JToonTest {
         @DisplayName("adds length marker to primitive arrays")
         void addsMarkerToPrimitives() {
             // Given
-            Map<String, Object> obj = obj("tags", list("reading", "gaming", "coding"));
+            final Map<String, Object> obj = obj("tags", list("reading", "gaming", "coding"));
 
             // Then
-            assertEquals("tags[#3]: reading,gaming,coding", encode(obj, new EncodeOptions(2, Delimiter.COMMA, true, KeyFolding.OFF, Integer.MAX_VALUE)));
+            assertEquals("tags[#3]: reading,gaming,coding",
+                encode(obj,
+                    new EncodeOptions(2, Delimiter.COMMA, true, KeyFolding.OFF, Integer.MAX_VALUE)));
         }
 
         @Test
         @DisplayName("handles empty arrays")
         void handlesEmptyArrays() {
             // Then
-            assertEquals("items[#0]:", encode(obj("items", List.of()), new EncodeOptions(2, Delimiter.COMMA, true, KeyFolding.OFF, Integer.MAX_VALUE)));
+            assertEquals("items[#0]:",
+                encode(obj("items", List.of()),
+                    new EncodeOptions(2, Delimiter.COMMA, true, KeyFolding.OFF, Integer.MAX_VALUE)));
         }
 
         @Test
         @DisplayName("adds length marker to tabular arrays")
         void addsMarkerToTabular() {
             // Given
-            Map<String, Object> obj = obj(
+            final Map<String, Object> obj = obj(
                 "items", list(
                     obj("sku", "A1", "qty", 2, "price", 9.99),
                     obj("sku", "B2", "qty", 1, "price", 14.5)));
@@ -1230,7 +1268,7 @@ class JToonTest {
         @DisplayName("adds length marker to nested arrays")
         void addsMarkerToNested() {
             // Given
-            Map<String, Object> obj = obj("pairs", list(list("a", "b"), list("c", "d")));
+            final Map<String, Object> obj = obj("pairs", list(list("a", "b"), list("c", "d")));
 
             // Then
             assertEquals("pairs[#2]:\n  - [#2]: a,b\n  - [#2]: c,d",
@@ -1241,17 +1279,19 @@ class JToonTest {
         @DisplayName("works with delimiter option")
         void worksWithDelimiter() {
             // Given
-            Map<String, Object> obj = obj("tags", list("reading", "gaming", "coding"));
+            final Map<String, Object> obj = obj("tags", list("reading", "gaming", "coding"));
 
             // Then
-            assertEquals("tags[#3|]: reading|gaming|coding", encode(obj, new EncodeOptions(2, Delimiter.PIPE, true, KeyFolding.OFF, Integer.MAX_VALUE)));
+            assertEquals("tags[#3|]: reading|gaming|coding",
+                encode(obj,
+                    new EncodeOptions(2, Delimiter.PIPE, true, KeyFolding.OFF, Integer.MAX_VALUE)));
         }
 
         @Test
         @DisplayName("default is false (no length marker)")
         void defaultIsFalse() {
             // Given
-            Map<String, Object> obj = obj("tags", list("reading", "gaming", "coding"));
+            final Map<String, Object> obj = obj("tags", list("reading", "gaming", "coding"));
 
             // Then
             assertEquals("tags[3]: reading,gaming,coding", encode(obj));
@@ -1264,13 +1304,13 @@ class JToonTest {
 
         @Nested
         @DisplayName("simple POJOs")
-        class SimplePOJOs {
+        class SimplePojos {
 
             @Test
             @DisplayName("encodes simple POJO with basic fields")
-            void encodesSimplePOJO() {
+            void encodesSimplePojo() {
                 // Given
-                Person person = new Person("Ada", 30, true);
+                final Person person = new Person("Ada", 30, true);
 
                 // Then
                 assertEquals("name: Ada\nage: 30\nactive: true", encode(person));
@@ -1280,7 +1320,7 @@ class JToonTest {
             @DisplayName("encodes POJO with multiple field types")
             void encodesMultipleFieldTypes() {
                 // Given
-                Product product = new Product(101, "Laptop", 999.99, true);
+                final Product product = new Product(101, "Laptop", 999.99, true);
 
                 // Then
                 assertEquals("id: 101\nname: Laptop\nprice: 999.99\ninStock: true", encode(product));
@@ -1290,7 +1330,7 @@ class JToonTest {
             @DisplayName("encodes POJO with null values")
             void encodesNullValues() {
                 // Given
-                NullableData data = new NullableData("hello", null, null);
+                final NullableData data = new NullableData("hello", null, null);
 
                 // Then
                 assertEquals("text: hello\ncount: null\nflag: null", encode(data));
@@ -1300,7 +1340,7 @@ class JToonTest {
             @DisplayName("encodes POJO with all null values")
             void encodesAllNulls() {
                 // Given
-                NullableData data = new NullableData(null, null, null);
+                final NullableData data = new NullableData(null, null, null);
 
                 // Then
                 assertEquals("text: null\ncount: null\nflag: null", encode(data));
@@ -1308,10 +1348,10 @@ class JToonTest {
 
             @Test
             @DisplayName("encodes POJO in object context")
-            void encodesPOJOInObject() {
+            void encodesPojoInObject() {
                 // Given
-                Person person = new Person("Bob", 25, false);
-                Map<String, Object> obj = obj("user", person);
+                final Person person = new Person("Bob", 25, false);
+                final Map<String, Object> obj = obj("user", person);
 
                 // Then
                 assertEquals("user:\n  name: Bob\n  age: 25\n  active: false", encode(obj));
@@ -1324,10 +1364,10 @@ class JToonTest {
 
             @Test
             @DisplayName("encodes POJO with nested POJO")
-            void encodesNestedPOJO() {
+            void encodesNestedPojo() {
                 // Given
-                Address address = new Address("123 Main St", "Springfield", "12345");
-                Employee employee = new Employee("Alice", 1001, address);
+                final Address address = new Address("123 Main St", "Springfield", "12345");
+                final Employee employee = new Employee("Alice", 1001, address);
 
                 // Then
                 assertEquals(
@@ -1345,9 +1385,9 @@ class JToonTest {
             @DisplayName("encodes deeply nested POJOs")
             void encodesDeeplyNested() {
                 // Given
-                Address address = new Address("456 Oak Ave", "Metropolis", "54321");
-                Employee manager = new Employee("Carol", 2001, address);
-                Company company = new Company("TechCorp", manager);
+                final Address address = new Address("456 Oak Ave", "Metropolis", "54321");
+                final Employee manager = new Employee("Carol", 2001, address);
+                final Company company = new Company("TechCorp", manager);
 
                 // Then
                 assertEquals(
@@ -1367,7 +1407,7 @@ class JToonTest {
             @DisplayName("encodes POJO with list of primitives")
             void encodesListOfPrimitives() {
                 // Given
-                Skills skills = new Skills("Developer", List.of("Java", "Python", "JavaScript"));
+                final Skills skills = new Skills("Developer", List.of("Java", "Python", "JavaScript"));
 
                 // Then
                 assertEquals("owner: Developer\nskillList[3]: Java,Python,JavaScript", encode(skills));
@@ -1375,11 +1415,11 @@ class JToonTest {
 
             @Test
             @DisplayName("encodes POJO with list of POJOs in tabular format")
-            void encodesListOfPOJOs() {
+            void encodesListOfPojos() {
                 // Given
-                Person person1 = new Person("Alice", 30, true);
-                Person person2 = new Person("Bob", 25, false);
-                Team team = new Team("DevTeam", List.of(person1, person2));
+                final Person person1 = new Person("Alice", 30, true);
+                final Person person2 = new Person("Bob", 25, false);
+                final Team team = new Team("DevTeam", List.of(person1, person2));
 
                 // Then
                 assertEquals(
@@ -1395,11 +1435,11 @@ class JToonTest {
             @DisplayName("encodes POJO with Map fields")
             void encodesMapFields() {
                 // Given
-                Map<String, Object> settings = Map.of("debug", true, "timeout", 30, "mode", "production");
-                Configuration config = new Configuration("AppConfig", settings);
+                final Map<String, Object> settings = Map.of("debug", true, "timeout", 30, "mode", "production");
+                final Configuration config = new Configuration("AppConfig", settings);
 
                 // When
-                String result = encode(config);
+                final String result = encode(config);
 
                 // Then
                 assertTrue(result.startsWith("name: AppConfig\nsettings:"));
@@ -1412,23 +1452,23 @@ class JToonTest {
             @DisplayName("encodes POJO with empty collections")
             void encodesEmptyCollections() {
                 // Given
-                EmptyCollections empty = new EmptyCollections(List.of(), Map.of());
+                final EmptyCollections empty = new EmptyCollections(List.of(), Map.of());
 
                 // Then
-            assertEquals("emptyList: []\nemptyMap:", encode(empty));
+                assertEquals("emptyList: []\nemptyMap:", encode(empty));
             }
 
             @Test
             @DisplayName("encodes POJO with multiple collection fields")
             void encodesMultipleCollections() {
                 // Given
-                MultiCollection multi = new MultiCollection(
+                final MultiCollection multi = new MultiCollection(
                     List.of(1, 2, 3),
                     List.of("a", "b"),
                     Map.of("x", 10, "y", 20));
 
                 // When
-                String result = encode(multi);
+                final String result = encode(multi);
 
                 // Then
                 assertTrue(result.contains("numbers[3]: 1,2,3"));
@@ -1445,7 +1485,7 @@ class JToonTest {
             @DisplayName("encodes POJO with @JsonProperty annotation")
             void encodesJsonProperty() {
                 // Given
-                AnnotatedProduct product = new AnnotatedProduct(501, "Mouse", 29.99);
+                final AnnotatedProduct product = new AnnotatedProduct(501, "Mouse", 29.99);
 
                 // Then
                 assertEquals("product_id: 501\nproduct_name: Mouse\nprice: 29.99", encode(product));
@@ -1455,7 +1495,7 @@ class JToonTest {
             @DisplayName("encodes POJO with @JsonIgnore annotation")
             void encodesJsonIgnore() {
                 // Given
-                SecureData data = new SecureData("public info", "secret", 1);
+                final SecureData data = new SecureData("public info", "secret", 1);
 
                 // Then
                 assertEquals("publicField: public info\nversion: 1", encode(data));
@@ -1465,7 +1505,7 @@ class JToonTest {
             @DisplayName("encodes POJO with multiple annotations")
             void encodesMultipleAnnotations() {
                 // Given
-                ComplexAnnotated obj = new ComplexAnnotated(123, "Test", "internal data", true);
+                final ComplexAnnotated obj = new ComplexAnnotated(123, "Test", "internal data", true);
 
                 // Then
                 assertEquals("user_id: 123\nname: Test\nis_active: true", encode(obj));
@@ -1475,11 +1515,11 @@ class JToonTest {
             @DisplayName("encodes nested POJO with annotations")
             void encodesNestedWithAnnotations() {
                 // Given
-                Address address = new Address("789 Pine Rd", "Gotham", "99999");
-                AnnotatedEmployee employee = new AnnotatedEmployee(3001, "Diana", address, "123-45-6789");
+                final Address address = new Address("789 Pine Rd", "Gotham", "99999");
+                final AnnotatedEmployee employee = new AnnotatedEmployee(3001, "Diana", address, "123-45-6789");
 
                 // When
-                String encode = encode(employee);
+                final String encode = encode(employee);
 
                 // Then
                 assertTrue(encode.contains("emp_id"));
@@ -1501,13 +1541,14 @@ class JToonTest {
             @DisplayName("encodes POJO with annotation: AnyGetter")
             void encodesWithAnyGetterAnnotations() {
                 // Given
-                Address address = new Address("789 Pine Rd", "Gotham", "99999");
-                AnnotatedEmployee employee = new AnnotatedEmployee(3001, "Diana", address, "123-45-6789");
+                final Address address = new Address("789 Pine Rd", "Gotham", "99999");
+                final AnnotatedEmployee employee = new AnnotatedEmployee(3001, "Diana", address, "123-45-6789");
 
-                TestPojos.FullEmployee fullEmployee = new TestPojos.FullEmployee(employee, Map.of("key1", "value1", "key2", "value2"));
+                final TestPojos.FullEmployee fullEmployee = new TestPojos.FullEmployee(employee,
+                    Map.of("key1", "value1", "key2", "value2"));
 
                 // When
-                String encode = encode(fullEmployee);
+                final String encode = encode(fullEmployee);
 
                 // Then
                 assertTrue(encode.contains("key1: value1"));
@@ -1518,11 +1559,11 @@ class JToonTest {
             @DisplayName("encodes POJO with annotation: PropertyOrder")
             void encodesWithJsonPropertyOrderAnnotations() {
                 // Given
-                Address address = new Address("789 Pine Rd", "Gotham", "99999");
-                OrderEmployee orderEmployee = new OrderEmployee("Miles Edward O'Brien", 42, address);
+                final Address address = new Address("789 Pine Rd", "Gotham", "99999");
+                final OrderEmployee orderEmployee = new OrderEmployee("Miles Edward O'Brien", 42, address);
 
                 // When
-                String encode = encode(orderEmployee);
+                final String encode = encode(orderEmployee);
 
                 // Then
                 assertEquals(
@@ -1538,12 +1579,12 @@ class JToonTest {
 
             @Test
             @DisplayName("encodes a POJO with SQLDate")
-            void encodesSQLDate() {
+            void encodesSqlDate() {
                 // Given
-                UserDTO userDTO = new UserDTO(123, "Bob", "Marley", new java.sql.Date(1766419274));
+                final UserDto userDto = new UserDto(123, "Bob", "Marley", new java.sql.Date(1766419274));
 
                 // When
-                String encode = encode(userDTO);
+                final String encode = encode(userDto);
 
                 // Then
                 assertEquals(
@@ -1560,7 +1601,7 @@ class JToonTest {
             @DisplayName("encodes POJO with annotation: JsonSerialize")
             void encodesWithJsonSerializeAnnotations() {
                 // Given
-                HotelInfoLlmRerankDTO hotelInfoLlmRerankDTO = new HotelInfoLlmRerankDTO("A 23",
+                final HotelInfoLlmRerankDto hotelInfoLlmRerankDto = new HotelInfoLlmRerankDto("A 23",
                     "hotelId 23",
                     "hotelName",
                     "hotelBrand",
@@ -1568,10 +1609,11 @@ class JToonTest {
                     "hotelPrice",
                     "hotelAddressDistance"
                 );
-                HotelInfoLlmRerankDTOWithSerializer hotel = new HotelInfoLlmRerankDTOWithSerializer("Sunset Hotel", hotelInfoLlmRerankDTO);
+                final HotelInfoLlmRerankDtoWithSerializer hotel =
+                    new HotelInfoLlmRerankDtoWithSerializer("Sunset Hotel", hotelInfoLlmRerankDto);
 
                 // When
-                String encode = encode(hotel);
+                final String encode = encode(hotel);
 
                 // Then
                 assertEquals(
@@ -1583,11 +1625,11 @@ class JToonTest {
 
             @Test
             @DisplayName("encodes list of annotated POJOs in tabular format")
-            void encodesListOfAnnotatedPOJOs() {
+            void encodesListOfAnnotatedPojos() {
                 // Given
-                AnnotatedProduct p1 = new AnnotatedProduct(101, "Keyboard", 79.99);
-                AnnotatedProduct p2 = new AnnotatedProduct(102, "Monitor", 299.99);
-                Map<String, Object> obj = obj("products", List.of(p1, p2));
+                final AnnotatedProduct p1 = new AnnotatedProduct(101, "Keyboard", 79.99);
+                final AnnotatedProduct p2 = new AnnotatedProduct(102, "Monitor", 299.99);
+                final Map<String, Object> obj = obj("products", List.of(p1, p2));
 
                 // Then
                 assertEquals(
@@ -1602,9 +1644,10 @@ class JToonTest {
             @DisplayName("encodes nested POJO with keeping the order")
             void encodesNestedWithKeepingTheOrder() {
                 // Given
-                List<HotelInfoLlmRerankDTO> hotelList = new ArrayList<>();
-                for (int i = 0; i < 5; i++) {
-                    hotelList.add(new HotelInfoLlmRerankDTO("A" + (i + 1),
+                final List<HotelInfoLlmRerankDto> hotelList = new ArrayList<>();
+                final int hotelCount = 5;
+                for (int i = 0; i < hotelCount; i++) {
+                    hotelList.add(new HotelInfoLlmRerankDto("A" + (i + 1),
                         "hotelId " + i,
                         "hotelName",
                         "hotelBrand",
@@ -1615,7 +1658,8 @@ class JToonTest {
                 }
 
                 // Then
-                assertTrue(encode(hotelList).startsWith("[5]{no,hotelId,hotelName,hotelBrand,hotelCategory,hotelPrice,hotelAddressDistance}:"));
+                assertTrue(encode(hotelList).startsWith(
+                    "[5]{no,hotelId,hotelName,hotelBrand,hotelCategory,hotelPrice,hotelAddressDistance}:"));
             }
         }
     }

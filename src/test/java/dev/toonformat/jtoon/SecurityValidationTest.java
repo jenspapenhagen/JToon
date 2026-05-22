@@ -1,13 +1,17 @@
 package dev.toonformat.jtoon;
 
+import static org.junit.jupiter.api.Assertions.*;
 import dev.toonformat.jtoon.normalizer.JsonNormalizer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 class SecurityValidationTest {
+
+    private static final int CUSTOM_INDENT = 4;
+    private static final int CUSTOM_FLATTEN_DEPTH = 5;
+    private static final int SECURITY_INDENT = 10;
+    private static final int CUSTOM_MAX_ARRAY_SIZE = 100;
 
     @Nested
     @DisplayName("EncodeOptions validation")
@@ -16,21 +20,22 @@ class SecurityValidationTest {
         @DisplayName("should reject negative indent")
         void testNegativeIndent() {
             assertThrows(IllegalArgumentException.class,
-                () -> new EncodeOptions(-1, Delimiter.COMMA, false, KeyFolding.OFF, 10));
+                () -> new EncodeOptions(-1, Delimiter.COMMA, false, KeyFolding.OFF, SECURITY_INDENT));
         }
 
         @Test
         @DisplayName("should reject indent exceeding MAX_INDENT")
         void testExcessiveIndent() {
             assertThrows(IllegalArgumentException.class,
-                () -> new EncodeOptions(EncodeOptions.MAX_ALLOWED_INDENT + 1, Delimiter.COMMA, false, KeyFolding.OFF, 10));
+                () -> new EncodeOptions(EncodeOptions.MAX_ALLOWED_INDENT + 1, Delimiter.COMMA, false,
+                        KeyFolding.OFF, SECURITY_INDENT));
         }
 
         @Test
         @DisplayName("should reject null delimiter")
         void testNullDelimiter() {
             assertThrows(NullPointerException.class,
-                () -> new EncodeOptions(2, null, false, KeyFolding.OFF, 10));
+                () -> new EncodeOptions(2, null, false, KeyFolding.OFF, SECURITY_INDENT));
         }
 
         @Test
@@ -43,10 +48,11 @@ class SecurityValidationTest {
         @Test
         @DisplayName("should accept valid options")
         void testValidOptions() {
-            EncodeOptions opts = new EncodeOptions(4, Delimiter.PIPE, true, KeyFolding.SAFE, 5);
-            assertEquals(4, opts.indent());
+            final EncodeOptions opts = new EncodeOptions(CUSTOM_INDENT, Delimiter.PIPE, true,
+                    KeyFolding.SAFE, CUSTOM_FLATTEN_DEPTH);
+            assertEquals(CUSTOM_INDENT, opts.indent());
             assertEquals(Delimiter.PIPE, opts.delimiter());
-            assertEquals(5, opts.flattenDepth());
+            assertEquals(CUSTOM_FLATTEN_DEPTH, opts.flattenDepth());
         }
     }
 
@@ -57,21 +63,27 @@ class SecurityValidationTest {
         @DisplayName("should reject negative indent")
         void testNegativeIndent() {
             assertThrows(IllegalArgumentException.class,
-                () -> new DecodeOptions(-1, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH));
+                () -> new DecodeOptions(-1, Delimiter.COMMA, true, PathExpansion.OFF,
+                        DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                        DecodeOptions.DEFAULT_MAX_STRING_LENGTH));
         }
 
         @Test
         @DisplayName("should reject indent exceeding MAX_INDENT")
         void testExcessiveIndent() {
             assertThrows(IllegalArgumentException.class,
-                () -> new DecodeOptions(DecodeOptions.MAX_ALLOWED_INDENT + 1, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH));
+                () -> new DecodeOptions(DecodeOptions.MAX_ALLOWED_INDENT + 1, Delimiter.COMMA, true,
+                        PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH,
+                        DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH));
         }
 
         @Test
         @DisplayName("should reject null delimiter")
         void testNullDelimiter() {
             assertThrows(NullPointerException.class,
-                () -> new DecodeOptions(2, null, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH));
+                () -> new DecodeOptions(2, null, true, PathExpansion.OFF,
+                        DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                        DecodeOptions.DEFAULT_MAX_STRING_LENGTH));
         }
     }
 
@@ -83,19 +95,20 @@ class SecurityValidationTest {
         @DisplayName("should decode safely nested TOON within depth limit")
         void testWithinDepthLimit() {
             // Given: TOON with 500 levels of nesting (within default 512 limit)
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < 500; i++) {
+            final int safeNestingLevels = 500;
+            final StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < safeNestingLevels; i++) {
                 sb.append("  ".repeat(i));
-                if (i < 499) {
+                if (i < safeNestingLevels - 1) {
                     sb.append('a').append(i).append(":\n");
                 } else {
                     sb.append('a').append(i).append(": value");
                 }
             }
-            String toon = sb.toString();
+            final String toon = sb.toString();
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             assertNotNull(result);
@@ -105,16 +118,17 @@ class SecurityValidationTest {
         @DisplayName("should reject TOON exceeding max depth")
         void testExceedsDepthLimit() {
             // Given: TOON with 600 levels of nesting (exceeds default 512 limit)
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < 600; i++) {
+            final int exceededNestingLevels = 600;
+            final StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < exceededNestingLevels; i++) {
                 sb.append("  ".repeat(i));
-                if (i < 599) {
+                if (i < exceededNestingLevels - 1) {
                     sb.append('a').append(i).append(":\n");
                 } else {
                     sb.append('a').append(i).append(": value");
                 }
             }
-            String toon = sb.toString();
+            final String toon = sb.toString();
 
             // Then
             assertThrows(IllegalArgumentException.class, () -> JToon.decode(toon));
@@ -129,7 +143,7 @@ class SecurityValidationTest {
         @DisplayName("should reject array header exceeding maxArraySize")
         void testArrayExceedsMaxSize() {
             // Given: TOON with array header claiming 10,000,001 elements
-            String toon = "items[10000001]: 1,2,3";
+            final String toon = "items[10000001]: 1,2,3";
 
             // Then
             assertThrows(IllegalArgumentException.class, () -> JToon.decode(toon));
@@ -139,10 +153,10 @@ class SecurityValidationTest {
         @DisplayName("should allow array within maxArraySize")
         void testArrayWithinMaxSize() {
             // Given: TOON with array header within default limit
-            String toon = "items[3]: 1,2,3";
+            final String toon = "items[3]: 1,2,3";
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             assertNotNull(result);
@@ -152,11 +166,13 @@ class SecurityValidationTest {
         @DisplayName("should handle custom maxArraySize option")
         void testCustomMaxArraySize() {
             // Given: TOON with array size within custom limit
-            DecodeOptions options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, 512, 100, 10_000_000);
-            String toon = "items[50]: " + "x,".repeat(49) + "x";
+            final DecodeOptions options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF,
+                    DecodeOptions.MAX_ALLOWED_DEPTH, CUSTOM_MAX_ARRAY_SIZE,
+                    DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+            final String toon = "items[50]: " + "x,".repeat(49) + "x";
 
             // When
-            Object result = JToon.decode(toon, options);
+            final Object result = JToon.decode(toon, options);
 
             // Then
             assertNotNull(result);
@@ -171,8 +187,8 @@ class SecurityValidationTest {
         @DisplayName("should reject string exceeding maxStringLength")
         void testStringExceedsMaxLength() {
             // Given: TOON with a string value of 10,000,001 characters
-            String longValue = "x".repeat(10_000_001);
-            String toon = "key: " + longValue;
+            final String longValue = "x".repeat(10_000_001);
+            final String toon = "key: " + longValue;
 
             // Then (lenient mode to avoid error propagation overhead)
             assertThrows(IllegalArgumentException.class, () -> JToon.decode(toon));
@@ -182,10 +198,10 @@ class SecurityValidationTest {
         @DisplayName("should allow string within maxStringLength")
         void testStringWithinMaxLength() {
             // Given: TOON with a string value within default limit
-            String toon = "key: hello";
+            final String toon = "key: hello";
 
             // When
-            Object result = JToon.decode(toon);
+            final Object result = JToon.decode(toon);
 
             // Then
             assertEquals("hello", ((java.util.Map<?, ?>) result).get("key"));
@@ -200,7 +216,7 @@ class SecurityValidationTest {
         @DisplayName("should reject array header with size exceeding Integer.MAX_VALUE")
         void testOverflowArraySize() {
             // Given: TOON with array header size that would overflow Integer.parseInt
-            String toon = "x[99999999999]: 1,2,3";
+            final String toon = "x[99999999999]: 1,2,3";
 
             // Then: should throw because 99999999999 > maxArraySize (10M)
             assertThrows(IllegalArgumentException.class, () -> JToon.decode(toon));
@@ -213,7 +229,8 @@ class SecurityValidationTest {
         @Test
         @DisplayName("should have MAX_DEPTH constant")
         void testMaxDepthConstant() {
-            assertEquals(256, JsonNormalizer.MAX_ALLOWED_NESTING_DEPTH);
+            final int expectedMaxDepth = 256;
+            assertEquals(expectedMaxDepth, JsonNormalizer.MAX_ALLOWED_NESTING_DEPTH);
         }
     }
 }

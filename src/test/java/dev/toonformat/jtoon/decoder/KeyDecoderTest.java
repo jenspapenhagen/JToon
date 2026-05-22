@@ -1,12 +1,6 @@
 package dev.toonformat.jtoon.decoder;
 
-import dev.toonformat.jtoon.DecodeOptions;
-import dev.toonformat.jtoon.Delimiter;
-import dev.toonformat.jtoon.PathExpansion;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-
+import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -14,11 +8,17 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
+import dev.toonformat.jtoon.DecodeOptions;
+import dev.toonformat.jtoon.Delimiter;
+import dev.toonformat.jtoon.PathExpansion;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @Tag("unit")
 class KeyDecoderTest {
+
+    private static final int TEST_PATH_VALUE = 123;
 
     @Test
     @DisplayName("throws unsupported Operation Exception for calling the constructor")
@@ -41,11 +41,13 @@ class KeyDecoderTest {
     @DisplayName("Given SAFE path expansion and valid dotted key When checked Then key is expandable")
     void shouldExpandKey_givenSafeAndValidDotted_whenChecked_thenTrue() {
         // Given
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
 
         // When
-        boolean expandable = KeyDecoder.shouldExpandKey("user.name", context);
+        final boolean expandable = KeyDecoder.shouldExpandKey("user.name", context);
 
         // Then
         assertTrue(expandable);
@@ -55,11 +57,13 @@ class KeyDecoderTest {
     @DisplayName("Given SAFE path expansion and valid dotted key When checked Then key is expandable")
     void shouldExpandKeyGivenKeyWithQutesWhenCheckedThenTrue() {
         // Given
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.SAFE, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.SAFE,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
 
         // When
-        boolean expandable = KeyDecoder.shouldExpandKey("\"user.name\"", context);
+        final boolean expandable = KeyDecoder.shouldExpandKey("\"user.name\"", context);
 
         // Then
         assertFalse(expandable);
@@ -69,11 +73,13 @@ class KeyDecoderTest {
     @DisplayName("Given OFF path expansion When checked Then dotted key is not expandable")
     void shouldExpandKey_givenOff_whenChecked_thenFalse() {
         // Given
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
 
         // When
-        boolean expandable = KeyDecoder.shouldExpandKey("user.name", context);
+        final boolean expandable = KeyDecoder.shouldExpandKey("user.name", context);
 
         // Then
         assertFalse(expandable);
@@ -83,11 +89,13 @@ class KeyDecoderTest {
     @DisplayName("Given quoted key When checked Then key is not expandable")
     void shouldExpandKey_givenQuoted_whenChecked_thenFalse() {
         // Given
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
 
         // When
-        boolean expandable = KeyDecoder.shouldExpandKey("\"user.name\"", context);
+        final boolean expandable = KeyDecoder.shouldExpandKey("\"user.name\"", context);
 
         // Then
         assertFalse(expandable);
@@ -97,39 +105,43 @@ class KeyDecoderTest {
     @DisplayName("Given empty target map and dotted key When expanded Then nested structure is created")
     void expandPathIntoMap_givenDottedKey_whenExpanded_thenCreatesNested() {
         // Given
-        Map<String, Object> target = new LinkedHashMap<>();
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final Map<String, Object> target = new LinkedHashMap<>();
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
 
         // When
         KeyDecoder.expandPathIntoMap(target, "a.b.c", 1, context);
 
         // Then
         assertTrue(target.containsKey("a"));
-        Object a = target.get("a");
+        final Object a = target.get("a");
         assertInstanceOf(Map.class, a);
-        @SuppressWarnings("unchecked") Map<String, Object> aMap = (Map<String, Object>) a;
-        Object b = aMap.get("b");
+        @SuppressWarnings("unchecked") final Map<String, Object> aMap = (Map<String, Object>) a;
+        final Object b = aMap.get("b");
         assertInstanceOf(Map.class, b);
-        @SuppressWarnings("unchecked") Map<String, Object> bMap = (Map<String, Object>) b;
+        @SuppressWarnings("unchecked") final Map<String, Object> bMap = (Map<String, Object>) b;
         assertEquals(1, bMap.get("c"));
     }
 
     @Test
     void testThrowsIllegalArgumentExceptionWhenPathConflictsInStrictMode() {
         // Given
-        Map<String, Object> root = new LinkedHashMap<>();
+        final Map<String, Object> root = new LinkedHashMap<>();
 
         root.put("foo", "notAMap");
 
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
 
 
         // When / Then
-        IllegalArgumentException ex = assertThrows(
+        final IllegalArgumentException ex = assertThrows(
             IllegalArgumentException.class,
-            () -> KeyDecoder.expandPathIntoMap(root, "foo.bar.baz", 123, context)
+            () -> KeyDecoder.expandPathIntoMap(root, "foo.bar.baz", TEST_PATH_VALUE, context)
         );
 
         assertTrue(ex.getMessage().contains("Path expansion conflict"));
@@ -139,22 +151,24 @@ class KeyDecoderTest {
     @Test
     void testCallsExpandPathIntoMapWhenShouldExpandKeyTrue() {
         // Given
-        Map<String, Object> result = new LinkedHashMap<>();
-        String originalKey = "foo.bar";
-        String content = "foo.bar[#0]";
-        int parentDepth = 0;
+        final Map<String, Object> result = new LinkedHashMap<>();
+        final String originalKey = "foo.bar";
+        final String content = "foo.bar[#0]";
+        final int parentDepth = 0;
 
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.lines = new String[]{content};
 
-        List<Object> expectedArray = Arrays.asList(1, 2, 3);
+        final List<Object> expectedArray = Arrays.asList(1, 2, 3);
 
         // When
         KeyDecoder.processKeyedArrayLine(result, content, originalKey, parentDepth, context);
 
         // Then
-        Map<String, Object> expectedNestedMap = new LinkedHashMap<>();
+        final Map<String, Object> expectedNestedMap = new LinkedHashMap<>();
         expectedNestedMap.put("bar", expectedArray);
         assertNull(result.get("bar"));
         assertEquals(result.size(),  expectedNestedMap.size());
@@ -164,18 +178,20 @@ class KeyDecoderTest {
     @DisplayName("Given basic keyed array line When processed Then value is placed in map")
     void processKeyedArrayLine_givenBasicKeyedArray_whenProcessed_thenValueInMap() {
         // Given
-        Map<String, Object> result = new LinkedHashMap<>();
-        String content = "tags[3]: a, b, c";
-        String originalKey = "tags";
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final Map<String, Object> result = new LinkedHashMap<>();
+        final String content = "tags[3]: a, b, c";
+        final String originalKey = "tags";
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.delimiter = Delimiter.COMMA;
 
         // When
         KeyDecoder.processKeyedArrayLine(result, content, originalKey, 0, context);
 
         // Then
-        List<Object> expected = Arrays.asList("a", "b", "c");
+        final List<Object> expected = Arrays.asList("a", "b", "c");
         assertEquals(expected, result.get("tags"));
     }
 
@@ -183,11 +199,13 @@ class KeyDecoderTest {
     @DisplayName("Given dotted keyed array line and SAFE expansion When processed Then value is placed in nested map")
     void processKeyedArrayLine_givenDottedKeyedArray_whenProcessed_thenNestedMapContainsValue() {
         // Given
-        Map<String, Object> result = new LinkedHashMap<>();
-        String content = "user.tags[2]: dev, test";
-        String originalKey = "user.tags";
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final Map<String, Object> result = new LinkedHashMap<>();
+        final String content = "user.tags[2]: dev, test";
+        final String originalKey = "user.tags";
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.delimiter = Delimiter.COMMA;
 
         // When
@@ -195,25 +213,28 @@ class KeyDecoderTest {
 
         // Then
         assertTrue(result.containsKey("user"));
-        @SuppressWarnings("unchecked") Map<String, Object> user = (Map<String, Object>) result.get("user");
-        List<Object> expected = Arrays.asList("dev", "test");
+        @SuppressWarnings("unchecked") final Map<String, Object> user = (Map<String, Object>) result.get("user");
+        final List<Object> expected = Arrays.asList("dev", "test");
         assertEquals(expected, user.get("tags"));
     }
 
     @Test
-    @DisplayName("Given dotted keyed array line and expansion conflict in strict mode When processed Then throws exception")
+    @DisplayName("Given dotted keyed array line and expansion conflict in strict mode"
+            + " When processed Then throws exception")
     void processKeyedArrayLine_givenExpansionConflictStrict_whenProcessed_thenThrowsException() {
         // Given
-        Map<String, Object> result = new LinkedHashMap<>();
+        final Map<String, Object> result = new LinkedHashMap<>();
         result.put("user", "not-a-map");
-        String content = "user.tags[1]: dev";
-        String originalKey = "user.tags";
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final String content = "user.tags[1]: dev";
+        final String originalKey = "user.tags";
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.delimiter = Delimiter.COMMA;
 
         // When / Then
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
             () -> KeyDecoder.processKeyedArrayLine(result, content, originalKey, 0, context));
         assertTrue(ex.getMessage().contains("Path expansion conflict"));
     }
@@ -221,16 +242,19 @@ class KeyDecoderTest {
     @Test
     void testEmptyValueCreatesLinkedHashMap() throws Exception {
         // Given
-        String value = " ";
-        int depth = 25;
+        final String value = " ";
+        final int depth = 25;
 
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.lines = new String[]{"key:   "};
         context.currentLine = -1;
 
         // When
-        Object result = invokePrivateStatic("parseKeyValue", new Class[]{String.class, int.class, DecodeContext.class}, value, depth, context);
+        final Object result = invokePrivateStatic("parseKeyValue",
+                new Class[]{String.class, int.class, DecodeContext.class}, value, depth, context);
 
         // Then
         assertInstanceOf(LinkedHashMap.class, result, "Expected a LinkedHashMap for empty value");
@@ -241,22 +265,24 @@ class KeyDecoderTest {
     @Test
     void testExpandPathIntoMapCalledWhenShouldExpandKeyTrue() {
         // Given
-        Map<String, Object> item = new LinkedHashMap<>();
-        String fieldContent = "foo.bar: someValue"; // contains colon
-        int depth = 0;
+        final Map<String, Object> item = new LinkedHashMap<>();
+        final String fieldContent = "foo.bar: someValue"; // contains colon
+        final int depth = 0;
 
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.lines = fieldContent.split(" ");
-        Object parsedValue = "someValue";
+        final Object parsedValue = "someValue";
 
         // When
-        boolean result = KeyDecoder.parseKeyValueField(fieldContent, item, depth, context);
+        final boolean result = KeyDecoder.parseKeyValueField(fieldContent, item, depth, context);
 
         // Then
         assertTrue(result, "Should return true for field with colon");
 
-        Map<String, Object> expectedNestedMap = new LinkedHashMap<>();
+        final Map<String, Object> expectedNestedMap = new LinkedHashMap<>();
         expectedNestedMap.put("bar", parsedValue);
         assertEquals(expectedNestedMap, item.get("foo"));
     }
@@ -266,9 +292,11 @@ class KeyDecoderTest {
     @DisplayName("Given dotted key/value line and SAFE expansion When processed Then value is placed in nested map")
     void processKeyValueLine_givenDottedKey_whenProcessed_thenNestedMapContainsValue() {
         // Given
-        Map<String, Object> result = new LinkedHashMap<>();
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final Map<String, Object> result = new LinkedHashMap<>();
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.lines = new String[]{"user.name: Ada"};
         context.currentLine = 0;
 
@@ -277,7 +305,7 @@ class KeyDecoderTest {
 
         // Then
         assertTrue(result.containsKey("user"));
-        @SuppressWarnings("unchecked") Map<String, Object> user = (Map<String, Object>) result.get("user");
+        @SuppressWarnings("unchecked") final Map<String, Object> user = (Map<String, Object>) result.get("user");
         assertEquals("Ada", user.get("name"));
     }
 
@@ -285,9 +313,11 @@ class KeyDecoderTest {
     @DisplayName("Given wrong content When processed Then value is placed in nested map")
     void processKeyValueLine_givenWrongContent() {
         // Given
-        Map<String, Object> result = new LinkedHashMap<>();
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.SAFE, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final Map<String, Object> result = new LinkedHashMap<>();
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.SAFE,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.lines = new String[]{"invalid line"};
         context.currentLine = 0;
 
@@ -302,14 +332,16 @@ class KeyDecoderTest {
     @DisplayName("Given invalid key/value line in strict mode When processed Then exception is thrown")
     void processKeyValueLine_givenMissingColonStrict_whenProcessed_thenThrows() {
         // Given
-        Map<String, Object> result = new LinkedHashMap<>();
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final Map<String, Object> result = new LinkedHashMap<>();
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.lines = new String[]{"invalid line"};
         context.currentLine = 0;
 
         // When / Then
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
             () -> KeyDecoder.processKeyValueLine(result, context.lines[0], 0, context));
         assertTrue(ex.getMessage().contains("Missing colon"));
     }
@@ -318,18 +350,20 @@ class KeyDecoderTest {
     @DisplayName("Given key-value pair with dotted key When parsed Then resulting object has nested structure")
     void parseKeyValuePair_givenDottedKey_whenParsed_thenNestedStructure() {
         // Given
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.SAFE,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         context.lines = new String[]{"a.b: 1"};
         context.currentLine = 0;
 
         // When
-        Object obj = KeyDecoder.parseKeyValuePair("a.b", "1", 0, false, context);
+        final Object obj = KeyDecoder.parseKeyValuePair("a.b", "1", 0, false, context);
 
         // Then
         assertInstanceOf(Map.class, obj);
-        @SuppressWarnings("unchecked") Map<String, Object> map = (Map<String, Object>) obj;
-        @SuppressWarnings("unchecked") Map<String, Object> a = (Map<String, Object>) map.get("a");
+        @SuppressWarnings("unchecked") final Map<String, Object> map = (Map<String, Object>) obj;
+        @SuppressWarnings("unchecked") final Map<String, Object> a = (Map<String, Object>) map.get("a");
         assertEquals(1L, a.get("b"));
     }
 
@@ -337,23 +371,26 @@ class KeyDecoderTest {
     @DisplayName("No Quted key When checked Then key is expandable")
     void parseKeyValueField_NoQuotes_givenSafeAndValidDotted_whenChecked_thenTrue() {
         // Given
-        DecodeContext context = new DecodeContext();
-        context.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.SAFE, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
-        Map<String, Object> map = new LinkedHashMap<>();
+        final DecodeContext context = new DecodeContext();
+        context.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.SAFE,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        final Map<String, Object> map = new LinkedHashMap<>();
         map.put("user.name", "Ada");
 
-        int depth = 0;
+        final int depth = 0;
 
         // When
-        boolean expandable = KeyDecoder.parseKeyValueField("\"user.name\"", map, depth, context);
+        final boolean expandable = KeyDecoder.parseKeyValueField("\"user.name\"", map, depth, context);
 
         // Then
         assertFalse(expandable);
     }
 
     // Reflection helpers for invoking private static methods
-    private static Object invokePrivateStatic(String methodName, Class<?>[] paramTypes, Object... args) throws Exception {
-        Method declaredMethod = KeyDecoder.class.getDeclaredMethod(methodName, paramTypes);
+    private static Object invokePrivateStatic(final String methodName, final Class<?>[] paramTypes,
+            final Object... args) throws Exception {
+        final Method declaredMethod = KeyDecoder.class.getDeclaredMethod(methodName, paramTypes);
         declaredMethod.setAccessible(true);
         return declaredMethod.invoke(null, args);
     }

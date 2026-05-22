@@ -1,5 +1,7 @@
 package dev.toonformat.jtoon.encoder;
 
+import static org.junit.jupiter.api.Assertions.*;
+import java.util.List;
 import dev.toonformat.jtoon.Delimiter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -14,10 +16,6 @@ import tools.jackson.databind.node.IntNode;
 import tools.jackson.databind.node.LongNode;
 import tools.jackson.databind.node.NullNode;
 import tools.jackson.databind.node.StringNode;
-
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for PrimitiveEncoder utility class.
@@ -34,7 +32,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should encode true")
         void testTrue() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(BooleanNode.TRUE, Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(BooleanNode.TRUE, Delimiter.COMMA.toString());
 
             // Then
             assertEquals("true", result);
@@ -44,7 +42,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should encode false")
         void testFalse() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(BooleanNode.FALSE, Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(BooleanNode.FALSE, Delimiter.COMMA.toString());
 
             // Then
             assertEquals("false", result);
@@ -59,7 +57,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should encode integer")
         void testInteger() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(IntNode.valueOf(42), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(IntNode.valueOf(42), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("42", result);
@@ -69,7 +67,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should encode negative integer")
         void testNegativeInteger() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(IntNode.valueOf(-100), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(IntNode.valueOf(-100), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("-100", result);
@@ -79,7 +77,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should encode zero")
         void testZero() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(IntNode.valueOf(0), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(IntNode.valueOf(0), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("0", result);
@@ -89,7 +87,8 @@ class PrimitiveEncoderTest {
         @DisplayName("should encode long")
         void testLong() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(LongNode.valueOf(9999999999L), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(
+                LongNode.valueOf(9999999999L), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("9999999999", result);
@@ -99,7 +98,8 @@ class PrimitiveEncoderTest {
         @DisplayName("should encode double")
         void testDouble() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(DoubleNode.valueOf(3.14), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(
+                DoubleNode.valueOf(3.14), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("3.14", result);
@@ -109,7 +109,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should encode float")
         void testFloat() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(FloatNode.valueOf(2.5f), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(FloatNode.valueOf(2.5f), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("2.5", result);
@@ -119,7 +119,8 @@ class PrimitiveEncoderTest {
         @DisplayName("should encode decimal node")
         void testDecimal() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(DecimalNode.valueOf(new java.math.BigDecimal("123.456")), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(
+                DecimalNode.valueOf(new java.math.BigDecimal("123.456")), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("123.456", result);
@@ -129,10 +130,12 @@ class PrimitiveEncoderTest {
         @DisplayName("should preserve high-precision BigDecimal exactly")
         void testHighPrecisionDecimal() {
             // Given — a 40-digit number that would lose precision through Double
-            java.math.BigDecimal precise = new java.math.BigDecimal("1234567890123456789012345678901234567890.12345678901234567890");
+            final java.math.BigDecimal precise = new java.math.BigDecimal(
+                "1234567890123456789012345678901234567890.12345678901234567890");
 
             // When
-            String result = PrimitiveEncoder.encodePrimitive(DecimalNode.valueOf(precise), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(
+                DecimalNode.valueOf(precise), Delimiter.COMMA.toString());
 
             // Then — exact value preserved, not truncated via double precision
             // trailing zero stripped by stripTrailingZeros
@@ -143,10 +146,11 @@ class PrimitiveEncoderTest {
         @DisplayName("should preserve high-precision small decimal")
         void testHighPrecisionSmallDecimal() {
             // Given — a tiny fractional number that loses precision via Double
-            java.math.BigDecimal tiny = new java.math.BigDecimal("0.00000000000012345678901234567890");
+            final java.math.BigDecimal tiny = new java.math.BigDecimal("0.00000000000012345678901234567890");
 
             // When
-            String result = PrimitiveEncoder.encodePrimitive(DecimalNode.valueOf(tiny), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(
+                DecimalNode.valueOf(tiny), Delimiter.COMMA.toString());
 
             // Then — trailing zero stripped by stripTrailingZeros
             assertEquals("0.0000000000001234567890123456789", result);
@@ -161,7 +165,8 @@ class PrimitiveEncoderTest {
         @DisplayName("should encode simple string unquoted")
         void testSimpleString() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("hello"), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(
+                StringNode.valueOf("hello"), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("hello", result);
@@ -170,8 +175,9 @@ class PrimitiveEncoderTest {
         @Test
         @DisplayName("should quote string with comma when using comma delimiter")
         void testStringWithComma() {
-            //give
-            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("a,b"), Delimiter.COMMA.toString());
+            // Given
+            final String result = PrimitiveEncoder.encodePrimitive(
+                StringNode.valueOf("a,b"), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("\"a,b\"", result);
@@ -181,7 +187,8 @@ class PrimitiveEncoderTest {
         @DisplayName("should not quote string with comma when using pipe delimiter")
         void testStringWithCommaUsingPipe() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("a,b"), Delimiter.PIPE.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(
+                StringNode.valueOf("a,b"), Delimiter.PIPE.toString());
 
             // Then
             assertEquals("a,b", result);
@@ -191,7 +198,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should quote empty string")
         void testEmptyString() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf(""), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf(""), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("\"\"", result);
@@ -201,7 +208,8 @@ class PrimitiveEncoderTest {
         @DisplayName("should quote string that looks like boolean")
         void testBooleanLikeString() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("true"), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(
+                StringNode.valueOf("true"), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("\"true\"", result);
@@ -211,7 +219,8 @@ class PrimitiveEncoderTest {
         @DisplayName("should quote string that looks like null")
         void testNullLikeString() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("null"), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(
+                StringNode.valueOf("null"), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("\"null\"", result);
@@ -221,7 +230,8 @@ class PrimitiveEncoderTest {
         @DisplayName("should quote string that looks like number")
         void testNumberLikeString() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("123"), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(
+                StringNode.valueOf("123"), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("\"123\"", result);
@@ -236,7 +246,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should encode null")
         void testNull() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(NullNode.getInstance(), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(NullNode.getInstance(), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("null", result);
@@ -251,7 +261,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should encode simple string without quotes")
         void testSimpleString() {
             // Given
-            String result = PrimitiveEncoder.encodeStringLiteral("hello world", Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodeStringLiteral("hello world", Delimiter.COMMA.toString());
 
             // Then
             assertEquals("hello world", result);
@@ -261,7 +271,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should quote and escape string with quotes")
         void testStringWithQuotes() {
             // Given
-            String result = PrimitiveEncoder.encodeStringLiteral("say \"hi\"", Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodeStringLiteral("say \"hi\"", Delimiter.COMMA.toString());
 
             // Then
             assertEquals("\"say \\\"hi\\\"\"", result);
@@ -271,7 +281,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should quote string with leading space")
         void testLeadingSpace() {
             // Given
-            String result = PrimitiveEncoder.encodeStringLiteral(" hello", Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodeStringLiteral(" hello", Delimiter.COMMA.toString());
 
             // Then
             assertEquals("\" hello\"", result);
@@ -281,7 +291,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should quote string with trailing space")
         void testTrailingSpace() {
             // Given
-            String result = PrimitiveEncoder.encodeStringLiteral("hello ", Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodeStringLiteral("hello ", Delimiter.COMMA.toString());
 
             // Then
             assertEquals("\"hello \"", result);
@@ -291,7 +301,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should quote string with colon")
         void testColon() {
             // Given
-            String result = PrimitiveEncoder.encodeStringLiteral("key:value", Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodeStringLiteral("key:value", Delimiter.COMMA.toString());
 
             // Then
             assertEquals("\"key:value\"", result);
@@ -301,7 +311,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should quote string with active delimiter")
         void testDelimiter() {
             // Given
-            String result = PrimitiveEncoder.encodeStringLiteral("a,b,c", Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodeStringLiteral("a,b,c", Delimiter.COMMA.toString());
 
             // Then
             assertEquals("\"a,b,c\"", result);
@@ -311,7 +321,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should not quote string with inactive delimiter")
         void testInactiveDelimiter() {
             // Given
-            String result = PrimitiveEncoder.encodeStringLiteral("a|b|c", Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodeStringLiteral("a|b|c", Delimiter.COMMA.toString());
 
             // Then
             assertEquals("a|b|c", result);
@@ -326,7 +336,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should encode simple key without quotes")
         void testSimpleKey() {
             // Given
-            String result = PrimitiveEncoder.encodeKey("name");
+            final String result = PrimitiveEncoder.encodeKey("name");
 
             // Then
             assertEquals("name", result);
@@ -336,7 +346,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should encode key with underscores without quotes")
         void testKeyWithUnderscore() {
             // Given
-            String result = PrimitiveEncoder.encodeKey("user_name");
+            final String result = PrimitiveEncoder.encodeKey("user_name");
 
             // Then
             assertEquals("user_name", result);
@@ -346,7 +356,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should encode key with dots without quotes")
         void testKeyWithDots() {
             // Given
-            String result = PrimitiveEncoder.encodeKey("com.example.key");
+            final String result = PrimitiveEncoder.encodeKey("com.example.key");
 
             // Then
             assertEquals("com.example.key", result);
@@ -356,7 +366,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should quote key with spaces")
         void testKeyWithSpaces() {
             // Given
-            String result = PrimitiveEncoder.encodeKey("full name");
+            final String result = PrimitiveEncoder.encodeKey("full name");
 
             // Then
             assertEquals("\"full name\"", result);
@@ -365,14 +375,14 @@ class PrimitiveEncoderTest {
         @Test
         @DisplayName("should quote numeric key")
         void testNumericKey() {
-            String result = PrimitiveEncoder.encodeKey("123");
+            final String result = PrimitiveEncoder.encodeKey("123");
             assertEquals("\"123\"", result);
         }
 
         @Test
         @DisplayName("should quote key starting with hyphen")
         void testKeyWithLeadingHyphen() {
-            String result = PrimitiveEncoder.encodeKey("-key");
+            final String result = PrimitiveEncoder.encodeKey("-key");
             assertEquals("\"-key\"", result);
         }
 
@@ -380,7 +390,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should quote empty key")
         void testEmptyKey() {
             // Given
-            String result = PrimitiveEncoder.encodeKey("");
+            final String result = PrimitiveEncoder.encodeKey("");
 
             // Then
             assertEquals("\"\"", result);
@@ -390,7 +400,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should quote key with special characters")
         void testKeyWithSpecialChars() {
             // Given
-            String result = PrimitiveEncoder.encodeKey("key:value");
+            final String result = PrimitiveEncoder.encodeKey("key:value");
 
             // Then
             assertEquals("\"key:value\"", result);
@@ -405,13 +415,13 @@ class PrimitiveEncoderTest {
         @DisplayName("should join primitive values with comma")
         void testJoinWithComma() {
             // Given
-            List<JsonNode> values = List.of(
+            final List<JsonNode> values = List.of(
                 IntNode.valueOf(1),
                 StringNode.valueOf("hello"),
                 BooleanNode.TRUE);
 
             // When
-            String result = PrimitiveEncoder.joinEncodedValues(values, Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.joinEncodedValues(values, Delimiter.COMMA.toString());
 
             // Then
             assertEquals("1,hello,true", result);
@@ -421,13 +431,13 @@ class PrimitiveEncoderTest {
         @DisplayName("should join values with pipe delimiter")
         void testJoinWithPipe() {
             // Given
-            List<JsonNode> values = List.of(
+            final List<JsonNode> values = List.of(
                 IntNode.valueOf(1),
                 StringNode.valueOf("test"),
                 IntNode.valueOf(2));
 
             // When
-            String result = PrimitiveEncoder.joinEncodedValues(values, Delimiter.PIPE.toString());
+            final String result = PrimitiveEncoder.joinEncodedValues(values, Delimiter.PIPE.toString());
 
             // Then
             assertEquals("1|test|2", result);
@@ -437,13 +447,13 @@ class PrimitiveEncoderTest {
         @DisplayName("should join values with tab delimiter")
         void testJoinWithTab() {
             // Given
-            List<JsonNode> values = List.of(
+            final List<JsonNode> values = List.of(
                 StringNode.valueOf("a"),
                 StringNode.valueOf("b"),
                 StringNode.valueOf("c"));
 
             // When
-            String result = PrimitiveEncoder.joinEncodedValues(values, Delimiter.TAB.toString());
+            final String result = PrimitiveEncoder.joinEncodedValues(values, Delimiter.TAB.toString());
 
             // Then
             assertEquals("a\tb\tc", result);
@@ -453,10 +463,10 @@ class PrimitiveEncoderTest {
         @DisplayName("should handle empty list")
         void testEmptyList() {
             // Given
-            List<JsonNode> values = List.of();
+            final List<JsonNode> values = List.of();
 
             // When
-            String result = PrimitiveEncoder.joinEncodedValues(values, Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.joinEncodedValues(values, Delimiter.COMMA.toString());
 
             // Then
             assertEquals("", result);
@@ -466,10 +476,10 @@ class PrimitiveEncoderTest {
         @DisplayName("should handle single value")
         void testSingleValue() {
             // Given
-            List<JsonNode> values = List.of(IntNode.valueOf(42));
+            final List<JsonNode> values = List.of(IntNode.valueOf(42));
 
             // When
-            String result = PrimitiveEncoder.joinEncodedValues(values, Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.joinEncodedValues(values, Delimiter.COMMA.toString());
 
             // Then
             assertEquals("42", result);
@@ -479,12 +489,12 @@ class PrimitiveEncoderTest {
         @DisplayName("should quote values containing delimiter")
         void testQuoteDelimiter() {
             // Given
-            List<JsonNode> values = List.of(
+            final List<JsonNode> values = List.of(
                 StringNode.valueOf("a,b"),
                 StringNode.valueOf("c,d"));
 
             // When
-            String result = PrimitiveEncoder.joinEncodedValues(values, Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.joinEncodedValues(values, Delimiter.COMMA.toString());
 
             // Then
             assertEquals("\"a,b\",\"c,d\"", result);
@@ -494,13 +504,13 @@ class PrimitiveEncoderTest {
         @DisplayName("should handle null values")
         void testNullValues() {
             // Given
-            List<JsonNode> values = List.of(
+            final List<JsonNode> values = List.of(
                 IntNode.valueOf(1),
                 NullNode.getInstance(),
                 IntNode.valueOf(2));
 
             // When
-            String result = PrimitiveEncoder.joinEncodedValues(values, Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.joinEncodedValues(values, Delimiter.COMMA.toString());
 
             // Then
             assertEquals("1,null,2", result);
@@ -515,7 +525,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should format simple array header")
         void testSimpleHeader() {
             // Given
-            String result = PrimitiveEncoder.formatHeader(5, "items", null, Delimiter.COMMA.toString(), false);
+            final String result = PrimitiveEncoder.formatHeader(5, "items", null, Delimiter.COMMA.toString(), false);
 
             // Then
             assertEquals("items[5]:", result);
@@ -525,10 +535,10 @@ class PrimitiveEncoderTest {
         @DisplayName("should format tabular header")
         void testTabularHeader() {
             // Given
-            List<String> fields = List.of("id", "name");
+            final List<String> fields = List.of("id", "name");
 
             // When
-            String result = PrimitiveEncoder.formatHeader(3, "users", fields, Delimiter.COMMA.toString(), false);
+            final String result = PrimitiveEncoder.formatHeader(3, "users", fields, Delimiter.COMMA.toString(), false);
 
             // Then
             assertEquals("users[3]{id,name}:", result);
@@ -538,7 +548,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should format header with length marker")
         void testWithLengthMarker() {
             // Given
-            String result = PrimitiveEncoder.formatHeader(5, "data", null, Delimiter.COMMA.toString(), true);
+            final String result = PrimitiveEncoder.formatHeader(5, "data", null, Delimiter.COMMA.toString(), true);
 
             // Then
             assertEquals("data[#5]:", result);
@@ -548,10 +558,10 @@ class PrimitiveEncoderTest {
         @DisplayName("should format header with pipe delimiter")
         void testPipeDelimiter() {
             // Given
-            List<String> fields = List.of("x", "y");
+            final List<String> fields = List.of("x", "y");
 
             // When
-            String result = PrimitiveEncoder.formatHeader(2, "points", fields, Delimiter.PIPE.toString(), false);
+            final String result = PrimitiveEncoder.formatHeader(2, "points", fields, Delimiter.PIPE.toString(), false);
 
             // Then
             assertEquals("points[2|]{x|y}:", result);
@@ -561,7 +571,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should format header without key")
         void testWithoutKey() {
             // Given
-            String result = PrimitiveEncoder.formatHeader(3, null, null, Delimiter.COMMA.toString(), false);
+            final String result = PrimitiveEncoder.formatHeader(3, null, null, Delimiter.COMMA.toString(), false);
 
             // Then
             assertEquals("[3]:", result);
@@ -576,7 +586,8 @@ class PrimitiveEncoderTest {
         @DisplayName("should handle Unicode in string encoding")
         void testUnicode() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("Hello 世界"), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(
+                StringNode.valueOf("Hello 世界"), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("Hello 世界", result);
@@ -586,7 +597,8 @@ class PrimitiveEncoderTest {
         @DisplayName("should handle emoji in string encoding")
         void testEmoji() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("Hello 🌍"), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(
+                StringNode.valueOf("Hello 🌍"), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("Hello 🌍", result);
@@ -596,7 +608,8 @@ class PrimitiveEncoderTest {
         @DisplayName("should handle complex escaped string")
         void testComplexEscaping() {
             // Given
-            String result = PrimitiveEncoder.encodePrimitive(StringNode.valueOf("line1\nline2\ttab"), Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.encodePrimitive(
+                StringNode.valueOf("line1\nline2\ttab"), Delimiter.COMMA.toString());
 
             // Then
             assertEquals("\"line1\\nline2\\ttab\"", result);
@@ -606,7 +619,7 @@ class PrimitiveEncoderTest {
         @DisplayName("should join mixed type values correctly")
         void testMixedTypes() {
             // Given
-            List<JsonNode> values = List.of(
+            final List<JsonNode> values = List.of(
                 IntNode.valueOf(123),
                 StringNode.valueOf("text"),
                 BooleanNode.FALSE,
@@ -614,7 +627,7 @@ class PrimitiveEncoderTest {
                 DoubleNode.valueOf(3.14));
 
             // When
-            String result = PrimitiveEncoder.joinEncodedValues(values, Delimiter.COMMA.toString());
+            final String result = PrimitiveEncoder.joinEncodedValues(values, Delimiter.COMMA.toString());
 
             // Then
             assertEquals("123,text,false,null,3.14", result);

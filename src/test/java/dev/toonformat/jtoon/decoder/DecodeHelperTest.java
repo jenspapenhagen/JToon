@@ -1,5 +1,12 @@
 package dev.toonformat.jtoon.decoder;
 
+import static org.junit.jupiter.api.Assertions.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import dev.toonformat.jtoon.DecodeOptions;
 import dev.toonformat.jtoon.Delimiter;
 import dev.toonformat.jtoon.PathExpansion;
@@ -10,17 +17,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 @Tag("unit")
 class DecodeHelperTest {
+
+    private static final int TEST_CONFLICT_VALUE = 5;
+
     private final DecodeContext context = new DecodeContext();
 
     @Test
@@ -55,7 +56,7 @@ class DecodeHelperTest {
         setUpContext("tags[3]: 1,2,3");
 
         // When
-        int result = DecodeHelper.getDepth("tags[3]: 1,2,3", context);
+        final int result = DecodeHelper.getDepth("tags[3]: 1,2,3", context);
 
         // Then
         assertEquals(0, result);
@@ -68,7 +69,7 @@ class DecodeHelperTest {
         setUpContext("items[1]:\n  - id: 1\n    nested:\n      x: 1");
 
         // When
-        int result = DecodeHelper.getDepth("items[1]:\n  - id: 1\n    nested:\n      x: 1", context);
+        final int result = DecodeHelper.getDepth("items[1]:\n  - id: 1\n    nested:\n      x: 1", context);
 
         // Then
         assertEquals(0, result);
@@ -81,7 +82,7 @@ class DecodeHelperTest {
         setUpContext("items[2]{\"order:id\",\"full name\"}:\n  1,Ada\n  2,Bob");
 
         // When
-        int result = DecodeHelper.getDepth("items[2]{\"order:id\",\"full name\"}:\n  1,Ada\n  2,Bob", context);
+        final int result = DecodeHelper.getDepth("items[2]{\"order:id\",\"full name\"}:\n  1,Ada\n  2,Bob", context);
 
         // Then
         assertEquals(0, result);
@@ -94,7 +95,7 @@ class DecodeHelperTest {
         setUpContext("id: 123\nname: Ada\nactive: true");
 
         // When
-        int result = DecodeHelper.getDepth("id: 123\nname: Ada\nactive: true", context);
+        final int result = DecodeHelper.getDepth("id: 123\nname: Ada\nactive: true", context);
 
         // Then
         assertEquals(0, result);
@@ -108,7 +109,7 @@ class DecodeHelperTest {
         context.currentLine = 0;
 
         // When
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
             () -> DecodeHelper.getDepth("\tkey: 1", context));
 
         // Then
@@ -123,7 +124,7 @@ class DecodeHelperTest {
         context.currentLine = 0;
 
         // When
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
             () -> DecodeHelper.getDepth("   key: 1", context));
 
         // Then
@@ -135,11 +136,12 @@ class DecodeHelperTest {
     void getDepth_withCustomIndent() {
         // Given
         // indent size 4, 8 spaces -> depth 2
+        final int customIndent = 4;
         setUpContext("        key: 1");
-        context.options = DecodeOptions.withIndent(4);
+        context.options = DecodeOptions.withIndent(customIndent);
 
         // When
-        int depth = DecodeHelper.getDepth("        key: 1", context);
+        final int depth = DecodeHelper.getDepth("        key: 1", context);
 
         // Then
         assertEquals(2, depth);
@@ -166,10 +168,10 @@ class DecodeHelperTest {
     @DisplayName("findUnquotedColon: ignores colons inside quotes and handles escapes")
     void findUnquotedColon_case1() {
         // Given
-        String s1 = "\"order:id\": 1"; // first colon quoted, second is key-value
+        final String s1 = "\"order:id\": 1"; // first colon quoted, second is key-value
 
         // When
-        int idx1 = DecodeHelper.findUnquotedColon(s1);
+        final int idx1 = DecodeHelper.findUnquotedColon(s1);
 
         // Then
         assertEquals(s1.lastIndexOf(':'), idx1);
@@ -178,7 +180,7 @@ class DecodeHelperTest {
     @Test
     void findUnquotedColon_case2() {
         // Given
-        String s2 = "no colon here";
+        final String s2 = "no colon here";
         // When/Then
         assertEquals(-1, DecodeHelper.findUnquotedColon(s2));
     }
@@ -186,10 +188,10 @@ class DecodeHelperTest {
     @Test
     void findUnquotedColon_case() {
         // Given
-        String s3 = "\"escaped\\\"quote\":42"; // quoted section contains escaped quote
+        final String s3 = "\"escaped\\\"quote\":42"; // quoted section contains escaped quote
 
         // When
-        int idx3 = DecodeHelper.findUnquotedColon(s3);
+        final int idx3 = DecodeHelper.findUnquotedColon(s3);
 
         // Then
         assertEquals(s3.lastIndexOf(':'), idx3);
@@ -202,7 +204,7 @@ class DecodeHelperTest {
         setUpContext("\n\n  a: 1\n\n");
 
         // When
-        int idx = DecodeHelper.findNextNonBlankLine(0, context);
+        final int idx = DecodeHelper.findNextNonBlankLine(0, context);
 
         // Then
         assertEquals(2, idx);
@@ -216,7 +218,7 @@ class DecodeHelperTest {
         context.currentLine = 0;
 
         // When
-        Integer depth = DecodeHelper.findNextNonBlankLineDepth(context);
+        final Integer depth = DecodeHelper.findNextNonBlankLineDepth(context);
 
         // Then
         assertNotNull(depth);
@@ -254,7 +256,7 @@ class DecodeHelperTest {
 
         // When
         // object vs scalar
-        IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class,
             () -> DecodeHelper.checkFinalValueConflict("a", new java.util.HashMap<>(), 1, context));
         // Then
         assertTrue(ex1.getMessage().contains("object"));
@@ -268,7 +270,7 @@ class DecodeHelperTest {
 
         // When
         // array vs scalar
-        IllegalArgumentException ex2 = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex2 = assertThrows(IllegalArgumentException.class,
             () -> DecodeHelper.checkFinalValueConflict("a", new ArrayList<>(), 1, context));
 
         // Then
@@ -279,7 +281,7 @@ class DecodeHelperTest {
     @DisplayName("checkPathExpansionConflict: respects strict mode toggle")
     void checkPathExpansionConflict_strictToggle() {
         // Given
-        Map<String, Object> map = new HashMap<>();
+        final Map<String, Object> map = new HashMap<>();
         map.put("a", new HashMap<>());
 
         // When
@@ -293,7 +295,7 @@ class DecodeHelperTest {
     @DisplayName("checkPathExpansionConflict: respects strict mode toggle")
     void checkPathExpansionConflict_strictToggle2() {
         // Given
-        Map<String, Object> map = new HashMap<>();
+        final Map<String, Object> map = new HashMap<>();
         // strict false -> no conflict
         setUpContext("");
         context.options = DecodeOptions.withStrict(false);
@@ -367,7 +369,8 @@ class DecodeHelperTest {
             setUpContext(new String[]{"    abc"}, false, 0);
 
             // When / Then
-            assertEquals(4, DecodeHelper.getDepth("    abc", context));
+            final int expectedDepth = 4;
+            assertEquals(expectedDepth, DecodeHelper.getDepth("    abc", context));
         }
 
         @Test
@@ -381,17 +384,18 @@ class DecodeHelperTest {
         }
 
         @Test
-        @DisplayName("Given strict mode and blank line with non-multiple spaces, Then getDepth() throws (validateIndentation skipped)")
+        @DisplayName("Given strict mode and blank line with non-multiple spaces,"
+                + " Then getDepth() throws (validateIndentation skipped)")
         void strictBlankNonMultipleIndentationThrows() {
             // Given
             // 3 spaces + NON-BREAKING SPACE (U+00A0)
             // NBSP is whitespace but NOT trimmed away and not counted as space -> perfect case
-            String line = "   \u00A0";
+            final String line = "   " + (char) 0xA0;
 
             setUpContext(new String[]{line}, true, 2);
             context.currentLine = 0;
             // When
-            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> DecodeHelper.getDepth(line, context));
 
             // Then
@@ -402,7 +406,7 @@ class DecodeHelperTest {
         @DisplayName("validateIndentation: strict mode tab → throws")
         void validateIndentationTabThrows() {
             // Given
-            String line = "\tabc";
+            final String line = "\tabc";
 
             setUpContext(new String[]{line}, true, 2);
             context.currentLine = 0;
@@ -416,9 +420,10 @@ class DecodeHelperTest {
         @DisplayName("validateIndentation: leading spaces then text → ok")
         void validateIndentationLeadingSpacesThenStop() {
             // Given
-            String line = "   abc"; // 3 spaces then letter
+            final String line = "   abc"; // 3 spaces then letter
 
-            setUpContext(new String[]{line}, true, 3); // indent 3 → valid
+            final int validIndent = 3;
+            setUpContext(new String[]{line}, true, validIndent); // indent 3 → valid
             context.currentLine = 0;
 
             // When / Then
@@ -429,12 +434,12 @@ class DecodeHelperTest {
         @DisplayName("validateIndentation: strict + non-multiple indentation → throws")
         void validateIndentationNonMultipleThrows() {
             // Given
-            String line = "   abc"; // 3 spaces → not multiple of indent 2
+            final String line = "   abc"; // 3 spaces → not multiple of indent 2
 
             setUpContext(new String[]{line}, true, 2);
             context.currentLine = 0;
             // When
-            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> DecodeHelper.getDepth(line, context));
 
 
@@ -446,9 +451,10 @@ class DecodeHelperTest {
         @DisplayName("validateIndentation: non-breaking space stops loop")
         void validateIndentationStopsAtNonBreakingSpace() {
             // Given
-            String line = "   \u00A0abc";
+            final String line = "   " + (char) 0xA0 + "abc";
+            final int customIndent = 3;
 
-            setUpContext(new String[]{line}, true, 3);
+            setUpContext(new String[]{line}, true, customIndent);
             context.currentLine = 0;
 
             // When / Then
@@ -492,7 +498,7 @@ class DecodeHelperTest {
 
             // When / Then
             assertThrows(IllegalArgumentException.class,
-                () -> DecodeHelper.checkFinalValueConflict("a", new HashMap<>(), 5, context));
+                () -> DecodeHelper.checkFinalValueConflict("a", new HashMap<>(), TEST_CONFLICT_VALUE, context));
         }
 
         @Test
@@ -503,7 +509,7 @@ class DecodeHelperTest {
 
             // When / Then
             assertThrows(IllegalArgumentException.class,
-                () -> DecodeHelper.checkFinalValueConflict("a", new ArrayList<>(), 5, context));
+                () -> DecodeHelper.checkFinalValueConflict("a", new ArrayList<>(), TEST_CONFLICT_VALUE, context));
         }
 
         @Test
@@ -514,7 +520,7 @@ class DecodeHelperTest {
 
             // When / Then
             assertDoesNotThrow(
-                () -> DecodeHelper.checkFinalValueConflict("a", new HashMap<>(), 5, context)
+                () -> DecodeHelper.checkFinalValueConflict("a", new HashMap<>(), TEST_CONFLICT_VALUE, context)
             );
         }
 
@@ -523,12 +529,12 @@ class DecodeHelperTest {
         void pathExpansionConflict() {
             // Given
             setUpContext(new String[]{}, true, 2);
-            Map<String, Object> map = new HashMap<>();
+            final Map<String, Object> map = new HashMap<>();
             map.put("x", new HashMap<>());
 
             // When / Then
             assertThrows(IllegalArgumentException.class,
-                () -> DecodeHelper.checkPathExpansionConflict(map, "x", 5, context));
+                () -> DecodeHelper.checkPathExpansionConflict(map, "x", TEST_CONFLICT_VALUE, context));
         }
     }
 
@@ -625,10 +631,10 @@ class DecodeHelperTest {
         @Test
         @DisplayName("should throw when key already exists in strict mode")
         void duplicateKeyThrows() {
-            Map<String, Object> map = new HashMap<>();
+            final Map<String, Object> map = new HashMap<>();
             map.put("name", "Ada");
             setUpContext("");
-            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> DecodeHelper.checkDuplicateKey(map, "name", context));
             assertTrue(ex.getMessage().contains("Duplicate key"));
         }
@@ -636,7 +642,7 @@ class DecodeHelperTest {
         @Test
         @DisplayName("should not throw when key does not exist")
         void newKeyOk() {
-            Map<String, Object> map = new HashMap<>();
+            final Map<String, Object> map = new HashMap<>();
             map.put("name", "Ada");
             setUpContext("");
             assertDoesNotThrow(() -> DecodeHelper.checkDuplicateKey(map, "other", context));
@@ -645,7 +651,7 @@ class DecodeHelperTest {
         @Test
         @DisplayName("should not throw in non-strict mode")
         void nonStrictAllowsDuplicate() {
-            Map<String, Object> map = new HashMap<>();
+            final Map<String, Object> map = new HashMap<>();
             map.put("name", "Ada");
             context.options = DecodeOptions.withStrict(false);
             assertDoesNotThrow(() -> DecodeHelper.checkDuplicateKey(map, "name", context));
@@ -654,20 +660,28 @@ class DecodeHelperTest {
 
     @Nested
     @DisplayName("computeLeadingSpaces()")
-    class computeLeadingSpaces {
+    class ComputeLeadingSpaces {
         DecodeContext ctxStrict2 = new DecodeContext();
         DecodeContext ctxNonStrict2 = new DecodeContext();
         DecodeContext ctxStrict4 = new DecodeContext();
+        static final int strictIndent4 = 4;
 
         @BeforeEach
         void setup() {
-            ctxStrict2.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
-            ctxNonStrict2.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
-            ctxStrict4.options = new DecodeOptions(4, Delimiter.COMMA, true, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+            ctxStrict2.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF,
+                    DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                    DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+            ctxNonStrict2.options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF,
+                    DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                    DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+            ctxStrict4.options = new DecodeOptions(strictIndent4, Delimiter.COMMA, true, PathExpansion.OFF,
+                    DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                    DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         }
 
-        private int invokeCompute(String line, DecodeContext ctx) throws Exception {
-            Method declaredMethod = DecodeHelper.class.getDeclaredMethod("computeLeadingSpaces", new Class<?>[]{String.class, DecodeContext.class});
+        private int invokeCompute(final String line, final DecodeContext ctx) throws Exception {
+            final Method declaredMethod = DecodeHelper.class.getDeclaredMethod("computeLeadingSpaces",
+                    new Class<?>[]{String.class, DecodeContext.class});
             declaredMethod.setAccessible(true);
 
             return (int) declaredMethod.invoke(null, line, ctx);
@@ -681,14 +695,17 @@ class DecodeHelperTest {
 
         @Test
         void testLeadingSpacesNonStrict() throws Exception {
-            assertEquals(3, invokeCompute("   hello", ctxNonStrict2));
-            assertEquals(5, invokeCompute("     x", ctxNonStrict2));
+            final int expectedSpaces3 = 3;
+            final int expectedSpaces5 = 5;
+            assertEquals(expectedSpaces3, invokeCompute("   hello", ctxNonStrict2));
+            assertEquals(expectedSpaces5, invokeCompute("     x", ctxNonStrict2));
         }
 
         @Test
         void testLeadingSpacesStrictValidMultiple() throws Exception {
+            final int fourSpacesResult = 4;
             assertEquals(2, invokeCompute("  x", ctxStrict2));
-            assertEquals(4, invokeCompute("    x", ctxStrict2));
+            assertEquals(fourSpacesResult, invokeCompute("    x", ctxStrict2));
         }
 
         @Test
@@ -699,28 +716,34 @@ class DecodeHelperTest {
 
         @Test
         void testStrictIndentSize4Valid() throws Exception {
-            assertEquals(4, invokeCompute("    x", ctxStrict4));
-            assertEquals(8, invokeCompute("        x", ctxStrict4));
+            final int expectedSpaces4 = 4;
+            final int expectedSpaces8 = 8;
+            assertEquals(expectedSpaces4, invokeCompute("    x", ctxStrict4));
+            assertEquals(expectedSpaces8, invokeCompute("        x", ctxStrict4));
         }
 
         @Test
         void testBlankLinesReturnZero() throws Exception {
-            assertEquals(4, invokeCompute("    ", ctxStrict2));
+            final int expectedSpaces4 = 4;
+            final int expectedSpaces3 = 3;
+            assertEquals(expectedSpaces4, invokeCompute("    ", ctxStrict2));
             assertEquals(0, invokeCompute("", ctxStrict2));
-            assertEquals(3, invokeCompute("   ", ctxNonStrict2));
+            assertEquals(expectedSpaces3, invokeCompute("   ", ctxNonStrict2));
         }
     }
 
 
-    private void setUpContext(String toon) {
+    private void setUpContext(final String toon) {
         this.context.lines = toon.split("\n", -1);
         this.context.options = DecodeOptions.DEFAULT;
         this.context.delimiter = DecodeOptions.DEFAULT.delimiter();
     }
 
-    private void setUpContext(String[] lines, boolean strict, int indent) {
+    private void setUpContext(final String[] lines, final boolean strict, final int indent) {
         this.context.lines = lines;
-        this.context.options = new DecodeOptions(indent, Delimiter.COMMA, strict, PathExpansion.OFF, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+        this.context.options = new DecodeOptions(indent, Delimiter.COMMA, strict, PathExpansion.OFF,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         this.context.delimiter = DecodeOptions.DEFAULT.delimiter();
     }
 }

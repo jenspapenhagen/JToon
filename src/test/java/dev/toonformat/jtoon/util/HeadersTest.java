@@ -1,12 +1,10 @@
 package dev.toonformat.jtoon.util;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
+import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for {@link Headers}.
@@ -17,7 +15,7 @@ class HeadersTest {
     @Test
     @DisplayName("constructor throws UnsupportedOperationException")
     void constructorThrowsException() throws Exception {
-        Constructor<Headers> constructor = Headers.class.getDeclaredConstructor();
+        final Constructor<Headers> constructor = Headers.class.getDeclaredConstructor();
         constructor.setAccessible(true);
         assertThrows(InvocationTargetException.class, () -> constructor.newInstance());
     }

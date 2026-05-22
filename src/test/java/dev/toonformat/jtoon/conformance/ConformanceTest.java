@@ -1,5 +1,10 @@
 package dev.toonformat.jtoon.conformance;
 
+import static org.junit.jupiter.api.Assertions.*;
+import java.io.File;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Stream;
 import dev.toonformat.jtoon.DecodeOptions;
 import dev.toonformat.jtoon.Delimiter;
 import dev.toonformat.jtoon.EncodeOptions;
@@ -21,79 +26,72 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestFactory;
 import tools.jackson.databind.ObjectMapper;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 @Tag("unit")
 public class ConformanceTest {
     @Nested
     @DisplayName("Encoding conformance tests")
-    class encodeJsonTest {
+    class EncodeJsonTest {
         private final ObjectMapper mapper = new ObjectMapper();
 
         @TestFactory
-        Stream<DynamicNode> testJSONFile() {
-            File directory = new File("src/test/resources/conformance/encode");
+        Stream<DynamicNode> testJsonFile() {
+            final File directory = new File("src/test/resources/conformance/encode");
             return loadTestFixtures(directory)
                 .map(this::createTestContainer);
         }
 
-        private Stream<EncodeTestFile> loadTestFixtures(File directory) {
-            File[] files = Objects.requireNonNull(directory.listFiles());
+        private Stream<EncodeTestFile> loadTestFixtures(final File directory) {
+            final File[] files = Objects.requireNonNull(directory.listFiles());
             return Arrays.stream(files)
                 .map(this::parseFixture);
         }
 
         @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
-        private EncodeTestFile parseFixture(File file) {
+        private EncodeTestFile parseFixture(final File file) {
             try {
-                EncodeTestFixture fixture = mapper.readValue(file, EncodeTestFixture.class);
+                final EncodeTestFixture fixture = mapper.readValue(file, EncodeTestFixture.class);
                 return new EncodeTestFile(file, fixture);
             } catch (Exception exception) {
                 throw new RuntimeException("Failed to parse test fixture: " + file.getName(), exception);
             }
         }
 
-        private DynamicContainer createTestContainer(EncodeTestFile encodeFile) {
-            File file = encodeFile.file();
-            Stream<DynamicTest> tests = createTestsFromFixture(encodeFile);
+        private DynamicContainer createTestContainer(final EncodeTestFile encodeFile) {
+            final File file = encodeFile.file();
+            final Stream<DynamicTest> tests = createTestsFromFixture(encodeFile);
 
             return DynamicContainer.dynamicContainer(
                 file.getName(),
                 tests);
         }
 
-        private Stream<DynamicTest> createTestsFromFixture(EncodeTestFile encodeFile) {
-            EncodeTestFixture fixture = encodeFile.fixture();
+        private Stream<DynamicTest> createTestsFromFixture(final EncodeTestFile encodeFile) {
+            final EncodeTestFixture fixture = encodeFile.fixture();
             return fixture.tests().stream()
                 .map(this::createDynamicTest);
         }
 
-        private DynamicTest createDynamicTest(JsonEncodeTestCase testCase) {
+        private DynamicTest createDynamicTest(final JsonEncodeTestCase testCase) {
             return DynamicTest.dynamicTest(testCase.name(), () -> executeTestCase(testCase));
         }
 
-        private void executeTestCase(JsonEncodeTestCase testCase) {
-            EncodeOptions options = parseOptions(testCase.options());
-            String jsonInput = mapper.writeValueAsString(testCase.input());
-            String actual = JToon.encodeJson(jsonInput, options);
+        private void executeTestCase(final JsonEncodeTestCase testCase) {
+            final EncodeOptions options = parseOptions(testCase.options());
+            final String jsonInput = mapper.writeValueAsString(testCase.input());
+            final String actual = JToon.encodeJson(jsonInput, options);
             assertEquals(testCase.expected(), actual);
         }
 
-        private EncodeOptions parseOptions(JsonEncodeTestOptions options) {
+        private EncodeOptions parseOptions(final JsonEncodeTestOptions options) {
             if (options == null) {
                 return EncodeOptions.DEFAULT;
             }
 
-            int indent = options.indent() != null ? options.indent() : 2;
+            final int indent = options.indent() != null ? options.indent() : 2;
 
             Delimiter delimiter = Delimiter.COMMA;
             if (options.delimiter() != null) {
-                String delimiterValue = options.delimiter();
+                final String delimiterValue = options.delimiter();
                 delimiter = switch (delimiterValue) {
                     case "\t" -> Delimiter.TAB;
                     case "|" -> Delimiter.PIPE;
@@ -102,11 +100,11 @@ public class ConformanceTest {
                 };
             }
 
-            boolean lengthMarker = options.lengthMarker() != null && "#".equals(options.lengthMarker());
-            KeyFolding flatten = options.keyFolding() != null && options.keyFolding().equals("safe") ?
+            final boolean lengthMarker = options.lengthMarker() != null && "#".equals(options.lengthMarker());
+            final KeyFolding flatten = options.keyFolding() != null && options.keyFolding().equals("safe") ?
                 KeyFolding.SAFE :
                 KeyFolding.OFF;
-            int depth = options.flattenDepth() != null ? options.flattenDepth() : Integer.MAX_VALUE;
+            final int depth = options.flattenDepth() != null ? options.flattenDepth() : Integer.MAX_VALUE;
             return new EncodeOptions(indent, delimiter, lengthMarker, flatten, depth);
         }
 
@@ -116,86 +114,86 @@ public class ConformanceTest {
 
     @Nested
     @DisplayName("Decoding conformance tests")
-    class decodeJsonTest {
+    class DecodeJsonTest {
         private final ObjectMapper mapper = new ObjectMapper();
 
         @TestFactory
-        Stream<DynamicNode> testJSONFile() {
-            File directory = new File("src/test/resources/conformance/decode");
+        Stream<DynamicNode> testJsonFile() {
+            final File directory = new File("src/test/resources/conformance/decode");
             return loadTestFixtures(directory)
                 .map(this::createTestContainer);
         }
 
-        private Stream<DecodeTestFile> loadTestFixtures(File directory) {
-            File[] files = Objects.requireNonNull(directory.listFiles());
+        private Stream<DecodeTestFile> loadTestFixtures(final File directory) {
+            final File[] files = Objects.requireNonNull(directory.listFiles());
             return Arrays.stream(files)
                 .map(this::parseFixture);
         }
 
         @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
-        private DecodeTestFile parseFixture(File file) {
+        private DecodeTestFile parseFixture(final File file) {
             try {
-                DecodeTestFixture fixture = mapper.readValue(file, DecodeTestFixture.class);
+                final DecodeTestFixture fixture = mapper.readValue(file, DecodeTestFixture.class);
                 return new DecodeTestFile(file, fixture);
             } catch (Exception exception) {
                 throw new RuntimeException("Failed to parse test fixture: " + file.getName(), exception);
             }
         }
 
-        private DynamicContainer createTestContainer(DecodeTestFile decodeFile) {
-            File file = decodeFile.file();
-            Stream<DynamicTest> tests = createTestsFromFixture(decodeFile);
+        private DynamicContainer createTestContainer(final DecodeTestFile decodeFile) {
+            final File file = decodeFile.file();
+            final Stream<DynamicTest> tests = createTestsFromFixture(decodeFile);
 
             return DynamicContainer.dynamicContainer(
                 file.getName(),
                 tests);
         }
 
-        private Stream<DynamicTest> createTestsFromFixture(DecodeTestFile decodeFile) {
-            DecodeTestFixture fixture = decodeFile.fixture();
+        private Stream<DynamicTest> createTestsFromFixture(final DecodeTestFile decodeFile) {
+            final DecodeTestFixture fixture = decodeFile.fixture();
             return fixture.tests().stream()
                 .map(this::createDynamicTest);
         }
 
-        private DynamicTest createDynamicTest(JsonDecodeTestCase testCase) {
+        private DynamicTest createDynamicTest(final JsonDecodeTestCase testCase) {
             return DynamicTest.dynamicTest(testCase.name(), () -> executeTestCase(testCase));
         }
 
-        private void executeTestCase(JsonDecodeTestCase testCase) {
-            DecodeOptions options = parseOptions(testCase.options());
-            String toonInput = testCase.input().asString();
+        private void executeTestCase(final JsonDecodeTestCase testCase) {
+            final DecodeOptions options = parseOptions(testCase.options());
+            final String toonInput = testCase.input().asString();
 
             if (Boolean.TRUE.equals(testCase.shouldError())) {
-                Object actual;
+                final Object actual;
                 try {
                     actual = JToon.decode(toonInput, options);
                 } catch (IllegalArgumentException e) {
                     return;
                 }
-                String actualJson = mapper.writeValueAsString(actual);
+                final String actualJson = mapper.writeValueAsString(actual);
                 fail("Expected IllegalArgumentException but got result: " + actualJson);
             } else {
-                Object actual = JToon.decode(toonInput, options);
+                final Object actual = JToon.decode(toonInput, options);
                 if (testCase.expected() == null || testCase.expected().isNull()) {
                     assertNull(actual, "Expected null but got: " + actual);
                 } else {
-                    String actualJson = mapper.writeValueAsString(actual);
-                    String expectedJson = mapper.writeValueAsString(testCase.expected());
+                    final String actualJson = mapper.writeValueAsString(actual);
+                    final String expectedJson = mapper.writeValueAsString(testCase.expected());
                     assertEquals(expectedJson, actualJson);
                 }
             }
         }
 
-        private DecodeOptions parseOptions(JsonDecodeTestOptions options) {
+        private DecodeOptions parseOptions(final JsonDecodeTestOptions options) {
             if (options == null) {
                 return DecodeOptions.DEFAULT;
             }
 
-            int indent = options.indent() != null ? options.indent() : 2;
+            final int indent = options.indent() != null ? options.indent() : 2;
 
             Delimiter delimiter = Delimiter.COMMA;
             if (options.delimiter() != null) {
-                String delimiterValue = options.delimiter();
+                final String delimiterValue = options.delimiter();
                 delimiter = switch (delimiterValue) {
                     case "\t" -> Delimiter.TAB;
                     case "|" -> Delimiter.PIPE;
@@ -204,7 +202,7 @@ public class ConformanceTest {
                 };
             }
 
-            boolean strict = options.strict() != null ? options.strict() : true;
+            final boolean strict = options.strict() != null ? options.strict() : true;
 
             PathExpansion expandPaths = null;
             if (options.expandPaths() != null) {
@@ -214,7 +212,9 @@ public class ConformanceTest {
                 };
             }
 
-            return new DecodeOptions(indent, delimiter, strict, expandPaths, DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE, DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
+            return new DecodeOptions(indent, delimiter, strict, expandPaths,
+                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
+                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
         }
 
         private record DecodeTestFile(File file, DecodeTestFixture fixture) {

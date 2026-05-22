@@ -1,15 +1,13 @@
 package dev.toonformat.jtoon.decoder;
 
+import static org.junit.jupiter.api.Assertions.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import dev.toonformat.jtoon.encoder.PrimitiveEncoder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for PrimitiveDecoder utility class.
@@ -17,6 +15,9 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @Tag("unit")
 class PrimitiveDecoderTest {
+
+    private static final long EXPECTED_LONG_VALUE = 42L;
+    private static final double DELTA = 0.000001;
 
     @Test
     @DisplayName("throws unsupported Operation Exception for calling the constructor")
@@ -38,10 +39,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenNullInput_whenParse_thenReturnsEmptyString() {
         // Given
-        String input = null;
+        final String input = null;
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNotNull(result);
@@ -51,10 +52,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenEmptyInput_whenParse_thenReturnsEmptyString() {
         // Given
-        String input = "";
+        final String input = "";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertEquals("", result);
@@ -63,10 +64,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenNullLiteral_whenParse_thenReturnsNull() {
         // Given
-        String input = "null";
+        final String input = "null";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNull(result);
@@ -75,10 +76,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenTrueLiteral_whenParse_thenReturnsBooleanTrue() {
         // Given
-        String input = "true";
+        final String input = "true";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertEquals(true, result);
@@ -87,10 +88,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenFalseLiteral_whenParse_thenReturnsBooleanFalse() {
         // Given
-        String input = "false";
+        final String input = "false";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertEquals(false, result);
@@ -99,10 +100,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenQuotedString_whenParse_thenReturnsUnescapedString() {
         // Given
-        String input = "\"hello\\nworld\"";
+        final String input = "\"hello\\nworld\"";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertEquals("hello\nworld", result);
@@ -112,10 +113,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenOctalLikeNumber_whenParse_thenReturnsString() {
         // Given
-        String input = "0123"; // starts with "0" + non-decimal
+        final String input = "0123"; // starts with "0" + non-decimal
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertEquals("0123", result);
@@ -124,10 +125,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenZeroOrExplicitZeroFormats_whenParse_thenParsesAsNumber() {
         // Given
-        String input = "0.0";
+        final String input = "0.0";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertEquals(0L, result);  // negative/positive zero → 0L
@@ -136,60 +137,62 @@ class PrimitiveDecoderTest {
     @Test
     void givenIntegerString_whenParse_thenReturnsLong() {
         // Given
-        String input = "42";
+        final String input = "42";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
-        assertEquals(42L, result);
+        assertEquals(EXPECTED_LONG_VALUE, result);
     }
 
     @Test
     void givenDecimalNumber_whenParse_thenReturnsDouble() {
         // Given
-        String input = "3.14";
+        final String input = "3.14";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNotNull(result);
-        assertEquals(3.14, (Double) result, 0.000001);
+        final double expectedDouble = 3.14;
+        assertEquals(expectedDouble, (Double) result, DELTA);
     }
 
     @Test
     void givenExponentNumber_whenParse_thenReturnsLong() {
         // Given
-        String input = "1e3";
+        final String input = "1e3";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNotNull(result);
-        assertEquals(1000.0, (Long) result, 0.000001);
+        final double exponentResult = 1000.0;
+        assertEquals(exponentResult, (Long) result, DELTA);
     }
 
     @Test
     void givenDoubleRepresentingWholeNumber_whenParse_thenReturnsLong() {
         // Given
-        String input = "42.0";
+        final String input = "42.0";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
-        assertEquals(42L, result); // should convert to Long
+        assertEquals(EXPECTED_LONG_VALUE, result); // should convert to Long
     }
 
     @Test
     void givenNegativeZeroDouble_whenParse_thenReturnsZeroLong() {
         // Given
-        String input = "-0.0";
+        final String input = "-0.0";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertEquals(0L, result);
@@ -198,10 +201,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenOctalNumber_whenParse_thenReturnsLong() {
         // Given
-        String input = "07";
+        final String input = "07";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNotNull(result);
@@ -211,10 +214,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenNumberWithLeadingZero_whenParse_thenReturnsLong() {
         // Given
-        String input = "0.7";
+        final String input = "0.7";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNotNull(result);
@@ -224,10 +227,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenNumberWithLeadingZeroOutsideTheOctalRange_whenParse_thenReturnsLong() {
         // Given
-        String input = "0.9";
+        final String input = "0.9";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNotNull(result);
@@ -237,10 +240,10 @@ class PrimitiveDecoderTest {
     @Test
     void given08_whenParse_thenReturnsString() {
         // Given
-        String input = "08";
+        final String input = "08";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNotNull(result);
@@ -250,10 +253,10 @@ class PrimitiveDecoderTest {
     @Test
     void given09_whenParse_thenReturnsString() {
         // Given
-        String input = "09";
+        final String input = "09";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNotNull(result);
@@ -263,10 +266,10 @@ class PrimitiveDecoderTest {
     @Test
     void given00_whenParse_thenReturnsString() {
         // Given
-        String input = "00";
+        final String input = "00";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNotNull(result);
@@ -276,10 +279,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenNegativeLeadingZero_whenParse_thenReturnsString() {
         // Given
-        String input = "-07";
+        final String input = "-07";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNotNull(result);
@@ -289,23 +292,24 @@ class PrimitiveDecoderTest {
     @Test
     void givenLeadingZeroDecimal_whenParse_thenReturnsNumber() {
         // Given
-        String input = "0.5";
+        final String input = "0.5";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNotNull(result);
-        assertEquals(0.5, (Double) result, 0.000001);
+        final double expectedDouble = 0.5;
+        assertEquals(expectedDouble, (Double) result, DELTA);
     }
 
     @Test
     void givenLeadingZeroExponent_whenParse_thenReturnsNumber() {
         // Given — "0e1" = 0 × 10^1 = 0, which is a whole number → Long
-        String input = "0e1";
+        final String input = "0e1";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNotNull(result);
@@ -315,10 +319,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenMinLongNumber_whenParse_thenReturnsLong() {
         // Given
-        String input = String.valueOf(Long.MIN_VALUE);
+        final String input = String.valueOf(Long.MIN_VALUE);
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNotNull(result);
@@ -328,10 +332,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenMaxLongNumber_whenParse_thenReturnsLong() {
         // Given
-        String input = String.valueOf(Long.MAX_VALUE);
+        final String input = String.valueOf(Long.MAX_VALUE);
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNotNull(result);
@@ -341,10 +345,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenSmallerMinLongNumber_whenParse_thenReturnsLong() {
         // Given
-        String input = String.valueOf(Long.MIN_VALUE - 1);
+        final String input = String.valueOf(Long.MIN_VALUE - 1);
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNotNull(result);
@@ -354,10 +358,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenBiggerMaxLongNumber_whenParse_thenReturnsLong() {
         // Given
-        String input = String.valueOf(Long.MAX_VALUE + 1);
+        final String input = String.valueOf(Long.MAX_VALUE + 1);
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertNotNull(result);
@@ -368,10 +372,10 @@ class PrimitiveDecoderTest {
     @Test
     void givenInvalidNumber_whenParse_thenReturnsOriginalString() {
         // Given
-        String input = "123abc";
+        final String input = "123abc";
 
         // When
-        Object result = PrimitiveDecoder.parse(input);
+        final Object result = PrimitiveDecoder.parse(input);
 
         // Then
         assertEquals("123abc", result);
@@ -380,10 +384,10 @@ class PrimitiveDecoderTest {
     @Test
     void testing_SkipTrailingZeros() throws Exception {
         // Given
-        String input = "10.000";
+        final String input = "10.000";
 
         // When
-        String result = (String) invokePrivateStatic("stripTrailingZeros", new Class[]{String.class}, input);
+        final String result = (String) invokePrivateStatic("stripTrailingZeros", new Class[]{String.class}, input);
 
         // Then
         assertEquals("10", result);
@@ -392,18 +396,19 @@ class PrimitiveDecoderTest {
     @Test
     void testing_SkipTrailingZeros_WithSmallNUmber() throws Exception {
         // Given
-        String input = "1.0";
+        final String input = "1.0";
 
         // When
-        String result = (String) invokePrivateStatic("stripTrailingZeros", new Class[]{String.class}, input);
+        final String result = (String) invokePrivateStatic("stripTrailingZeros", new Class[]{String.class}, input);
 
         // Then
         assertEquals("1", result);
     }
 
     // Reflection helpers for invoking private static methods
-    private static Object invokePrivateStatic(String methodName, Class<?>[] paramTypes, Object... args) throws Exception {
-        Method declaredMethod = PrimitiveEncoder.class.getDeclaredMethod(methodName, paramTypes);
+    private static Object invokePrivateStatic(final String methodName, final Class<?>[] paramTypes,
+            final Object... args) throws Exception {
+        final Method declaredMethod = PrimitiveEncoder.class.getDeclaredMethod(methodName, paramTypes);
         declaredMethod.setAccessible(true);
         return declaredMethod.invoke(null, args);
     }
