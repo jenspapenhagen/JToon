@@ -80,7 +80,8 @@ class ObjectEncoderTest {
         final LineWriter writer = new LineWriter(options.indent());
 
         // When
-        ObjectEncoder.encodeObject(objectNode, writer, initialDepth, options, new HashSet<>(), null, null, new HashSet<>());
+        ObjectEncoder.encodeObject(objectNode, writer, initialDepth, options,
+            new HashSet<>(), null, null, new HashSet<>());
 
         // Then
         assertEquals("                                                  x: 10", writer.toString());
@@ -634,7 +635,8 @@ class ObjectEncoderTest {
         final Set<String> siblings = new HashSet<>();
 
         // When
-        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options, siblings, null, null, REMAINING_DEPTH, new HashSet<>());
+        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options,
+            siblings, null, null, REMAINING_DEPTH, new HashSet<>());
 
         // Then
         final String expected = String.join("\n",
@@ -662,7 +664,8 @@ class ObjectEncoderTest {
         final Set<String> siblings = new HashSet<>();
 
         // When
-        ObjectEncoder.encodeKeyValuePair(null, node, writer, 0, options, siblings, null, null, REMAINING_DEPTH, new HashSet<>());
+        ObjectEncoder.encodeKeyValuePair(null, node, writer, 0, options,
+            siblings, null, null, REMAINING_DEPTH, new HashSet<>());
 
         // Then
         final String expected = "";
@@ -734,7 +737,8 @@ class ObjectEncoderTest {
         final Set<String> blockedKeys = Set.of("items");
 
         // When
-        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options, siblings, null, null, REMAINING_DEPTH, blockedKeys);
+        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options,
+            siblings, null, null, REMAINING_DEPTH, blockedKeys);
 
         // Then
         final String expected = String.join("\n",
@@ -762,7 +766,8 @@ class ObjectEncoderTest {
         final Set<String> siblings = new HashSet<>();
 
         // When
-        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options, siblings, null, null, REMAINING_DEPTH, new HashSet<>());
+        ObjectEncoder.encodeKeyValuePair("items", node, writer, 0, options,
+            siblings, null, null, REMAINING_DEPTH, new HashSet<>());
 
         // Then
         final String expected = String.join("\n",
@@ -851,7 +856,7 @@ class ObjectEncoderTest {
         // When
         final EncodeOptions expectedEncodeOptions = (EncodeOptions) invokePrivateStatic("flatten",
             new Class[]{String.class, Flatten.FoldResult.class, LineWriter.class, int.class,
-                    EncodeOptions.class, Set.class, String.class, Set.class, int.class},
+                EncodeOptions.class, Set.class, String.class, Set.class, int.class},
             "key", foldResult, writer, 2, options, Set.of(), null, blockedKeys, 3);
 
         // Then
@@ -877,7 +882,7 @@ class ObjectEncoderTest {
         // When
         final EncodeOptions expectedEncodeOptions = (EncodeOptions) invokePrivateStatic("flatten",
             new Class[]{String.class, Flatten.FoldResult.class, LineWriter.class, int.class,
-                    EncodeOptions.class, Set.class, String.class, Set.class, int.class},
+                EncodeOptions.class, Set.class, String.class, Set.class, int.class},
             "key", foldResult, writer, 2, options, Set.of(), "user", blockedKeys, 3);
 
         // Then

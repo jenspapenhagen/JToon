@@ -31,8 +31,8 @@ import tools.jackson.databind.JsonNode;
 @State(Scope.Thread)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
+@Warmup(iterations = BenchmarkConstants.WARMUP_ITERATIONS, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = BenchmarkConstants.MEASUREMENT_ITERATIONS, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(2)
 public class EncodingOptimizationBenchmark {
 

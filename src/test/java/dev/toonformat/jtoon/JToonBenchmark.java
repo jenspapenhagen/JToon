@@ -22,8 +22,8 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @State(Scope.Thread)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Warmup(iterations = 3, time = 1)
-@Measurement(iterations = 5, time = 2)
+@Warmup(iterations = BenchmarkConstants.WARMUP_ITERATIONS, time = 1)
+@Measurement(iterations = BenchmarkConstants.MEASUREMENT_ITERATIONS, time = 2)
 @Fork(2)
 public class JToonBenchmark {
 

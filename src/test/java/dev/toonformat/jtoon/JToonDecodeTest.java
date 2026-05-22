@@ -744,7 +744,7 @@ public class JToonDecodeTest {
             @SuppressWarnings("unchecked")
             final Map<String, Object> map = (Map<String, Object>) result;
             final long decodedTen = 10L;
-        assertEquals(decodedTen, map.get("foo[1][bar]"));
+            assertEquals(decodedTen, map.get("foo[1][bar]"));
         }
 
         @Test

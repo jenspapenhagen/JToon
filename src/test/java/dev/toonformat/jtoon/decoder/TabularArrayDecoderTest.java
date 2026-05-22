@@ -121,7 +121,7 @@ class TabularArrayDecoderTest {
         // When
         final boolean processed = (boolean) invokePrivateStatic("processTabularRow",
             new Class[]{String.class, int.class, int.class, List.class,
-                    Delimiter.class, List.class, DecodeContext.class},
+                Delimiter.class, List.class, DecodeContext.class},
             line, lineDepth, expectedRowDepth,
             keys, Delimiter.COMMA, result, context
         );
