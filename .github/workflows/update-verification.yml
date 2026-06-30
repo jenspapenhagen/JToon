@@ -1,0 +1,41 @@
+name: Update Dependency Verification
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths-ignore:
+      - 'gradle/verification-metadata.xml'
+
+jobs:
+  update:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7.0.0
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5.4.0
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Regenerate dependency verification metadata
+        run: ./gradlew --write-verification-metadata sha256 build -x test
+
+      - name: Commit updated verification metadata
+        run: |
+          git diff --quiet gradle/verification-metadata.xml || {
+            git add gradle/verification-metadata.xml
+            git commit -m "auto: update dependency verification metadata [skip ci]"
+            git push
+          }
