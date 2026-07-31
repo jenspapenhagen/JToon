@@ -1,7 +1,7 @@
 {
-  "version": "3.1",
+  "version": "4.0",
   "category": "decode",
-  "description": "Primitive array decoding - inline arrays of strings, numbers, booleans, quoted strings",
+  "description": "Primitive array decoding – inline arrays of strings, numbers, booleans, quoted strings",
   "tests": [
     {
       "name": "parses string arrays inline",
@@ -104,6 +104,14 @@
       "input": "\"key[test]\"[3]: 1,2,3",
       "expected": {
         "key[test]": [1, 2, 3]
+      },
+      "specSection": "9.1"
+    },
+    {
+      "name": "parses quoted key containing a colon with inline array",
+      "input": "\"a:b\"[2]: 1,2",
+      "expected": {
+        "a:b": [1, 2]
       },
       "specSection": "9.1"
     },
