@@ -4,13 +4,16 @@ on:
   push:
     tags:
       - 'v*'
+  release:
+    types:
+      - published
 
 jobs:
   build-and-release:
     runs-on: ubuntu-22.04
     permissions:
       contents: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v7.0.1
@@ -20,7 +23,21 @@ jobs:
 
       - name: Extract version from tag
         id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name || github.ref_name }}
+        run: echo "VERSION=${TAG_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Skip duplicate run (release created by this workflow)
+        id: skip_duplicate
+        env:
+          RELEASE_AUTHOR: ${{ github.event.release.author.login || '' }}
+        run: |
+          if [ "${{ github.event_name }}" = "release" ] && [ "$RELEASE_AUTHOR" = "github-actions[bot]" ]; then
+            echo "Release was created by the tag-push run itself - skipping duplicate publish"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set version from tag
         env:
@@ -48,6 +65,7 @@ jobs:
         run: ./gradlew build --write-verification-metadata sha256
 
       - name: Validate Maven Central credentials
+        if: steps.skip_duplicate.outputs.skip != 'true'
         run: |
           if [ -z "${{ secrets.MAVEN_CENTRAL_TOKEN }}" ]; then
             echo "❌ MAVEN_CENTRAL_TOKEN secret is not set"
@@ -58,9 +76,11 @@ jobs:
           MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
 
       - name: Check curl version
+        if: steps.skip_duplicate.outputs.skip != 'true'
         run: curl --version
 
       - name: Publish to Maven Central
+        if: steps.skip_duplicate.outputs.skip != 'true'
         run: ./gradlew publishToMavenCentral --write-verification-metadata sha256
         env:
           MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
@@ -68,15 +88,18 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Generate SBOM
+        if: steps.skip_duplicate.outputs.skip != 'true'
         run: ./gradlew cyclonedxBom --write-verification-metadata sha256
 
       - name: Update README version
+        if: steps.skip_duplicate.outputs.skip != 'true'
         run: |
           VERSION=${{ steps.get_version.outputs.VERSION }}
           sed -i "s/jtoon:[0-9]\+\.[0-9]\+\.[0-9]\+/jtoon:$VERSION/g" README.md
           sed -i "s/<version>[0-9]\+\.[0-9]\+\.[0-9]\+<\/version>/<version>$VERSION<\/version>/g" README.md
 
       - name: Commit README and verification metadata changes
+        if: steps.skip_duplicate.outputs.skip != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -86,25 +109,39 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3.0.3
-        with:
-          files: |
-            build/libs/*.jar
-            build/reports/jtoon-bom.json
-          generate_release_notes: true
-          draft: false
-          prerelease: ${{ contains(steps.get_version.outputs.VERSION, '-') }}
+      - name: Create GitHub Release (if not exists)
+        if: steps.skip_duplicate.outputs.skip != 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ steps.get_version.outputs.VERSION }}"
+          if gh release view "$TAG" --json tagName >/dev/null 2>&1; then
+            echo "Release $TAG already exists - skipping creation"
+          else
+            ARGS=()
+            if [[ "${{ steps.get_version.outputs.VERSION }}" == *-* ]]; then
+              ARGS+=(--prerelease)
+            fi
+            gh release create "$TAG" --generate-notes "${ARGS[@]}"
+          fi
+
+      - name: Upload release assets
+        if: steps.skip_duplicate.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ steps.get_version.outputs.VERSION }}"
+          gh release upload "$TAG" build/libs/*.jar build/reports/jtoon-bom.json --clobber
 
       - name: Generate JaCoCo Badge
+        if: steps.skip_duplicate.outputs.skip != 'true'
         uses: cicirello/jacoco-badge-generator@v2.12.1
         with:
           generate-branches-badge: true
           jacoco-csv-file: build/customJacocoReportDir/test/jacocoTestReport.csv
 
       - name: Commit and push the badge
+        if: steps.skip_duplicate.outputs.skip != 'true'
         uses: EndBug/add-and-commit@v11.1.1
         with:
             default_author: github_actions
