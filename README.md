@@ -360,7 +360,9 @@ Object result2 = JToon.decode(invalidToon, lenient);
 # Run tests only
 ./gradlew test
 
-# Update dependency verification metadata (required when adding/updating dependencies)
+# Update dependency verification metadata (required when adding/updating dependencies).
+# Delete first: --write-verification-metadata merges, it does not replace.
+rm -f gradle/verification-metadata.xml
 ./gradlew --write-verification-metadata sha256 build cyclonedxBom -x test
 ```
 
