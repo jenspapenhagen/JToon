@@ -13,12 +13,39 @@ plugins {
 }
 
 group = 'dev.toonformat'
-version = providers.gradleProperty('version').getOrElse('1.0.5')
+
+// The released version is derived from the git tag: .github/workflows/release.yml injects
+// `version=<tag>` into gradle.properties before building. A local build has no such injection,
+// so the fallback must not look like a real release. 'unspecified' is Gradle's own sentinel and
+// yields artifacts named e.g. JToon-unspecified.jar, which can never be mistaken for, or
+// published as, 2.0.x. Publishing without an explicit version is refused outright (see guard below).
+def releaseVersion = providers.gradleProperty('version').orNull
+version = releaseVersion ?: 'unspecified'
 description = 'Token-Oriented Object Notation (TOON) - A compact, human-readable format for LLM contexts'
 
 // Apply external Gradle scripts
 apply from: 'gradle/publishing.gradle'
 apply from: 'gradle/verification.gradle'
+
+// Publishing guard: refuse to publish when no version was resolved from gradle.properties
+// or -Pversion. Covers every repository publish, including publishToMavenCentral, which reaches
+// a remote upload via createCentralBundle -> publishMavenJavaPublicationToLocalRepoRepository.
+// Publish-to-MavenLocal is deliberately exempt, since a local install has no release risk.
+tasks.withType(org.gradle.api.publish.maven.tasks.PublishToMavenRepository).configureEach {
+    // Resolve everything at configuration time: org.gradle.configuration-cache=true forbids
+    // touching Task.project during execution, so name/version are captured here, not read in doFirst.
+    def taskName = name
+    def projectName = project.name
+    def resolvedVersion = project.version.toString()
+    doFirst {
+        if (!releaseVersion) {
+            throw new GradleException(
+                    "Refusing to publish '${projectName}' with version '${resolvedVersion}': no version was set.\n" +
+                    "The release version comes from the git tag. For a manual run pass it explicitly:\n" +
+                    "  ./gradlew ${taskName} -Pversion=2.0.5")
+        }
+    }
+}
 
 java {
     // Only enforce toolchain in CI to ensure consistent Java 17 builds
