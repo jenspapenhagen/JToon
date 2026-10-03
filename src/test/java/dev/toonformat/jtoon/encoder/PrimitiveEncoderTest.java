@@ -663,5 +663,39 @@ class PrimitiveEncoderTest {
             assertEquals("123,text,false,null,3.14", result);
         }
     }
-}
 
+    @Nested
+    @DisplayName("encodeRootPrimitive - root byte-order mark (\u00a77.2)")
+    class EncodeRootPrimitiveByteOrderMark {
+
+        private static final String BOM = "\uFEFF";
+
+        @Test
+        @DisplayName("quotes a root string starting with U+FEFF")
+        void quotesRootStringStartingWithBom() {
+            assertEquals("\"" + BOM + "abc\"",
+                    PrimitiveEncoder.encodeRootPrimitive(StringNode.valueOf(BOM + "abc"), Delimiter.COMMA.toString()));
+        }
+
+        @Test
+        @DisplayName("quotes a root string consisting only of U+FEFF")
+        void quotesRootStringThatIsOnlyBom() {
+            assertEquals("\"" + BOM + "\"",
+                    PrimitiveEncoder.encodeRootPrimitive(StringNode.valueOf(BOM), Delimiter.COMMA.toString()));
+        }
+
+        @Test
+        @DisplayName("leaves U+FEFF unquoted in a non-root value")
+        void leavesBomUnquotedWhenNotRoot() {
+            assertEquals(BOM + "abc",
+                    PrimitiveEncoder.encodePrimitive(StringNode.valueOf(BOM + "abc"), Delimiter.COMMA.toString()));
+        }
+
+        @Test
+        @DisplayName("leaves a root string with an interior U+FEFF unquoted")
+        void leavesInteriorBomUnquoted() {
+            assertEquals("a" + BOM + "b",
+                    PrimitiveEncoder.encodeRootPrimitive(StringNode.valueOf("a" + BOM + "b"), Delimiter.COMMA.toString()));
+        }
+    }
+}
