@@ -72,7 +72,7 @@ user:
   name: Ada
   tags[2]: reading,gaming
   active: true
-  preferences[0]:
+  preferences: []
 ```
 
 ## Type Conversions
