@@ -186,8 +186,10 @@ class HeadersTest {
     }
 
     @Nested
-    @DisplayName("matchKeyedArrayHeader - unquoted key tokens (\u00a77.4)")
+    @DisplayName("matchKeyedArrayHeader - unquoted key tokens (§7.4)")
     class MatchKeyedArrayHeaderKeyToken {
+
+        private static final char NBSP = (char) 0xA0;
 
         @Test
         @DisplayName("keeps a hyphen inside the key")
@@ -216,7 +218,8 @@ class HeadersTest {
         @Test
         @DisplayName("keeps a non-breaking space inside the key")
         void nonBreakingSpaceInsideKey() {
-            assertEquals("a\u00a0b", Headers.matchKeyedArrayHeader("a\u00a0b[1]:").key());
+            final String key = "a" + NBSP + "b";
+            assertEquals(key, Headers.matchKeyedArrayHeader(key + "[1]:").key());
         }
 
         @Test
@@ -226,19 +229,19 @@ class HeadersTest {
         }
 
         @Test
-        @DisplayName("rejects a space between key and bracket segment (\u00a76)")
+        @DisplayName("rejects a space between key and bracket segment (§6)")
         void spaceBeforeBracketRejected() {
             assertNull(Headers.matchKeyedArrayHeader("foo [2]:"));
         }
 
         @Test
-        @DisplayName("rejects a space between bracket segment and colon (\u00a76)")
+        @DisplayName("rejects a space between bracket segment and colon (§6)")
         void spaceBeforeColonRejected() {
             assertNull(Headers.matchKeyedArrayHeader("items[2] :"));
         }
 
         @Test
-        @DisplayName("rejects content between bracket segment and colon (\u00a76)")
+        @DisplayName("rejects content between bracket segment and colon (§6)")
         void contentBeforeColonRejected() {
             assertNull(Headers.matchKeyedArrayHeader("items[2]extra:"));
         }

@@ -665,10 +665,10 @@ class PrimitiveEncoderTest {
     }
 
     @Nested
-    @DisplayName("encodeRootPrimitive - root byte-order mark (\u00a77.2)")
+    @DisplayName("encodeRootPrimitive - root byte-order mark (§7.2)")
     class EncodeRootPrimitiveByteOrderMark {
 
-        private static final String BOM = "\uFEFF";
+        private static final String BOM = String.valueOf((char) 0xFEFF);
 
         @Test
         @DisplayName("quotes a root string starting with U+FEFF")
@@ -694,8 +694,9 @@ class PrimitiveEncoderTest {
         @Test
         @DisplayName("leaves a root string with an interior U+FEFF unquoted")
         void leavesInteriorBomUnquoted() {
-            assertEquals("a" + BOM + "b",
-                    PrimitiveEncoder.encodeRootPrimitive(StringNode.valueOf("a" + BOM + "b"), Delimiter.COMMA.toString()));
+            final String value = "a" + BOM + "b";
+            assertEquals(value,
+                    PrimitiveEncoder.encodeRootPrimitive(StringNode.valueOf(value), Delimiter.COMMA.toString()));
         }
     }
 }

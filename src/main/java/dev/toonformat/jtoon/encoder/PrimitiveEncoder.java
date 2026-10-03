@@ -35,18 +35,6 @@ public final class PrimitiveEncoder {
     }
 
     /**
-     * Encodes a primitive in root primitive position (§5), where the quoting
-     * rules of §7.2 apply with the additional root-only constraints.
-     *
-     * @param value     the primitive root value to encode
-     * @param delimiter the delimiter to use (for string validation)
-     * @return the encoded string representation
-     */
-    public static String encodeRootPrimitive(final JsonNode value, final String delimiter) {
-        return encodePrimitive(value, delimiter, true);
-    }
-
-    /**
      * Encodes a primitive JsonNode, applying the §7.2 quoting rules for the
      * given position.
      *
@@ -63,6 +51,18 @@ public final class PrimitiveEncoder {
             case STRING -> encodeStringLiteral(value.asString(), delimiter, rootPrimitive);
             default -> NULL_LITERAL;
         };
+    }
+
+    /**
+     * Encodes a primitive in root primitive position (§5), where the quoting
+     * rules of §7.2 apply with the additional root-only constraints.
+     *
+     * @param value     the primitive root value to encode
+     * @param delimiter the delimiter to use (for string validation)
+     * @return the encoded string representation
+     */
+    public static String encodeRootPrimitive(final JsonNode value, final String delimiter) {
+        return encodePrimitive(value, delimiter, true);
     }
 
     /**
