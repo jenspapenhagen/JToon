@@ -9,15 +9,16 @@ import org.jspecify.annotations.Nullable;
 public final class Headers {
 
     /**
-     * Matches standalone array headers: [3], [#2], [3\t], [2|].
-     * Group 1: optional # marker, Group 2: digits, Group 3: optional delimiter
+     * Matches standalone array headers: [3], [3\t], [2|].
+     * Group 1: optional # marker, captured so strict mode can reject it (§6),
+     * Group 2: digits, Group 3: optional delimiter
      */
     public static final Pattern ARRAY_HEADER_PATTERN = Pattern.compile("^\\[(#?)(\\d+)([\\t|])?]");
 
     /**
      * Matches tabular array headers with field names: [2]{id,name,role}:.
-     * Group 1: optional # marker, Group 2: digits, Group 3: optional delimiter,
-     * Group 4: field spec
+     * Group 1: optional # marker, captured so strict mode can reject it (§6),
+     * Group 2: digits, Group 3: optional delimiter, Group 4: field spec
      */
     public static final Pattern TABULAR_HEADER_PATTERN = Pattern.compile("^\\[(#?)(\\d+)([\\t|])?]\\{(.+)}:");
 
@@ -28,10 +29,10 @@ public final class Headers {
      * express. The former KEYED_ARRAY_PATTERN is kept only for its key and
      * bracket-segment grammar, documented below.
      * Matches keyed array headers: items[2]{id,name}: or tags[3]:.
-     * Group 1: key, Group 2: #marker, Group 3: delimiter, Group 4: flat field spec.
+     * Group 1: key, Group 2: delimiter, Group 3: flat field spec.
      */
     public static final Pattern KEYED_ARRAY_PATTERN = Pattern.compile(
-        "^(\"(?:[^\"\\\\]|\\\\.)*+\"|[^\\[\\]:\\s]++)\\[(#?)\\d++([\\t|])?](\\{[^}]+})?:.*+$");
+        "^(\"(?:[^\"\\\\]|\\\\.)*+\"|[^\\[\\]:\\s]++)\\[\\d++([\\t|])?](\\{[^}]+})?:.*+$");
 
     /**
      * Result of {@link #matchKeyedArrayHeader} and {@link #matchKeylessKeyedHeader}:
@@ -171,7 +172,7 @@ public final class Headers {
     }
 
     /**
-     * Scans the bracket segment: {@code [ (#?) \d+ (:)? ([\t|])? ]}.
+     * Scans the bracket segment: {@code [ \d+ (:)? ([\t|])? ]}.
      *
      * @param content the line content to scan
      * @param start   the index of the opening bracket
@@ -184,7 +185,7 @@ public final class Headers {
         if (i >= n || content.charAt(i) != '[') {
             return null;
         }
-        i = skipHashMarker(content, i + 1, n);
+        i++;
         final int digitsStart = i;
         while (i < n && Character.isDigit(content.charAt(i))) {
             i++;
@@ -212,21 +213,6 @@ public final class Headers {
             return null;
         }
         return new BracketSegment(declaredLength, keyed, delimiter, i + 1);
-    }
-
-    /**
-     * Skips an optional length-marker hash in the bracket segment.
-     *
-     * @param content the line content to scan
-     * @param i       the index to inspect
-     * @param n       the content length
-     * @return the index just past the hash, or the unchanged index
-     */
-    private static int skipHashMarker(final String content, final int i, final int n) {
-        if (i < n && content.charAt(i) == '#') {
-            return i + 1;
-        }
-        return i;
     }
 
     /**
