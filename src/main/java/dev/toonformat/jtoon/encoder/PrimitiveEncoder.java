@@ -31,10 +31,36 @@ public final class PrimitiveEncoder {
      * @return the encoded string representation
      */
     public static String encodePrimitive(final JsonNode value, final String delimiter) {
+        return encodePrimitive(value, delimiter, false);
+    }
+
+    /**
+     * Encodes a primitive in root primitive position (§5), where the quoting
+     * rules of §7.2 apply with the additional root-only constraints.
+     *
+     * @param value     the primitive root value to encode
+     * @param delimiter the delimiter to use (for string validation)
+     * @return the encoded string representation
+     */
+    public static String encodeRootPrimitive(final JsonNode value, final String delimiter) {
+        return encodePrimitive(value, delimiter, true);
+    }
+
+    /**
+     * Encodes a primitive JsonNode, applying the §7.2 quoting rules for the
+     * given position.
+     *
+     * @param value         the primitive value to encode
+     * @param delimiter     the delimiter to use (for string validation)
+     * @param rootPrimitive whether the value sits in root primitive position (§5)
+     * @return the encoded string representation
+     */
+    private static String encodePrimitive(final JsonNode value, final String delimiter,
+            final boolean rootPrimitive) {
         return switch (value.getNodeType()) {
             case BOOLEAN -> String.valueOf(value.asBoolean());
             case NUMBER -> encodeNumber(value);
-            case STRING -> encodeStringLiteral(value.asString(), delimiter);
+            case STRING -> encodeStringLiteral(value.asString(), delimiter, rootPrimitive);
             default -> NULL_LITERAL;
         };
     }
@@ -99,8 +125,24 @@ public final class PrimitiveEncoder {
      * @return the encoded string, quoted if necessary
      */
     static String encodeStringLiteral(final String value, final String delimiter) {
+        return encodeStringLiteral(value, delimiter, false);
+    }
+
+    /**
+     * Encodes a string literal, quoting if necessary.
+     * Delegates validation to StringValidator and escaping to StringEscaper.
+     *
+     * @param value         the string value to encode
+     * @param delimiter     the delimiter to use (for validation)
+     * @param rootPrimitive whether the value sits in root primitive position (§5)
+     * @return the encoded string, quoted if necessary
+     */
+    static String encodeStringLiteral(final String value, final String delimiter, final boolean rootPrimitive) {
         requireScalarValues(value);
-        if (StringValidator.isSafeUnquoted(value, delimiter)) {
+        final boolean safeUnquoted = rootPrimitive
+            ? StringValidator.isSafeUnquotedRootPrimitive(value, delimiter)
+            : StringValidator.isSafeUnquoted(value, delimiter);
+        if (safeUnquoted) {
             return value;
         }
 

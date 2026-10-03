@@ -46,6 +46,8 @@ public final class Constants {
     public static final char BACKSLASH = '\\';
     /** Double quote character used for string literals. */
     public static final char DOUBLE_QUOTE = '"';
+    /** Byte-order mark: U+FEFF at the very start of a document is a BOM, not content (§12). */
+    public static final char BYTE_ORDER_MARK = '\uFEFF';
 
     private Constants() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
