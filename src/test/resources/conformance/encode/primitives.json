@@ -62,7 +62,7 @@
       "input": "05",
       "expected": "\"05\"",
       "specSection": "7.2",
-      "note": "Matches the numeric-like pattern (05 is a listed §7.2 example), so it MUST be quoted"
+      "note": "Matches the numeric-like pattern, so it MUST be quoted"
     },
     {
       "name": "escapes newline in string",
@@ -273,6 +273,14 @@
       "input": "#hello",
       "expected": "\"#hello\"",
       "specSection": "7.2"
+    },
+    {
+      "name": "quotes a root string starting with U+FEFF",
+      "input": "\ufeff8",
+      "expected": "\"\ufeff8\"",
+      "specSection": "7.2",
+      "note": "Unquoted, a decoder would remove the U+FEFF as a byte-order mark (§12) and read the number 8",
+      "minSpecVersion": "4.1"
     }
   ]
 }

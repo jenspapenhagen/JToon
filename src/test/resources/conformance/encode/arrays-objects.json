@@ -61,7 +61,7 @@
       },
       "expected": "items[1]:\n  - users[2]{id,name}:\n      1,Ada\n      2,Bob\n    status: active",
       "specSection": "10",
-      "note": "Tabular header on hyphen line with rows at depth +2 and sibling fields at depth +1 (§10)"
+      "note": "Tabular header on hyphen line with rows at depth +2 and sibling fields at depth +1"
     },
     {
       "name": "uses list form for nested object arrays with mismatched keys",
