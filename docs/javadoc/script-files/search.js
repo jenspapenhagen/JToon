@@ -6,57 +6,57 @@
  */
 "use strict";
 const messages = {
-    enterTerm: "Enter a search term",
-    noResult: "No results found",
-    oneResult: "Found one result",
-    manyResults: "Found {0} results",
-    loading: "Loading search index...",
-    searching: "Searching...",
-    redirecting: "Redirecting to first result...",
+    enterTerm: "Geben Sie einen Suchbegriff ein",
+    noResult: "Keine Ergebnisse gefunden",
+    oneResult: "Ein Ergebnis gefunden",
+    manyResults: "{0} Ergebnisse gefunden",
+    loading: "Suchindex wird geladen...",
+    searching: "Suche wird ausgeführt...",
+    redirecting: "Zum ersten Ergebnis wird umgeleitet...",
 }
 const categories = {
-    modules: "Modules",
+    modules: "Module",
     packages: "Packages",
-    types: "Classes and Interfaces",
-    members: "Members",
-    searchTags: "Search Tags"
+    types: "Klassen und Schnittstellen",
+    members: "Mitglieder",
+    searchTags: "Tags suchen"
 };
 // Localized element descriptors must match values in enum IndexItem.Kind.
 const itemDesc = [
     // Members
-    ["Enum constant in {0}"],
+    ["Enum-Konstante in {0}"],
     ["Variable in {0}"],
-    ["Static variable in {0}"],
-    ["Constructor for {0}"],
+    ["Statische Variable in {0}"],
+    ["Konstruktor für {0}"],
     ["Element in {0}"],
-    ["Method in {0}"],
-    ["Static method in {0}"],
-    ["Record component of {0}"],
+    ["Methode in {0}"],
+    ["Statische Methode in {0}"],
+    ["Komponente von {0} erfassen"],
     // Types in upper and lower case
-    ["Annotation Interface", "annotation interface"],
-    ["Enum Class",           "enum class"],
-    ["Interface",      "interface"],
-    ["Record Class",    "record class"],
-    ["Class",          "class"],
-    ["Exception Class", "exception class"],
+    ["Annotationsschnittstelle", "Annotationsschnittstellen"],
+    ["Enum-Klasse",           "Enum-Klasse"],
+    ["Schnittstelle",      "Schnittstelle"],
+    ["Datensatzklasse",    "Datensatzklasse"],
+    ["Klasse",          "Klasse"],
+    ["Ausnahmeklasse", "Ausnahmeklasse"],
     // Tags
-    ["Search tag in {0}"],
-    ["System property in {0}"],
-    ["Section in {0}"],
-    ["External specification in {0}"],
+    ["Tag suchen in {0}"],
+    ["Systemeigenschaft in {0}"],
+    ["Abschnitt in {0}"],
+    ["Externe Spezifikation in {0}"],
     // Other
-    ["Summary Page"],
+    ["Zusammenfassung (Seite)"],
 ];
-const mbrDesc = "Member";
-const clsDesc = "Class"
+const mbrDesc = "Mitglied";
+const clsDesc = "Klasse"
 const pkgDesc = "Package";
-const mdlDesc = "Module";
-const pkgDescLower = "package";
-const mdlDescLower = "module";
-const tagDesc = "Search Tag";
+const mdlDesc = "Modul";
+const pkgDescLower = "Package";
+const mdlDescLower = "Modul";
+const tagDesc = "Suchtag";
 const inDesc = "{0} in {1}";
-const descDesc = "Description";
-const linkLabel = "Go to search page";
+const descDesc = "Beschreibung";
+const linkLabel = "Gehe zur Suchseite";
 const NO_MATCH = {};
 const MAX_RESULTS = 300;
 const UNICODE_LETTER = 0;
