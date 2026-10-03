@@ -208,13 +208,13 @@ A header line is `key[N<delim?>]{fields}:` — optionally with the key and/or th
 - **No whitespace between a key and its bracket segment.** `foo [2]:` is an error, even though `foo bar[2]:` is valid input with the literal key `foo bar` (§7.4).
 - **No content between `]` and the following `{` or `:`.** `[2] :` and `[2]extra:` are errors.
 
-```toon
-foo [2]:        # ERROR: space before the bracket segment
-items[2] :      # ERROR: space before the colon
-items[2]extra:  # ERROR: content after the bracket segment
-items[2]:       # valid
-foo bar[2]:     # valid: the space belongs to the key
-```
+| Input | Valid | Reason |
+|---|---|---|
+| `items[2]:` | yes | the canonical form |
+| `foo bar[2]:` | yes | the space belongs to the key, so the key is `foo bar` (§7.4) |
+| `foo [2]:` | no | whitespace between key and bracket segment (§6) |
+| `items[2] :` | no | whitespace between `]` and `:` (§6) |
+| `items[2]extra:` | no | content between `]` and `:` (§6) |
 
 ---
 
@@ -395,15 +395,17 @@ A string that equals `-` or starts with `-`, or equals `#` or starts with `#`, m
 
 **Root primitive starting with U+FEFF:**
 
-A string in root position that starts with the byte-order mark `U+FEFF` must be quoted, because a decoder would otherwise strip it as a BOM (§12):
+A string in root position that starts with the byte-order mark `U+FEFF` must be quoted. Unquoted, a decoder strips that character as a BOM (§12) before any other processing and reads a *different value*: the string below comes back as the number `8`.
 
 ```python
-"BOMhello"
+"﻿8"            # the string U+FEFF followed by 8
 ```
 
 ```toon
-"BOMhello"
+"﻿8"
 ```
+
+The character is invisible in the blocks above — it is written `\ufeff` here so that you can see it. TOON does not escape it; only the two characters `\` and `"` and the control characters are escaped, so the encoded form really does contain the raw U+FEFF.
 
 **Delimiter characters:**
 
@@ -432,10 +434,10 @@ A string in root position that starts with the byte-order mark `U+FEFF` must be 
 
 A token whose first character, after the §12 trimming, is `"` must be a *complete* quoted token: its closing `"` has to be the token's last character. Any character after that closing quote is an error (§7.4) — in key position as well as in value position.
 
-```toon
-"valid": 1     # valid
-"a"b: 1        # ERROR: b follows the closing quote
-```
+| Input | Valid | Reason |
+|---|---|---|
+| `"valid": 1` | yes | the closing quote ends the token |
+| `"a"b: 1` | no | `b` follows the closing quote, so the token is not a complete quoted token (§7.4) |
 
 ### Escape Sequences
 
@@ -512,8 +514,10 @@ path: "C:\\Users\\Alice"
 ```
 
 ```toon
-"9007199254740993"  # Quoted for JS compatibility
+"9007199254740993"
 ```
+
+It is quoted so that a JavaScript consumer does not read it as a lossy `number` (§7.2).
 
 ### Booleans
 
