@@ -4,11 +4,77 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to Semantic Versioning and follows a Keep a Changelog-like format.
 
-## [Unreleased]
+## [2.0.5] - 2026-10-03
+
+### Fixed
+
+-   **Token trimming is now exactly U+0020**, as §12 requires. `String.trim()`, `String.isBlank()` and `String.stripTrailing()` also removed tabs and control characters, so `key: value<tab>` decoded as `value`, and `key: "a"<tab>` was accepted even though §7.4 requires the quoted token to end with its closing quote. A trailing tab at the end of a line is now line content. A single U+FEFF at the very start of a document is still stripped as a byte-order mark (§12).
+-   **Any character after the closing quote of a quoted token is now rejected in key position** as well as in value position (§7.4).
+-   **Root-form discovery starts at the first non-blank line** instead of assuming line 0, so a document with leading blank lines is no longer misparsed (§5).
+-   **An unquoted key token may contain spaces.** `foo bar[2]: 1,2` now decodes with the literal key `foo bar`, which §7.4 requires of decoders. Whitespace between a key and its bracket segment (`foo [2]:`) remains a header syntax error (§6, §14.2).
+-   **A root string value starting with U+FEFF is now quoted**, as §7.2 requires; unquoted, a conforming decoder would strip it as a byte-order mark and silently lose the character (§12). This is the one normative behaviour change in spec 4.1.2.
 
 ### Changed
 
--   Full TOON Spec 4.1.1 conformance: canonical number formatting, BOM stripping, comment pre-pass (§5.1), strict header validation (§5, §6, §7.3, §7.4), nested field groups in tabular arrays (§9.3), and keyed tabular form for objects of uniform objects, including the keyless root form and keyed headers on list-item hyphen lines (§9.5, §10). Non-strict tab leniency: leading tabs are accepted as indentation and expanded to `indent` spaces before classification (§12); a tab-indented `#` line is data, not a comment. Conformance suite: 95/95 passing.
+-   Conformance raised from spec 4.1.1 to **4.1.2**, which is a single normative change: a root primitive starting with U+FEFF must be quoted (§7.2). On top of that, decoder strictness was tightened in five places where the implementation accepted input the spec rejects — token trimming, quoted-token boundaries, root-form discovery, header key tokens and the `[N]` length marker. The full conformance suite from 4.1 (canonical number formatting, BOM stripping, comment pre-pass §5.1, strict header validation §5/§6/§7.3/§7.4, nested field groups in tabular arrays §9.3, keyed tabular form §9.5/§10, non-strict tab leniency §12) carries over unchanged and remains green. The 24 conformance fixture files are byte-identical to the spec repository at tag `v4.1.2`.
+-   Upstream [PR #201](https://github.com/toon-format/toon-java/pull/201) integrated (squash merge). Conflicts in `KeyDecoder`, `ListItemDecoder` and `ValueDecoder` were resolved additively, keeping both the `validateQuotedTokenBoundary` check from #201 and the `validateKeyHasNoUnquotedBrackets` check from #200. `DecodeHelper.trimSpaces()` remains the canonical token trimmer.
+-   The targeted specification version is now declared as `toon-spec: 4.1.2` in the README, as §13 recommends.
+
+### Documentation
+
+-   `README.md`: spec badge updated to v4.1.2; corrected a stale quick-start example that showed the non-conforming legacy empty-array form `preferences[0]:` instead of `preferences: []` (§9.1).
+-   `docs/FORMAT.md` audited against the spec and corrected. The most serious defect was a flat contradiction: the document stated *"TOON does not support comments"*, while §5.1 defines full-line comments and the decoder has always implemented the comment pre-pass. Also corrected: empty arrays (§9.1, was the stale `items[0]:` form), number notation (§2, was stated as an absolute MUST where the spec only requires canonical decimal inside the canonical range and permits exponent notation outside it), nested-uniform tabular columns (§9.3), decoder key permissiveness (§7.4), and the quoting triggers for a leading `-` or `#` and for a root primitive starting with U+FEFF (§7.2).
+-   `docs/FORMAT.md` gained the normative sections that were missing entirely: Keyed Tabular Arrays (§9.5), Header Syntax (§6), Quoted Token Boundaries (§7.4), line terminators and the BOM (§12), the two delimiter scopes (§11.1) and the full strict-mode error set (§14).
+-   `util/package-info.java`: the documented unquoted-key pattern was `^[A-Z_][\w.]*$`, which is wrong — it excluded lowercase keys that the encoder in fact emits unquoted. Corrected to the spec's `^[A-Za-z_][A-Za-z0-9_.]*$` (§7.3), with a note that §7.3 constrains encoders only while decoders accept any token. The quoting trigger was documented as `- ` (dash-space) rather than a hyphen at position 0, and the `#` trigger, the root U+FEFF trigger and `Constants.BYTE_ORDER_MARK` were missing.
+-   `docs/javadoc/` regenerated. 20 pages had never been generated at all — the checked-in output predated the decoder, encoder and validator packages, so `Headers`, `KeyFolding`, every `decoder/*` class and the whole `validator` package were absent. 88 → 109 pages.
+
+### Build and Tooling
+
+-   Gradle wrapper **9.7.1 → 9.8.0**.
+-   NullAway **0.14.1 → 0.14.2**.
+-   SpotBugs Gradle plugin **6.5.11 → 6.5.12**.
+-   `gradle/verification-metadata.xml` **regenerated from scratch** instead of merged: **3786 → 2821 lines, 522 → 398 components**. The removed entries were artifacts of dependencies that have left the graph. Regenerated under Gradle 9.8.0 and spot-checked against Maven Central's published SHA1 checksums.
+-   Removed `gradle/verification-metadata.dryrun.xml`, a leftover from an earlier dry run that Gradle never reads and that nothing in the repository referenced.
+-   The `update-verification` workflow no longer lets stale entries accumulate: `--write-verification-metadata` *merges* into an existing file rather than replacing it, so the workflow now deletes the file first and then regenerates. A subsequent verification-enabled build was added as a self-check, since the write mode tolerates verification failures by design.
+-   `README.md` and `CONTRIBUTING.md` document the delete-then-regenerate procedure, so the merge behaviour is not reintroduced locally.
+-   Checkstyle is clean again: `PrimitiveEncoder` overloads reordered, and the U+FEFF literal in `Constants` expressed without an escaped unicode character.
+
+### Tests
+
+-   New `HeadersTest` coverage for §7.4 key tokens: keys containing a hyphen, a leading digit, an internal space, a tab, a non-breaking space and a quoted key; rejection of a space before the bracket segment and before the colon, and of content between the bracket segment and the colon.
+-   New `PrimitiveEncoderTest` coverage for the §7.2 root byte-order-mark rule: a root string starting with U+FEFF is quoted, a bare U+FEFF is quoted, and U+FEFF stays unquoted both in non-root position and in the interior of a root string.
+-   Full suite: **1870 tests, 0 failures**, with dependency verification enabled.
+
+## [2.0.4] - 2026-09-07
+
+### Fixed
+
+-   Releases triggered from the GitHub UI failed, because the release workflow assumed the version came from a gradle property it now derives from the git tag.
+-   The release workflow gained a `workflow_dispatch` trigger, so a patch can be cut without pushing a tag first.
+
+## [2.0.3] - 2026-09-07
+
+### Changed
+
+-   Conformance raised to spec **4.1.1**: a decode fixture for the comment change was added and `ValueDecoder` adapted to it.
+-   Jackson **3.2.1 → 3.2.2** (`jackson-databind`, `jackson-module-blackbird`).
+-   NullAway **0.14.0 → 0.14.1**.
+-   JSpecify **1.0.0 → 1.0.1**.
+-   Gradle wrapper **9.6.1 → 9.7.0 → 9.7.1**.
+-   SpotBugs plugin **6.5.9 → 6.5.10**, OWASP dependency-check **12.2.2 → 13.0.0**.
+-   CI dependency bumps: `actions/checkout` 7.0.0 → 7.0.1, `actions/setup-java` 5.4.0 → 6.0.0, `softprops/action-gh-release` 3.0.1 → 3.0.3, `EndBug/add-and-commit` 10.0.0 → 11.1.1.
+
+## [2.0.2] - 2026-07-31
+
+### Changed
+
+-   Conformance raised to spec **4.1**, the largest decoder change so far. New `FatalDecodeException` for strict-mode violations, new `KeyedObjectDecoder` and `KeyedObjectEncoder` for the keyed tabular form (§9.5), and a rewrite of `ArrayDecoder`, `DecodeHelper`, `KeyDecoder`, `ListItemDecoder`, `ObjectDecoder`, `PrimitiveDecoder`, `TabularArrayDecoder`, `ValueDecoder`, `ArrayEncoder` and `HeaderFormatter` to enforce strict header validation (§5, §6, §7.3, §7.4). Adds canonical number formatting, BOM stripping, the comment pre-pass (§5.1), nested field groups in tabular arrays (§9.3) and keyed headers on list-item hyphen lines (§9.5, §10).
+-   Decode conformance fixtures refreshed for spec 3.3.2, including new cases for validation errors, objects and arrays; the keyed-array pattern was reordered.
+-   NullAway **0.13.7 → 0.13.8**, SpotBugs plugin **6.5.8 → 6.5.9**, CycloneDX BOM **3.2.4 → 3.3.0**.
+
+### Documentation
+
+-   README and CONTRIBUTING now document the dependency-verification regeneration command.
 
 ## [2.0.1] - 2026-07-11
 
@@ -35,7 +101,7 @@ This project adheres to Semantic Versioning and follows a Keep a Changelog-like 
 -   Added dependency verification metadata for reproducible builds.
 -   Enforced SHA-256 checksum verification for Gradle wrapper.
 
-## [2.0.0] - 2026-02-24
+## [2.0.0] - 2026-05-21
 
 ### Added
 
@@ -189,7 +255,7 @@ This project adheres to Semantic Versioning and follows a Keep a Changelog-like 
 -   Updated dependency: `org.junit:junit-bom` from 5.10.0 to 6.0.1.
 -   Updated GitHub Actions: `actions/setup-java` from 4 to 5, `actions/upload-artifact` from 4 to 5, `actions/checkout` from 4 to 5, `softprops/action-gh-release` from 1 to 2.
 
-## [0.1.1] - 2025-10-30
+## [0.1.1] - 2025-10-31
 
 ### Added
 
@@ -203,7 +269,7 @@ This project adheres to Semantic Versioning and follows a Keep a Changelog-like 
 
 -   README: Expanded API docs to include `encodeJson` overloads.
 
-## [0.1.0] - 2025-10-30
+## [0.1.0] - 2025-10-28
 
 ### Added
 

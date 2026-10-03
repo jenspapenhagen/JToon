@@ -29,9 +29,19 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Discard existing dependency verification metadata
+        # --write-verification-metadata merges into an existing file instead of
+        # replacing it, so entries for dependencies that left the graph would
+        # survive forever. Deleting first keeps the file free of stale entries.
+        run: rm -f gradle/verification-metadata.xml
+
       - name: Regenerate dependency verification metadata
         run: ./gradlew --write-verification-metadata sha256 build cyclonedxBom -x test
 
+      - name: Verify regenerated metadata
+        # Proves the freshly written file is complete: a build with verification
+        # enabled and no --write flag must still succeed.
+        run: ./gradlew build -x test
 
       - name: Commit updated verification metadata
         run: |

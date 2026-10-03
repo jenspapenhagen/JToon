@@ -27,7 +27,11 @@ public final class Headers {
      * regex-based dispatch: a field spec may nest braces at any depth
      * ({@code {geo{point{lat,lon}}}}, §6, §9.3), which a flat regex cannot
      * express. The former KEYED_ARRAY_PATTERN is kept only for its key and
-     * bracket-segment grammar, documented below.
+     * bracket-segment grammar, documented below. Its {@code [^\[\]:\s]++} key
+     * alternative is the encoder form of §7.3 and is narrower than what
+     * {@link #scanUnquotedKey} accepts: §7.4 requires decoders to accept any
+     * unquoted key token, so this pattern is documentation, not the accepted
+     * language.
      * Matches keyed array headers: items[2]{id,name}: or tags[3]:.
      * Group 1: key, Group 2: delimiter, Group 3: flat field spec.
      */
@@ -152,20 +156,30 @@ public final class Headers {
     }
 
     /**
-     * Scans an unquoted key up to a structural character or whitespace.
+     * Scans an unquoted key up to a structural character.
+     *
+     * <p>Spec §7.4: an unquoted key token is the text before a header's bracket
+     * segment, and decoders must accept any such token as a literal key. A
+     * space inside the key is therefore part of the key; only U+0020 directly
+     * before the bracket segment is the header syntax error of §6, and that is
+     * rejected here so the line falls through to key-value parsing (§14.2).
+     * Every other whitespace character stays part of the key (§12).
      *
      * @param content  the line content to scan
      * @param keyStart the index where the key starts
      * @param n        the content length
-     * @return the index just past the key, or -1 when the key is empty
+     * @return the index just past the key, or -1 when the key is empty or a
+     *         space separates it from the bracket segment
      */
     private static int scanUnquotedKey(final String content, final int keyStart, final int n) {
         int i = keyStart;
-        while (i < n && content.charAt(i) != '[' && content.charAt(i) != ':'
-                && !Character.isWhitespace(content.charAt(i))) {
+        while (i < n && content.charAt(i) != '[' && content.charAt(i) != ':') {
             i++;
         }
         if (i == keyStart) {
+            return -1;
+        }
+        if (i < n && content.charAt(i) == '[' && content.charAt(i - 1) == ' ') {
             return -1;
         }
         return i;

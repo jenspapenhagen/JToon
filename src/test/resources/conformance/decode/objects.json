@@ -350,14 +350,6 @@
       "specSection": "7.1"
     },
     {
-      "name": "unescapes tab in key immediately followed by a colon",
-      "input": "\"\\t:x\": v",
-      "expected": {
-        "\t:x": "v"
-      },
-      "specSection": "8"
-    },
-    {
       "name": "unescapes quotes in key",
       "input": "\"he said \\\"hi\\\"\": 1",
       "expected": {

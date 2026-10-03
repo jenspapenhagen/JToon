@@ -158,7 +158,7 @@
         "note": "a,b"
       },
       "specSection": "11",
-      "note": "Object field values are parsed as the whole post-colon token, never split on a delimiter (§11.2)"
+      "note": "Object field values are parsed as the whole post-colon token, never split on a delimiter"
     },
     {
       "name": "does not split object values on commas inside a tab-delimited scope",

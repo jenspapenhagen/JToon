@@ -19,20 +19,24 @@
  * <p>Strings must be quoted if they:</p>
  * <ul>
  *   <li>Are empty</li>
- *   <li>Have leading or trailing whitespace</li>
+ *   <li>Have leading or trailing whitespace (U+0020 or U+0009)</li>
  *   <li>Look like keywords (true, false, null)</li>
  *   <li>Look like numbers (123, 3.14, 1e-6)</li>
  *   <li>Contain special characters (colon, quotes, backslash)</li>
  *   <li>Contain structural characters (brackets, braces)</li>
  *   <li>Contain control characters (newline, tab, etc.)</li>
  *   <li>Contain the active delimiter</li>
- *   <li>Start with "- " (list marker)</li>
+ *   <li>Start with "-" (list marker)</li>
+ *   <li>Start with "#" (comment marker)</li>
+ *   <li>Are a root primitive starting with U+FEFF (byte-order mark, &sect;12)</li>
  * </ul>
  * 
  * <p><strong>Key Validation Rules:</strong></p>
  * <p>Object keys can be unquoted if they match:</p>
- * <pre>{@code ^[A-Z_][\\w.]*$}</pre>
- * <p>(Start with letter or underscore, contain only word characters and dots)</p>
+ * <pre>{@code ^[A-Za-z_][A-Za-z0-9_.]*$}</pre>
+ * <p>(ASCII only, per &sect;7.3)</p>
+ * <p>&sect;7.3 constrains encoders only: decoders must accept any unquoted key token as a
+ * literal key, even one outside this pattern.</p>
  * 
  * <h3>StringEscaper</h3>
  * <p>
@@ -55,7 +59,7 @@
  *   <li><strong>Structural:</strong> COLON, COMMA, SPACE, brackets, braces</li>
  *   <li><strong>Literals:</strong> NULL_LITERAL, TRUE_LITERAL, FALSE_LITERAL</li>
  *   <li><strong>List markers:</strong> LIST_ITEM_MARKER, LIST_ITEM_PREFIX</li>
- *   <li><strong>Escape characters:</strong> BACKSLASH, DOUBLE_QUOTE</li>
+ *   <li><strong>Escape characters:</strong> BACKSLASH, DOUBLE_QUOTE, BYTE_ORDER_MARK</li>
  * </ul>
  * 
  * <h2>Delimiter-Aware Validation</h2>

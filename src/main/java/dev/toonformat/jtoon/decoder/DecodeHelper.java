@@ -19,6 +19,56 @@ public final class DecodeHelper {
     }
 
     /**
+     * Trims surrounding spaces from a token – exactly U+0020, no other
+     * characters (§12). Tabs, control characters, and NBSP stay part of the
+     * token.
+     *
+     * @param token the raw token
+     * @return the token without leading and trailing U+0020
+     */
+    static String trimSpaces(final String token) {
+        int start = 0;
+        int end = token.length();
+        while (start < end && token.charAt(start) == ' ') {
+            start++;
+        }
+        while (end > start && token.charAt(end - 1) == ' ') {
+            end--;
+        }
+        return token.substring(start, end);
+    }
+
+    /**
+     * Spec §7.4: after the closing quote of a quoted token only spaces
+     * (U+0020, §12) may follow. A token without a leading quote passes; an
+     * unterminated token is left to
+     * {@link dev.toonformat.jtoon.util.StringEscaper#validateString}.
+     *
+     * @param token the token to validate
+     * @throws FatalDecodeException if another character follows the closing quote
+     */
+    static void validateQuotedTokenBoundary(final String token) {
+        if (!token.startsWith("\"")) {
+            return;
+        }
+        boolean escaped = false;
+        for (int i = 1; i < token.length(); i++) {
+            final char c = token.charAt(i);
+            if (escaped) {
+                escaped = false;
+            } else if (c == '\\') {
+                escaped = true;
+            } else if (c == '"') {
+                if (!trimSpaces(token.substring(i + 1)).isEmpty()) {
+                    throw new FatalDecodeException(
+                        "Characters after closing quote in token: " + token);
+                }
+                return;
+            }
+        }
+    }
+
+    /**
      * Calculates indentation depth (nesting level) of a line.
      * Counts leading spaces in multiples of the configured indent size.
      * In strict mode, validates indentation (no tabs, proper multiples).
@@ -77,13 +127,13 @@ public final class DecodeHelper {
 
 
     /**
-     * Checks if a line is blank (empty or only whitespace).
+     * Checks if a line is blank (empty or only spaces).
      *
      * @param line the line string to parse
      * @return true or false depending on if the line is blank or not
      */
     static boolean isBlankLine(final String line) {
-        return line.isBlank();
+        return trimSpaces(line).isEmpty();
     }
 
     /**
