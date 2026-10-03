@@ -341,10 +341,11 @@ import dev.toonformat.jtoon.*;
 String toon = "tags[3|]: a|b|c";
 
 // Decode with pipe delimiter
-DecodeOptions options = new DecodeOptions(2, Delimiter.PIPE, true);
+DecodeOptions options = DecodeOptions.withDelimiter(Delimiter.PIPE);
 Object result = JToon.decode(toon, options);
 
-// Lenient mode (returns null on errors instead of throwing)
+// Lenient mode: an unterminated quoted token yields null instead of throwing
+String invalidToon = "key: \"unterminated";
 DecodeOptions lenient = DecodeOptions.withStrict(false);
 Object result2 = JToon.decode(invalidToon, lenient);
 ```
