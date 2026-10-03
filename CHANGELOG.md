@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to Semantic Versioning and follows a Keep a Changelog-like format.
 
-## [Unreleased]
+## [2.0.5] - 2026-10-03
 
 ### Fixed
 
@@ -16,7 +16,7 @@ This project adheres to Semantic Versioning and follows a Keep a Changelog-like 
 
 ### Changed
 
--   Full TOON Spec **4.1.2** conformance: canonical number formatting, BOM stripping, comment pre-pass (§5.1), strict header validation (§5, §6, §7.3, §7.4), nested field groups in tabular arrays (§9.3), and keyed tabular form for objects of uniform objects, including the keyless root form and keyed headers on list-item hyphen lines (§9.5, §10). Non-strict tab leniency: leading tabs are accepted as indentation and expanded to `indent` spaces before classification (§12); a tab-indented `#` line is data, not a comment. Conformance fixtures are byte-identical to the spec repository at tag `v4.1.2`.
+-   Conformance raised from spec 4.1.1 to **4.1.2**, which is a single normative change: a root primitive starting with U+FEFF must be quoted (§7.2). On top of that, decoder strictness was tightened in five places where the implementation accepted input the spec rejects — token trimming, quoted-token boundaries, root-form discovery, header key tokens and the `[N]` length marker. The full conformance suite from 4.1 (canonical number formatting, BOM stripping, comment pre-pass §5.1, strict header validation §5/§6/§7.3/§7.4, nested field groups in tabular arrays §9.3, keyed tabular form §9.5/§10, non-strict tab leniency §12) carries over unchanged and remains green. The 24 conformance fixture files are byte-identical to the spec repository at tag `v4.1.2`.
 -   Upstream [PR #201](https://github.com/toon-format/toon-java/pull/201) integrated (squash merge). Conflicts in `KeyDecoder`, `ListItemDecoder` and `ValueDecoder` were resolved additively, keeping both the `validateQuotedTokenBoundary` check from #201 and the `validateKeyHasNoUnquotedBrackets` check from #200. `DecodeHelper.trimSpaces()` remains the canonical token trimmer.
 -   The targeted specification version is now declared as `toon-spec: 4.1.2` in the README, as §13 recommends.
 
@@ -45,6 +45,37 @@ This project adheres to Semantic Versioning and follows a Keep a Changelog-like 
 -   New `PrimitiveEncoderTest` coverage for the §7.2 root byte-order-mark rule: a root string starting with U+FEFF is quoted, a bare U+FEFF is quoted, and U+FEFF stays unquoted both in non-root position and in the interior of a root string.
 -   Full suite: **1870 tests, 0 failures**, with dependency verification enabled.
 
+## [2.0.4] - 2026-09-07
+
+### Fixed
+
+-   Releases triggered from the GitHub UI failed, because the release workflow assumed the version came from a gradle property it now derives from the git tag.
+-   The release workflow gained a `workflow_dispatch` trigger, so a patch can be cut without pushing a tag first.
+
+## [2.0.3] - 2026-09-07
+
+### Changed
+
+-   Conformance raised to spec **4.1.1**: a decode fixture for the comment change was added and `ValueDecoder` adapted to it.
+-   Jackson **3.2.1 → 3.2.2** (`jackson-databind`, `jackson-module-blackbird`).
+-   NullAway **0.14.0 → 0.14.1**.
+-   JSpecify **1.0.0 → 1.0.1**.
+-   Gradle wrapper **9.6.1 → 9.7.0 → 9.7.1**.
+-   SpotBugs plugin **6.5.9 → 6.5.10**, OWASP dependency-check **12.2.2 → 13.0.0**.
+-   CI dependency bumps: `actions/checkout` 7.0.0 → 7.0.1, `actions/setup-java` 5.4.0 → 6.0.0, `softprops/action-gh-release` 3.0.1 → 3.0.3, `EndBug/add-and-commit` 10.0.0 → 11.1.1.
+
+## [2.0.2] - 2026-07-31
+
+### Changed
+
+-   Conformance raised to spec **4.1**, the largest decoder change so far. New `FatalDecodeException` for strict-mode violations, new `KeyedObjectDecoder` and `KeyedObjectEncoder` for the keyed tabular form (§9.5), and a rewrite of `ArrayDecoder`, `DecodeHelper`, `KeyDecoder`, `ListItemDecoder`, `ObjectDecoder`, `PrimitiveDecoder`, `TabularArrayDecoder`, `ValueDecoder`, `ArrayEncoder` and `HeaderFormatter` to enforce strict header validation (§5, §6, §7.3, §7.4). Adds canonical number formatting, BOM stripping, the comment pre-pass (§5.1), nested field groups in tabular arrays (§9.3) and keyed headers on list-item hyphen lines (§9.5, §10).
+-   Decode conformance fixtures refreshed for spec 3.3.2, including new cases for validation errors, objects and arrays; the keyed-array pattern was reordered.
+-   NullAway **0.13.7 → 0.13.8**, SpotBugs plugin **6.5.8 → 6.5.9**, CycloneDX BOM **3.2.4 → 3.3.0**.
+
+### Documentation
+
+-   README and CONTRIBUTING now document the dependency-verification regeneration command.
+
 ## [2.0.1] - 2026-07-11
 
 ### Added
@@ -70,7 +101,7 @@ This project adheres to Semantic Versioning and follows a Keep a Changelog-like 
 -   Added dependency verification metadata for reproducible builds.
 -   Enforced SHA-256 checksum verification for Gradle wrapper.
 
-## [2.0.0] - 2026-02-24
+## [2.0.0] - 2026-05-21
 
 ### Added
 
@@ -224,7 +255,7 @@ This project adheres to Semantic Versioning and follows a Keep a Changelog-like 
 -   Updated dependency: `org.junit:junit-bom` from 5.10.0 to 6.0.1.
 -   Updated GitHub Actions: `actions/setup-java` from 4 to 5, `actions/upload-artifact` from 4 to 5, `actions/checkout` from 4 to 5, `softprops/action-gh-release` from 1 to 2.
 
-## [0.1.1] - 2025-10-30
+## [0.1.1] - 2025-10-31
 
 ### Added
 
@@ -238,7 +269,7 @@ This project adheres to Semantic Versioning and follows a Keep a Changelog-like 
 
 -   README: Expanded API docs to include `encodeJson` overloads.
 
-## [0.1.0] - 2025-10-30
+## [0.1.0] - 2025-10-28
 
 ### Added
 
