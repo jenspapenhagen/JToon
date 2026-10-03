@@ -1,6 +1,7 @@
 package dev.toonformat.jtoon.util;
 
 import static dev.toonformat.jtoon.util.Constants.BACKSLASH;
+import static dev.toonformat.jtoon.util.Constants.BYTE_ORDER_MARK;
 import static dev.toonformat.jtoon.util.Constants.DOUBLE_QUOTE;
 import static dev.toonformat.jtoon.util.Constants.FALSE_LITERAL;
 import static dev.toonformat.jtoon.util.Constants.LIST_ITEM_MARKER;
@@ -84,6 +85,35 @@ public final class StringValidator {
             }
         }
         return true;
+    }
+
+    /**
+     * Checks if a string can be safely written without quotes at root
+     * primitive position (§5).
+     *
+     * <p>Spec §7.2: a root primitive starting with U+FEFF must be quoted –
+     * unquoted, a decoder reads the character as a byte-order mark and strips
+     * it before any processing (§12).
+     *
+     * @param value     the root string value to check
+     * @param delimiter the delimiter being used (for validation)
+     * @return true if the root string can be written without quotes
+     */
+    public static boolean isSafeUnquotedRootPrimitive(final String value, final String delimiter) {
+        if (startsWithByteOrderMark(value)) {
+            return false;
+        }
+        return isSafeUnquoted(value, delimiter);
+    }
+
+    /**
+     * Checks whether a value starts with the byte-order mark U+FEFF.
+     *
+     * @param value the value to inspect
+     * @return true when the first character is U+FEFF
+     */
+    public static boolean startsWithByteOrderMark(final String value) {
+        return !value.isEmpty() && value.charAt(0) == BYTE_ORDER_MARK;
     }
 
     /**

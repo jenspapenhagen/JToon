@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -182,5 +183,76 @@ class HeadersTest {
         assertNull(Headers.matchKeylessKeyedHeader("[x]:"));
         // Missing trailing colon
         assertNull(Headers.matchKeylessKeyedHeader("[2]{a,b}"));
+    }
+
+    @Nested
+    @DisplayName("matchKeyedArrayHeader - unquoted key tokens (§7.4)")
+    class MatchKeyedArrayHeaderKeyToken {
+
+        private static final char NBSP = (char) 0xA0;
+
+        @Test
+        @DisplayName("keeps a hyphen inside the key")
+        void hyphenInsideKey() {
+            assertEquals("foo-bar", Headers.matchKeyedArrayHeader("foo-bar[2]:").key());
+        }
+
+        @Test
+        @DisplayName("keeps a key that starts with a digit")
+        void digitLeadingKey() {
+            assertEquals("2key", Headers.matchKeyedArrayHeader("2key[1]:").key());
+        }
+
+        @Test
+        @DisplayName("keeps a space inside the key")
+        void spaceInsideKey() {
+            assertEquals("foo bar", Headers.matchKeyedArrayHeader("foo bar[2]:").key());
+        }
+
+        @Test
+        @DisplayName("keeps a tab inside the key")
+        void tabInsideKey() {
+            assertEquals("a\tb", Headers.matchKeyedArrayHeader("a\tb[1]:").key());
+        }
+
+        @Test
+        @DisplayName("keeps a non-breaking space inside the key")
+        void nonBreakingSpaceInsideKey() {
+            final String key = "a" + NBSP + "b";
+            assertEquals(key, Headers.matchKeyedArrayHeader(key + "[1]:").key());
+        }
+
+        @Test
+        @DisplayName("keeps a quoted key containing a space, quotes included")
+        void quotedKeyWithSpace() {
+            assertEquals("\"foo bar\"", Headers.matchKeyedArrayHeader("\"foo bar\"[2]:").key());
+        }
+
+        @Test
+        @DisplayName("rejects a space between key and bracket segment (§6)")
+        void spaceBeforeBracketRejected() {
+            assertNull(Headers.matchKeyedArrayHeader("foo [2]:"));
+        }
+
+        @Test
+        @DisplayName("rejects a space between bracket segment and colon (§6)")
+        void spaceBeforeColonRejected() {
+            assertNull(Headers.matchKeyedArrayHeader("items[2] :"));
+        }
+
+        @Test
+        @DisplayName("rejects content between bracket segment and colon (§6)")
+        void contentBeforeColonRejected() {
+            assertNull(Headers.matchKeyedArrayHeader("items[2]extra:"));
+        }
+
+        @Test
+        @DisplayName("accepts a field spec that starts with a digit")
+        void digitLeadingFieldSpec() {
+            final Headers.KeyedHeaderMatch match = Headers.matchKeyedArrayHeader("items[1]{2key}:");
+            assertEquals("items", match.key());
+            assertEquals(1L, match.declaredLength());
+            assertTrue(match.fieldsStart() > 0);
+        }
     }
 }

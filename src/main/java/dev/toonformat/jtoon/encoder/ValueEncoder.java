@@ -33,7 +33,7 @@ public final class ValueEncoder {
 
         // Handle primitive values directly
         if (value.isValueNode()) {
-            return PrimitiveEncoder.encodePrimitive(value, options.delimiter().toString());
+            return PrimitiveEncoder.encodeRootPrimitive(value, options.delimiter().toString());
         }
 
         // Complex values need a LineWriter for indentation

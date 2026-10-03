@@ -128,7 +128,7 @@ Item item1 = new Item("A1", "Widget", 2, 9.99);
 Item item2 = new Item("B2", "Gadget", 1, 14.5);
 Data data = new Data(List.of(item1, item2));
 
-EncodeOptions options = new EncodeOptions(2, Delimiter.TAB, false);
+EncodeOptions options = new EncodeOptions(2, Delimiter.TAB, false, KeyFolding.OFF, 3);
 System.out.println(JToon.encode(data, options));
 ```
 
@@ -157,7 +157,7 @@ Pipe delimiters offer a middle ground between commas and tabs:
 
 ```java
 // Using the same Item and Data records from above
-EncodeOptions options = new EncodeOptions(2, Delimiter.PIPE, false);
+EncodeOptions options = new EncodeOptions(2, Delimiter.PIPE, false, KeyFolding.OFF, 3);
 System.out.println(JToon.encode(data, options));
 ```
 
@@ -185,14 +185,14 @@ Item item1 = new Item("A1", 2, 9.99);
 Item item2 = new Item("B2", 1, 14.5);
 Data data = new Data(List.of("reading", "gaming", "coding"), List.of(item1, item2));
 
-System.out.println(JToon.encode(data, new EncodeOptions(2, Delimiter.COMMA, true)));
+System.out.println(JToon.encode(data, new EncodeOptions(2, Delimiter.COMMA, true, KeyFolding.OFF, 3)));
 // tags[#3]: reading,gaming,coding
 // items[#2]{sku,qty,price}:
 //   A1,2,9.99
 //   B2,1,14.5
 
 // Works with custom delimiters
-System.out.println(JToon.encode(data, new EncodeOptions(2, Delimiter.PIPE, true)));
+System.out.println(JToon.encode(data, new EncodeOptions(2, Delimiter.PIPE, true, KeyFolding.OFF, 3)));
 // tags[#3|]: reading|gaming|coding
 // items[#2|]{sku|qty|price}:
 //   A1|2|9.99
@@ -270,10 +270,11 @@ import dev.toonformat.jtoon.*;
 String toon = "tags[3|]: a|b|c";
 
 // Decode with pipe delimiter
-DecodeOptions options = new DecodeOptions(2, Delimiter.PIPE, true);
+DecodeOptions options = DecodeOptions.withDelimiter(Delimiter.PIPE);
 Object result = JToon.decode(toon, options);
 
-// Lenient mode (returns null on errors instead of throwing)
+// Lenient mode: an unterminated quoted token yields null instead of throwing
+String invalidToon = "key: \"unterminated";
 DecodeOptions lenient = DecodeOptions.withStrict(false);
 Object result2 = JToon.decode(invalidToon, lenient);
 ```

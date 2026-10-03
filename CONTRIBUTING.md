@@ -106,11 +106,16 @@ This project uses [Gradle Dependency Verification](https://docs.gradle.org/curre
 When you **add or update dependencies**, you must regenerate the verification metadata before pushing:
 
 ```bash
+# Delete first: --write-verification-metadata MERGES into an existing file rather
+# than replacing it, so checksums of dependencies that left the graph would linger
+# forever. Removing it first keeps the file free of stale entries.
+rm -f gradle/verification-metadata.xml
+
 # Regenerate verification metadata (includes build and CycloneDX SBOM configurations)
 ./gradlew --write-verification-metadata sha256 build cyclonedxBom -x test
 ```
 
-Commit the updated `gradle/verification-metadata.xml` with your dependency changes. The CI build will **fail** if checksums are missing.
+Commit the updated `gradle/verification-metadata.xml` with your dependency changes. The CI build will **fail** if checksums are missing. The `update-verification` workflow applies the same delete-then-regenerate procedure on every push to `main`/`develop`, so the committed file always matches the current dependency graph exactly.
 
 ## SPEC Compliance
 

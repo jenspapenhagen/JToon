@@ -191,7 +191,7 @@ public final class TabularArrayDecoder {
             }
             return fieldList.length();
         }
-        result.add(new FieldNode(StringEscaper.unescape(name.toString().trim()), children));
+        result.add(new FieldNode(decodeFieldName(name), children));
         name.setLength(0);
         return next;
     }
@@ -204,13 +204,13 @@ public final class TabularArrayDecoder {
      * @param delimiterIdx the index of the delimiter character
      * @param result       the list to add the flushed field to
      * @param name         the buffered field name
-     * @return the index just past the delimiter and trailing whitespace
+     * @return the index just past the delimiter and trailing spaces
      */
     private static int skipFieldDelimiter(final String fieldList, final int delimiterIdx,
             final List<FieldNode> result, final StringBuilder name) {
         flushField(result, name);
         int i = delimiterIdx + 1;
-        while (i < fieldList.length() && Character.isWhitespace(fieldList.charAt(i))) {
+        while (i < fieldList.length() && fieldList.charAt(i) == ' ') {
             i++;
         }
         return i;
@@ -221,9 +221,19 @@ public final class TabularArrayDecoder {
      */
     private static void flushField(final List<FieldNode> result, final StringBuilder name) {
         if (!name.isEmpty()) {
-            result.add(new FieldNode(StringEscaper.unescape(name.toString().trim()), Collections.emptyList()));
+            result.add(new FieldNode(decodeFieldName(name), Collections.emptyList()));
             name.setLength(0);
         }
+    }
+
+    /**
+     * Decodes a buffered field name: trims spaces, enforces the quoted-token
+     * boundary (§7.4), and unescapes it.
+     */
+    private static String decodeFieldName(final StringBuilder name) {
+        final String rawName = DecodeHelper.trimSpaces(name.toString());
+        DecodeHelper.validateQuotedTokenBoundary(rawName);
+        return StringEscaper.unescape(rawName);
     }
 
     /**

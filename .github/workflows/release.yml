@@ -49,7 +49,9 @@ jobs:
         env:
           VERSION: ${{ steps.get_version.outputs.VERSION }}
         run: |
-          # Version an bestehendes gradle.properties anhängen (nicht überschreiben)
+          # Bestehenden version-Key ersetzen statt anhaengen: gradle.properties enthaelt inzwischen
+          # bereits einen, und ein Anhaengen wuerde zwei Eintraege hinterlassen.
+          sed -i '/^version=/d' gradle.properties
           echo "version=$VERSION" >> gradle.properties
           echo "gradle.properties updated:"
           cat gradle.properties

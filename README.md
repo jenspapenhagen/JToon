@@ -4,7 +4,7 @@
 [![Release](https://github.com/toon-format/toon-java/actions/workflows/release.yml/badge.svg)](https://github.com/toon-format/toon-java/actions/workflows/release.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/dev.toonformat/jtoon.svg)](https://central.sonatype.com/artifact/dev.toonformat/jtoon)
 ![Coverage](.github/badges/jacoco.svg)
-[![SPEC v4.1.1](https://img.shields.io/badge/spec-v4.1.1-fef3c0?labelColor=1b1b1f)](https://github.com/toon-format/spec)
+[![SPEC v4.1.2](https://img.shields.io/badge/spec-v4.1.2-fef3c0?labelColor=1b1b1f)](https://github.com/toon-format/spec)
 [![License: MIT](https://img.shields.io/badge/license-MIT-fef3c0?labelColor=1b1b1f)](./LICENSE)
 
 Compact, human-readable serialization format for LLM contexts with **30-60% token reduction** vs JSON. Combines YAML-like indentation with CSV-like tabular arrays. Working towards full compatibility with the [official TOON specification](https://github.com/toon-format/spec).
@@ -72,7 +72,7 @@ user:
   name: Ada
   tags[2]: reading,gaming
   active: true
-  preferences[0]:
+  preferences: []
 ```
 
 ## Type Conversions
@@ -341,10 +341,11 @@ import dev.toonformat.jtoon.*;
 String toon = "tags[3|]: a|b|c";
 
 // Decode with pipe delimiter
-DecodeOptions options = new DecodeOptions(2, Delimiter.PIPE, true);
+DecodeOptions options = DecodeOptions.withDelimiter(Delimiter.PIPE);
 Object result = JToon.decode(toon, options);
 
-// Lenient mode (returns null on errors instead of throwing)
+// Lenient mode: an unterminated quoted token yields null instead of throwing
+String invalidToon = "key: \"unterminated";
 DecodeOptions lenient = DecodeOptions.withStrict(false);
 Object result2 = JToon.decode(invalidToon, lenient);
 ```
@@ -360,7 +361,9 @@ Object result2 = JToon.decode(invalidToon, lenient);
 # Run tests only
 ./gradlew test
 
-# Update dependency verification metadata (required when adding/updating dependencies)
+# Update dependency verification metadata (required when adding/updating dependencies).
+# Delete first: --write-verification-metadata merges, it does not replace.
+rm -f gradle/verification-metadata.xml
 ./gradlew --write-verification-metadata sha256 build cyclonedxBom -x test
 ```
 
@@ -368,7 +371,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for full development guidelines.
 
 ## Project Status
 
-This project is 100% compliant with TOON specification. Release conformance enforced on CI/CD.
+`toon-spec: 4.1.2`
+
+This project is 100% compliant with TOON specification 4.1.2. Release conformance enforced on CI/CD.
 
 ## Documentation
 
