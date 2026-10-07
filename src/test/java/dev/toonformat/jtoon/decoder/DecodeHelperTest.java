@@ -527,39 +527,67 @@ class DecodeHelperTest {
     }
 
     @Nested
-    @DisplayName("rejectMalformedHeader()")
-    class RejectMalformedHeader {
+    @DisplayName("rejectMalformedHeaderLine()")
+    class RejectMalformedHeaderLine {
 
         @Test
-        @DisplayName("should throw in strict mode when the line keeps a header shape")
-        void rejectsHeaderShape() {
+        @DisplayName("should throw in strict mode on an array-header line failing the §6 grammar")
+        void rejectsMalformedHeaderLines() {
             context.options = DecodeOptions.withStrict(true);
             assertThrows(IllegalArgumentException.class,
-                () -> DecodeHelper.rejectMalformedHeader("foo[bar]", "1", context));
+                () -> DecodeHelper.rejectMalformedHeaderLine("foo[bar]: 10", context));
             assertThrows(IllegalArgumentException.class,
-                () -> DecodeHelper.rejectMalformedHeader("items[2]extra", "1", context));
+                () -> DecodeHelper.rejectMalformedHeaderLine("items[2]extra: a,b", context));
             assertThrows(IllegalArgumentException.class,
-                () -> DecodeHelper.rejectMalformedHeader("items[1]{a}", "1", context));
+                () -> DecodeHelper.rejectMalformedHeaderLine("items[1]{a}: 1", context));
             assertThrows(IllegalArgumentException.class,
-                () -> DecodeHelper.rejectMalformedHeader("k[2", "]{a}: x", context));
+                () -> DecodeHelper.rejectMalformedHeaderLine("k[2:]{a}: x", context));
+            assertThrows(IllegalArgumentException.class,
+                () -> DecodeHelper.rejectMalformedHeaderLine("foo[1][bar]: 10", context));
+            assertThrows(IllegalArgumentException.class,
+                () -> DecodeHelper.rejectMalformedHeaderLine("items[2] : 1,2", context));
+            assertThrows(IllegalArgumentException.class,
+                () -> DecodeHelper.rejectMalformedHeaderLine("a[1:", context));
+            assertThrows(IllegalArgumentException.class,
+                () -> DecodeHelper.rejectMalformedHeaderLine("a[2:]{x}", context));
+            assertThrows(IllegalArgumentException.class,
+                () -> DecodeHelper.rejectMalformedHeaderLine("foo [2]: bar", context));
+            assertThrows(IllegalArgumentException.class,
+                () -> DecodeHelper.rejectMalformedHeaderLine("t\t[1]: x", context));
+            assertThrows(IllegalArgumentException.class,
+                () -> DecodeHelper.rejectMalformedHeaderLine("n\u00a0[1]: y", context));
+            assertThrows(IllegalArgumentException.class,
+                () -> DecodeHelper.rejectMalformedHeaderLine("a[b: c", context));
+            assertThrows(IllegalArgumentException.class,
+                () -> DecodeHelper.rejectMalformedHeaderLine("[1]{x: y}", context));
         }
 
         @Test
-        @DisplayName("should accept a line without a header shape")
-        void acceptsNoHeaderShape() {
+        @DisplayName("should accept lines that are not array-header lines")
+        void acceptsNonHeaderLines() {
             context.options = DecodeOptions.withStrict(true);
-            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeader("foo", "[1]", context));
-            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeader("a[b", "c", context));
-            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeader("[1]{x", "y}", context));
-            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeader("\"foo[bar]\"", "1", context));
-            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeader("\"escaped\\\"quote[br]\"", "1", context));
+            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeaderLine("foo: bar[1]", context));
+            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeaderLine("\"foo[bar]\": 1", context));
+            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeaderLine(
+                "\"escaped\\\"quote[br]\": 1", context));
+            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeaderLine("plain", context));
+            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeaderLine("a:b[2]: x", context));
         }
 
         @Test
-        @DisplayName("should accept a header shape in non-strict mode")
+        @DisplayName("should accept a valid §6 header reaching the check")
+        void acceptsValidHeader() {
+            context.options = DecodeOptions.withStrict(true);
+            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeaderLine("foo-bar[2]: 1,2", context));
+            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeaderLine("\"a:b\"[2]: 1,2", context));
+        }
+
+        @Test
+        @DisplayName("should accept a malformed header in non-strict mode")
         void acceptsHeaderShapeWhenLenient() {
             context.options = DecodeOptions.withStrict(false);
-            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeader("foo[bar]", "1", context));
+            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeaderLine("foo[bar]: 10", context));
+            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeaderLine("a[1:", context));
         }
     }
 
