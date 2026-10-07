@@ -41,7 +41,7 @@ tasks.withType(org.gradle.api.publish.maven.tasks.PublishToMavenRepository).conf
             throw new GradleException(
                     "Refusing to publish '${projectName}' with version '${resolvedVersion}': no version was set.\n" +
                     "The release version comes from the git tag. For a manual run pass it explicitly:\n" +
-                    "  ./gradlew ${taskName} -Pversion=2.0.5")
+                    "  ./gradlew ${taskName} -Pversion=2.0.6")
         }
     }
 }

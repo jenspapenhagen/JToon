@@ -6,6 +6,8 @@ This project adheres to Semantic Versioning and follows a Keep a Changelog-like 
 
 ## [Unreleased]
 
+## [2.0.6] - 2026-10-07
+
 ### Changed
 
 -   Conformance raised from spec 4.1.2 to **4.3**. The 23 conformance fixture files are byte-identical to the spec repository at `v4.3.0` (`dfbc459`, including the four pinned fixture cases).
@@ -23,6 +25,8 @@ This project adheres to Semantic Versioning and follows a Keep a Changelog-like 
 -   **`maxArraySize` bounds the actual element count** of inline, list, tabular and keyed forms in either mode; only the comparison with the declared `[N]` stays strict-only.
 -   **Header parsing:** empty field entries and malformed nested field groups are rejected, a length beyond the `long` range still forms a header, and a line below a bare `key[N]:` header carries no values (§6, §9).
 -   **Key and value tokens:** `: 1` decodes as the empty key, `\uXXXX` escapes with a surrogate or a non-ASCII digit are rejected, a carriage return before CRLF is content, a backslash outside quotes is a literal character (`a\: b` has the key `a\`), a list ends at a hyphen without a following space, and tabular rows sit exactly one level below their header in strict mode (§7, §9, §12).
+
+-   **Documentation code examples corrected:** array headers no longer carry an invalid comma (`users[2]{id,name}` — comma is implied), tab-delimited examples contain real tab characters instead of spaces, the pipe tabular header declares its field list with pipes (`users[2|]{id|name}`), the multi-value value catalogs are valid inline arrays, and the README tab output matches the encoder byte-for-byte.
 
 ## [2.0.5] - 2026-10-03
 
