@@ -4,7 +4,7 @@
 [![Release](https://github.com/toon-format/toon-java/actions/workflows/release.yml/badge.svg)](https://github.com/toon-format/toon-java/actions/workflows/release.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/dev.toonformat/jtoon.svg)](https://central.sonatype.com/artifact/dev.toonformat/jtoon)
 ![Coverage](.github/badges/jacoco.svg)
-[![SPEC v4.1.2](https://img.shields.io/badge/spec-v4.1.2-fef3c0?labelColor=1b1b1f)](https://github.com/toon-format/spec)
+[![SPEC v4.2](https://img.shields.io/badge/spec-v4.2-fef3c0?labelColor=1b1b1f)](https://github.com/toon-format/spec)
 [![License: MIT](https://img.shields.io/badge/license-MIT-fef3c0?labelColor=1b1b1f)](./LICENSE)
 
 Compact, human-readable serialization format for LLM contexts with **30-60% token reduction** vs JSON. Combines YAML-like indentation with CSV-like tabular arrays. Working towards full compatibility with the [official TOON specification](https://github.com/toon-format/spec).
@@ -254,7 +254,7 @@ Converts TOON-formatted strings back to Java objects or JSON.
 - `options` – Optional decoding options (`DecodeOptions` record):
   - `indent` – Number of spaces per indentation level (default: `2`)
   - `delimiter` – Expected delimiter: `Delimiter.COMMA` (default), `Delimiter.TAB`, or `Delimiter.PIPE`
-  - `strict` – Boolean for validation mode. When `true` (default), throws `IllegalArgumentException` on invalid input. When `false`, returns `null` on errors.
+  - `strict` – Boolean for validation mode. When `true` (default), throws `IllegalArgumentException` on invalid input. When `false`, applies the spec's non-strict leniencies, such as count mismatches, depth jumps and skipped over-indented lines, and throws wherever the spec names none.
   - `expandPaths` – Boolean Path expansion mode for dotted keys (default: `OFF`).
 
 **Returns:**
@@ -313,10 +313,10 @@ String toon = "tags[3|]: a|b|c";
 DecodeOptions options = DecodeOptions.withDelimiter(Delimiter.PIPE);
 Object result = JToon.decode(toon, options);
 
-// Lenient mode: an unterminated quoted token yields null instead of throwing
-String invalidToon = "key: \"unterminated";
+// Non-strict mode: a count mismatch decodes the values that are present
+String mismatchedToon = "tags[3]: a,b";
 DecodeOptions lenient = DecodeOptions.withStrict(false);
-Object result2 = JToon.decode(invalidToon, lenient);
+Object result2 = JToon.decode(mismatchedToon, lenient);
 ```
 
 **CI/CD:** GitHub Actions • Java 17 • Coverage enforcement • PR coverage comments
@@ -340,9 +340,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for full development guidelines.
 
 ## Project Status
 
-`toon-spec: 4.1.2`
+`toon-spec: 4.2`
 
-This project is 100% compliant with TOON specification 4.1.2. Release conformance enforced on CI/CD.
+This project is 100% compliant with TOON specification 4.2. Release conformance enforced on CI/CD.
 
 ## Documentation
 

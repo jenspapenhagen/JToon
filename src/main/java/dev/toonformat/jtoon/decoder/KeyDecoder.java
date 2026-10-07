@@ -152,17 +152,14 @@ public final class KeyDecoder {
             final int depth, final DecodeContext context) {
         final int colonIdx = DecodeHelper.findUnquotedColon(content);
 
-        if (colonIdx > 0) {
+        if (colonIdx >= 0) {
             final String key = DecodeHelper.trimSpaces(content.substring(0, colonIdx));
             final String value = DecodeHelper.trimSpaces(content.substring(colonIdx + 1));
             parseKeyValuePairIntoMap(result, key, value, depth, context);
         } else {
-            // No colon found in key-value context - this is an error
-            if (context.options.strict()) {
-                throw new IllegalArgumentException(
-                    "Missing colon in key-value context at line " + (context.currentLine + 1));
-            }
-            context.currentLine++;
+            // No colon found in key-value context - an error in any mode
+            throw new IllegalArgumentException(
+                "Missing colon in key-value context at line " + (context.currentLine + 1));
         }
     }
 
@@ -178,7 +175,7 @@ public final class KeyDecoder {
     static void parseKeyValuePairIntoMap(final Map<String, Object> map, final String key, final String value,
                                          final int depth, final DecodeContext context) {
         DecodeHelper.validateQuotedTokenBoundary(key);
-        DecodeHelper.validateKeyHasNoUnquotedBrackets(key, context);
+        DecodeHelper.rejectMalformedHeader(key, value, context);
         final String unescapedKey = StringEscaper.unescape(key);
 
         final Object parsedValue = parseKeyValue(value, depth, context);
@@ -406,15 +403,15 @@ public final class KeyDecoder {
     static boolean parseKeyValueField(final String fieldContent, final Map<String, Object> item, final int depth,
                                        final DecodeContext context) {
         final int colonIdx = DecodeHelper.findUnquotedColon(fieldContent);
-        if (colonIdx <= 0) {
+        if (colonIdx < 0) {
             return false;
         }
 
         final String rawFieldKey = DecodeHelper.trimSpaces(fieldContent.substring(0, colonIdx));
         DecodeHelper.validateQuotedTokenBoundary(rawFieldKey);
-        DecodeHelper.validateKeyHasNoUnquotedBrackets(rawFieldKey, context);
-        final String fieldKey = StringEscaper.unescape(rawFieldKey);
         final String fieldValue = DecodeHelper.trimSpaces(fieldContent.substring(colonIdx + 1));
+        DecodeHelper.rejectMalformedHeader(rawFieldKey, fieldValue, context);
+        final String fieldKey = StringEscaper.unescape(rawFieldKey);
 
         final Object parsedValue = ObjectDecoder.parseFieldValue(fieldValue, depth + 2, context);
 

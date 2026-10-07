@@ -17,7 +17,6 @@ class ArrayDecoderTest {
 
     private static final int EXPECTED_PARSE_COUNT = 3;
     private static final int MAX_ARRAY_SIZE = 10_000_000;
-    private static final int FIRST_DATA_LINE_INDEX = 3;
 
     private final DecodeContext context = new DecodeContext();
 
@@ -225,12 +224,12 @@ class ArrayDecoderTest {
     }
 
     @Test
-    void shouldKeepBackslashEscapedDelimiterInsideValue() {
+    void shouldSplitAtDelimiterAfterBackslashOutsideQuotes() {
         // When
         final List<String> result = ArrayDecoder.parseDelimitedValues("a\\,b,c", Delimiter.COMMA);
 
         // Then
-        assertEquals(List.of("a\\,b", "c"), result);
+        assertEquals(List.of("a\\", "b", "c"), result);
     }
 
     @Test
@@ -255,19 +254,6 @@ class ArrayDecoderTest {
         final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
             () -> ArrayDecoder.parseArray("[03]: 1,2,3", 0, context));
         assertEquals("Invalid array length with leading zeros: [03]", thrown.getMessage());
-    }
-
-    @Test
-    void shouldParseFirstDataLineAfterBlankLinesFollowingHeader() {
-        // Given
-        setUpContext("[2]:\n\n  1,2\n  3,4\nnext: value");
-
-        // When
-        final List<Object> result = ArrayDecoder.parseArray("[2]:", 0, context);
-
-        // Then
-        assertEquals("[1, 2]", result.toString());
-        assertEquals(FIRST_DATA_LINE_INDEX, context.currentLine);
     }
 
     @Test
@@ -301,20 +287,6 @@ class ArrayDecoderTest {
 
         // When / Then
         assertThrows(IllegalArgumentException.class, () -> ArrayDecoder.parseArray("[x]", 0, context));
-    }
-
-    @Test
-    void shouldReturnEmptyListForInvalidHeaderInLenientMode() {
-        // Given
-        this.context.lines = "[x]".split("\n", -1);
-        this.context.options = DecodeOptions.withStrict(false);
-        this.context.delimiter = DecodeOptions.DEFAULT.delimiter();
-
-        // When
-        final List<Object> result = ArrayDecoder.parseArray("[x]", 0, context);
-
-        // Then
-        assertTrue(result.isEmpty());
     }
 
     @Test

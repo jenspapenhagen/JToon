@@ -35,6 +35,7 @@ public final class ObjectDecoder {
 
     private static Map<String, Object> doParseNestedObject(final int parentDepth, final DecodeContext context) {
         final Map<String, Object> result = new LinkedHashMap<>();
+        final int contentDepth = DecodeHelper.findContentDepth(parentDepth, context);
 
         while (context.currentLine < context.lines.length) {
             final String line = context.lines[context.currentLine];
@@ -51,17 +52,11 @@ public final class ObjectDecoder {
                 return result;
             }
 
-            if (depth == parentDepth + 1) {
-                processDirectChildLine(result, line, parentDepth, depth, context);
-            } else if (depth > parentDepth + 1) {
-                // Over-indented line jumps past the expected depth (§14.2)
-                if (context.options.strict()) {
-                    throw new IllegalArgumentException(
-                        "Over-indented line at " + (context.currentLine + 1) + " (depth " + depth + ")");
-                }
-                context.currentLine++;
+            if (depth == contentDepth) {
+                processDirectChildLine(result, line, contentDepth - 1, depth, context);
             } else {
-                context.currentLine++;
+                // A line off the content depth belongs to no scope (§14.2)
+                DecodeHelper.processOverIndentedLine(context, depth);
             }
         }
 
@@ -101,12 +96,22 @@ public final class ObjectDecoder {
      * @param context decode an object to deal with lines, delimiter and options
      */
     static void parseRootObjectFields(final Map<String, Object> obj, final int depth, final DecodeContext context) {
-        while (isRootFieldLine(depth, context)) {
+        while (context.currentLine < context.lines.length) {
             final String line = context.lines[context.currentLine];
 
             // Skip blank lines
             if (DecodeHelper.isBlankLine(line)) {
                 context.currentLine++;
+                continue;
+            }
+
+            final int lineDepth = DecodeHelper.getDepth(line, context);
+            if (lineDepth < depth) {
+                return;
+            }
+            // A deeper line belongs to no field; skipping it keeps the root fields after it (§8, §14.2)
+            if (lineDepth > depth) {
+                DecodeHelper.processOverIndentedLine(context, lineDepth);
                 continue;
             }
 
@@ -116,19 +121,6 @@ public final class ObjectDecoder {
                 return;
             }
         }
-    }
-
-    /**
-     * Returns whether the current line is a root field line at the given
-     * depth, staying within the line buffer.
-     *
-     * @param depth   the expected root field depth
-     * @param context decode an object to deal with lines, delimiter and options
-     * @return true when the current line sits at the root field depth
-     */
-    private static boolean isRootFieldLine(final int depth, final DecodeContext context) {
-        return context.currentLine < context.lines.length
-            && DecodeHelper.getDepth(context.lines[context.currentLine], context) == depth;
     }
 
     /**
@@ -158,7 +150,7 @@ public final class ObjectDecoder {
         }
 
         final int colonIdx = DecodeHelper.findUnquotedColon(content);
-        if (colonIdx > 0) {
+        if (colonIdx >= 0) {
             final String key = DecodeHelper.trimSpaces(content.substring(0, colonIdx));
             final String value = DecodeHelper.trimSpaces(content.substring(colonIdx + 1));
 
@@ -219,22 +211,15 @@ public final class ObjectDecoder {
     }
 
     /**
-     * Parses a bare scalar value and validates in strict mode.
+     * Parses a bare scalar value.
      *
      * @param content the content string to parse
-     * @param depth   the depth of the scalar value
      * @param context decode an object to deal with lines, delimiter and options
      * @return the parsed scalar value
      */
-    static Object parseBareScalarValue(final String content, final int depth, final DecodeContext context) {
+    static Object parseBareScalarValue(final String content, final DecodeContext context) {
         final Object result = PrimitiveDecoder.parse(content, context);
         context.currentLine++;
-
-        // In strict mode, check if there are more primitives at the root level
-        if (depth == 0 && context.options.strict()) {
-            DecodeHelper.validateNoMultiplePrimitivesAtRoot(context);
-        }
-
         return result;
     }
 
@@ -283,7 +268,7 @@ public final class ObjectDecoder {
             final int nextDepth = DecodeHelper.getDepth(context.lines[context.currentLine + 1], context);
             if (nextDepth > depth) {
                 if (!value.isEmpty()) {
-                    return parseInlineValueWithOrphanLines(value, depth, nextDepth, context, scalarParser);
+                    return parseInlineValueWithOrphanLines(value, depth, context, scalarParser);
                 }
                 context.currentLine++;
                 // parseNestedObject manages the currentLine, so we don't increment here
@@ -298,28 +283,27 @@ public final class ObjectDecoder {
 
     /**
      * Parses an inline value whose line carries deeper, orphaned lines:
-     * rejected in strict mode (§14.2), skipped in non-strict mode.
+     * rejected in strict mode (§14.2), skipped in non-strict mode unless
+     * they are scalar lines.
      *
      * @param value        the inline value string to parse
      * @param depth        the depth at which the value is located
-     * @param nextDepth    the depth of the first orphaned line
      * @param context      decode an object to deal with lines, delimiter and options
      * @param scalarParser parses the inline value
      * @return the parsed scalar value
      */
-    private static Object parseInlineValueWithOrphanLines(final String value, final int depth, final int nextDepth,
+    private static Object parseInlineValueWithOrphanLines(final String value, final int depth,
             final DecodeContext context, final BiFunction<String, DecodeContext, Object> scalarParser) {
         // Inline value: the field does not open a scope, so a deeper
         // line belongs to no scope at all (§14.2)
-        if (context.options.strict()) {
-            throw new IllegalArgumentException(
-                "Over-indented line at " + (context.currentLine + 2) + " (depth " + nextDepth + ")");
+        context.currentLine++;
+        while (context.currentLine < context.lines.length) {
+            final int lineDepth = DecodeHelper.getDepth(context.lines[context.currentLine], context);
+            if (lineDepth <= depth) {
+                break;
+            }
+            DecodeHelper.processOverIndentedLine(context, lineDepth);
         }
-        // Non-strict: skip the orphaned lines and keep the inline value
-        do {
-            context.currentLine++;
-        } while (context.currentLine < context.lines.length
-            && DecodeHelper.getDepth(context.lines[context.currentLine], context) > depth);
         return scalarParser.apply(value, context);
     }
 
@@ -338,16 +322,12 @@ public final class ObjectDecoder {
 
         // Find the next non-blank line and its depth
         final Integer nextDepth = DecodeHelper.findNextNonBlankLineDepth(context);
-        if (nextDepth == null) {
-            // No non-blank line found - create an empty object
-            return new LinkedHashMap<>();
-        }
 
         // Handle empty value with nested content.
         // The list item is at depth, and the field itself is conceptually at depth + 1,
         // So nested content should be parsed with parentDepth = depth + 1
         // This allows nested fields at depth + 2 or deeper to be processed correctly
-        if (isEmpty && nextDepth > depth) {
+        if (isEmpty && nextDepth != null && nextDepth > depth) {
             return parseNestedObject(depth + 1, context);
         }
 

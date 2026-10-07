@@ -8,8 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import static dev.toonformat.jtoon.util.Constants.LIST_ITEM_MARKER;
-import static dev.toonformat.jtoon.util.Constants.OPEN_BRACKET;
 
 /**
  * Handles decoding of TOON list item to JSON format.
@@ -39,13 +37,14 @@ public final class ListItemDecoder {
         if (lineDepth == depth + 1) {
             final String content = line.substring((depth + 1) * context.options.indent());
 
-            if (content.startsWith(LIST_ITEM_MARKER)) {
+            if (DecodeHelper.isListItemLine(content)) {
                 result.add(parseListItem(content, depth, context));
             } else {
                 context.currentLine++;
             }
         } else {
-            context.currentLine++;
+            // A deeper line that no item's scope consumed belongs to no scope
+            DecodeHelper.processOverIndentedLine(context, lineDepth);
         }
     }
 
@@ -68,7 +67,7 @@ public final class ListItemDecoder {
         }
 
         // Check for standalone array (e.g., "[2]: 1,2")
-        if (itemContent.startsWith(OPEN_BRACKET)) {
+        if (DecodeHelper.opensKeylessArray(itemContent)) {
             return parseStandaloneArrayItem(itemContent, depth, context);
         }
 
@@ -84,7 +83,7 @@ public final class ListItemDecoder {
         final int colonIdx = DecodeHelper.findUnquotedColon(itemContent);
 
         // Simple scalar: - value
-        if (colonIdx <= 0) {
+        if (colonIdx < 0) {
             context.currentLine++;
             return PrimitiveDecoder.parse(itemContent, context);
         }
@@ -116,8 +115,8 @@ public final class ListItemDecoder {
     private static Object parseStandaloneArrayItem(final String itemContent, final int depth,
             final DecodeContext context) {
         // Keyless headers are valid as list items only without a field
-        // list; [2]{x}: and [2:]{v}: are defects (§5, §6)
-        if (context.options.strict() && KEYLESS_FIELDS_HEADER.matcher(itemContent).find()) {
+        // list; [2]{x}: and [2:]{v}: are defects in any mode (§5, §6)
+        if (KEYLESS_FIELDS_HEADER.matcher(itemContent).find()) {
             throw new IllegalArgumentException(
                 "Keyless array header with field list only valid at document root at line "
                     + (context.currentLine + 1));
@@ -220,9 +219,9 @@ public final class ListItemDecoder {
         // Object item: - key: value
         final String rawKey = DecodeHelper.trimSpaces(itemContent.substring(0, colonIdx));
         DecodeHelper.validateQuotedTokenBoundary(rawKey);
-        DecodeHelper.validateKeyHasNoUnquotedBrackets(rawKey, context);
-        final String key = StringEscaper.unescape(rawKey);
         final String value = DecodeHelper.trimSpaces(itemContent.substring(colonIdx + 1));
+        DecodeHelper.rejectMalformedHeader(rawKey, value, context);
+        final String key = StringEscaper.unescape(rawKey);
 
         context.currentLine++;
 
@@ -253,8 +252,19 @@ public final class ListItemDecoder {
             final int depth, final DecodeContext context) {
         while (context.currentLine < context.lines.length) {
             final String line = context.lines[context.currentLine];
-            final int lineDepth = DecodeHelper.getDepth(line, context);
 
+            // Non-strict mode ignores blank lines before a line at field depth or deeper (§12)
+            if (DecodeHelper.isBlankLine(line)) {
+                final int nextNonBlankLine = DecodeHelper.findNextNonBlankLine(context.currentLine + 1, context);
+                if (context.options.strict() || nextNonBlankLine >= context.lines.length
+                        || DecodeHelper.getDepth(context.lines[nextNonBlankLine], context) < depth + 2) {
+                    return;
+                }
+                context.currentLine = nextNonBlankLine;
+                continue;
+            }
+
+            final int lineDepth = DecodeHelper.getDepth(line, context);
             if (lineDepth < depth + 2) {
                 return;
             }
@@ -287,9 +297,10 @@ public final class ListItemDecoder {
             wasParsed = KeyDecoder.parseKeyValueField(fieldContent, item, depth, context);
         }
 
-        // If neither pattern matched, skip this line to avoid an infinite loop
+        // Neither pattern matched: the line has no colon, an error in any mode
         if (!wasParsed) {
-            context.currentLine++;
+            throw new IllegalArgumentException(
+                "Missing colon in key-value context at line " + (context.currentLine + 1));
         }
     }
 }

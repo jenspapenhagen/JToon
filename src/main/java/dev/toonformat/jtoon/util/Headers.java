@@ -107,6 +107,10 @@ public final class Headers {
         if (fields.endIndex() >= n || content.charAt(fields.endIndex()) != ':') {
             return null;
         }
+        // A fields-bearing header carries no inline content (§6)
+        if (fields.start() >= 0 && !content.substring(fields.endIndex() + 1).chars().allMatch(c -> c == ' ')) {
+            return null;
+        }
         return new KeyedHeaderMatch(content.substring(0, keyEnd), keyEnd, bracket.declaredLength(),
             bracket.keyed(), bracket.delimiter(), fields.start(), fields.endIndex());
     }
@@ -168,13 +172,28 @@ public final class Headers {
      * @param content  the line content to scan
      * @param keyStart the index where the key starts
      * @param n        the content length
-     * @return the index just past the key, or -1 when the key is empty or a
-     *         space separates it from the bracket segment
+     * @return the index just past the key, or -1 when the key is empty, holds
+     *         an unclosed quote, or a space separates it from the bracket segment
      */
     private static int scanUnquotedKey(final String content, final int keyStart, final int n) {
         int i = keyStart;
-        while (i < n && content.charAt(i) != '[' && content.charAt(i) != ':') {
+        boolean inQuotes = false;
+        while (i < n) {
+            final char c = content.charAt(i);
+            if (inQuotes && c == '\\' && i + 1 < n) {
+                i += 2;
+                continue;
+            }
+            if (c == '"') {
+                inQuotes = !inQuotes;
+            } else if (!inQuotes && (c == '[' || c == ':')) {
+                break;
+            }
             i++;
+        }
+        // An unclosed quote opens a span to the end of the line, so no bracket segment follows (§5.2)
+        if (inQuotes) {
+            return -1;
         }
         if (i == keyStart) {
             return -1;
@@ -201,18 +220,14 @@ public final class Headers {
         }
         i++;
         final int digitsStart = i;
-        while (i < n && Character.isDigit(content.charAt(i))) {
+        while (i < n && content.charAt(i) >= '0' && content.charAt(i) <= '9') {
             i++;
         }
-        if (i == digitsStart) {
+        // A length has at least one ASCII digit and no leading zero (§6)
+        if (i == digitsStart || (i - digitsStart > 1 && content.charAt(digitsStart) == '0')) {
             return null;
         }
-        final long declaredLength;
-        try {
-            declaredLength = Long.parseLong(content.substring(digitsStart, i));
-        } catch (NumberFormatException e) {
-            return null;
-        }
+        final long declaredLength = parseLength(content.substring(digitsStart, i));
         boolean keyed = false;
         if (i < n && content.charAt(i) == ':') {
             keyed = true;
@@ -227,6 +242,22 @@ public final class Headers {
             return null;
         }
         return new BracketSegment(declaredLength, keyed, delimiter, i + 1);
+    }
+
+    /**
+     * Parses the digits of a bracket-segment length. A length beyond
+     * {@code long} still forms a header, so it saturates to
+     * {@link Long#MAX_VALUE}, a count no scope can meet.
+     *
+     * @param digits the length digits
+     * @return the declared length
+     */
+    public static long parseLength(final String digits) {
+        try {
+            return Long.parseLong(digits);
+        } catch (NumberFormatException e) {
+            return Long.MAX_VALUE;
+        }
     }
 
     /**
@@ -259,7 +290,7 @@ public final class Headers {
      * @param n       the content length
      * @return the index of the matching closing brace, or -1 when unbalanced
      */
-    private static int skipBalancedFieldSpec(final String content, final int i, final int n) {
+    public static int skipBalancedFieldSpec(final String content, final int i, final int n) {
         int pos = i;
         int depth = 1;
         boolean escaped = false;
@@ -268,7 +299,7 @@ public final class Headers {
             final char c = content.charAt(pos);
             if (escaped) {
                 escaped = false;
-            } else if (c == '\\') {
+            } else if (inQuotes && c == '\\') {
                 escaped = true;
             } else if (c == '"') {
                 inQuotes = !inQuotes;

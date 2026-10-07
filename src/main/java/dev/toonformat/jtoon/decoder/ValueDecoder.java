@@ -10,7 +10,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import static dev.toonformat.jtoon.util.Constants.BYTE_ORDER_MARK;
 import static dev.toonformat.jtoon.util.Constants.NULL_LITERAL;
-import static dev.toonformat.jtoon.util.Constants.OPEN_BRACKET;
 
 /**
  * Main decoder for converting TOON-formatted strings to Java objects.
@@ -45,28 +44,11 @@ public final class ValueDecoder {
      * @param toon    TOON-formatted input string
      * @param options parsing options (delimiter, indentation, strict mode)
      * @return parsed object (Map, List, primitive, or null)
-     * @throws IllegalArgumentException if strict mode is enabled and input is
-     *                                  invalid
+     * @throws IllegalArgumentException if the input is invalid; non-strict mode
+     *                                  relaxes only the checks the spec makes lenient
      */
     @Nullable
     public static Object decode(final String toon, final DecodeOptions options) {
-        try {
-            return decodeInternal(toon, options);
-        } catch (FatalDecodeException e) {
-            // Spec §5.2/§7.4: bare scalars outside root primitive position and
-            // characters after a closing quote are errors in strict and
-            // non-strict mode alike; lenient mode must not swallow them.
-            throw e;
-        } catch (IllegalArgumentException e) {
-            if (!options.strict()) {
-                return null;
-            }
-            throw e;
-        }
-    }
-
-    @Nullable
-    private static Object decodeInternal(final String toon, final DecodeOptions options) {
         if (toon == null) {
             return new LinkedHashMap<>();
         }
@@ -75,18 +57,10 @@ public final class ValueDecoder {
         // byte-order mark, not content; remove it before any processing.
         final String input = stripByteOrderMark(toon);
 
-        final String trimmed = DecodeHelper.trimSpaces(input);
-        if (NULL_LITERAL.equals(trimmed)) {
-            return null;
-        }
-        if ("[]".equals(trimmed)) {
-            return java.util.Collections.emptyList();
-        }
-
         //set an own decode context
         final DecodeContext context = new DecodeContext();
         context.options = options;
-        context.lines = buildContentLines(input.split("\r?\n", -1), options);
+        context.lines = buildContentLines(input.split("\n", -1), options);
         context.delimiter = options.delimiter();
 
         // Spec §5.1: a document of only comments and blank lines is an empty object
@@ -96,23 +70,40 @@ public final class ValueDecoder {
 
         // Spec §5: root-form discovery starts at the first non-blank line
         context.currentLine = DecodeHelper.findNextNonBlankLine(0, context);
-        final int lineIndex = context.currentLine;
-        final String line = context.lines[lineIndex];
-        final int depth = DecodeHelper.getDepth(line, context);
-
-        if (depth > 0) {
-            if (context.options.strict()) {
-                throw new IllegalArgumentException("Unexpected indentation at line " + lineIndex);
-            }
+        final int firstLine = context.currentLine;
+        skipIndentedLeadingLines(context);
+        if (context.currentLine >= context.lines.length) {
             return new LinkedHashMap<>();
         }
 
-        final Object result = parseRootDocument(line, depth, context);
+        final Object result = parseRootDocument(context.lines[context.currentLine], 0,
+            context.currentLine > firstLine, context);
 
         // The root form spans the whole document (§5); leftover lines must not be
         // silently discarded.
         DecodeHelper.validateNoTrailingContent(context);
         return result;
+    }
+
+    /**
+     * Skips the indented lines before the first depth-0 line: an indented
+     * first line belongs to no scope, so strict mode rejects it and
+     * non-strict mode skips it unless it is a scalar line.
+     *
+     * @param context decode an object to deal with lines, delimiter and options
+     */
+    private static void skipIndentedLeadingLines(final DecodeContext context) {
+        while (context.currentLine < context.lines.length) {
+            final int depth = DecodeHelper.getDepth(context.lines[context.currentLine], context);
+            if (depth == 0) {
+                return;
+            }
+            if (context.options.strict()) {
+                throw new IllegalArgumentException("Unexpected indentation at line " + (context.currentLine + 1));
+            }
+            DecodeHelper.processOverIndentedLine(context, depth);
+            context.currentLine = DecodeHelper.findNextNonBlankLine(context.currentLine, context);
+        }
     }
 
     private static String stripByteOrderMark(final String input) {
@@ -213,10 +204,13 @@ public final class ValueDecoder {
 
     /**
      * Routes the root line to its form (§5): keyless array header, keyed
-     * array header, key-value pair, or bare scalar.
+     * array header, key-value pair, or bare scalar. Any other non-blank line,
+     * a skipped indented one included, makes the document multi-line, so the
+     * bare scalar is then not a root primitive.
      */
-    private static Object parseRootDocument(final String line, final int depth, final DecodeContext context) {
-        if (!line.isEmpty() && line.charAt(0) == OPEN_BRACKET.charAt(0)) {
+    private static Object parseRootDocument(final String line, final int depth, final boolean skippedLeading,
+            final DecodeContext context) {
+        if (DecodeHelper.opensKeylessArray(line)) {
             return parseRootArrayLine(line, depth, context);
         }
 
@@ -226,11 +220,16 @@ public final class ValueDecoder {
         }
 
         final int colonIdx = DecodeHelper.findUnquotedColon(line);
-        if (colonIdx > 0) {
+        if (colonIdx >= 0) {
             return parseRootKeyValueLine(line, colonIdx, depth, context);
         }
 
-        return parseRootBareLine(line, depth, context);
+        if (skippedLeading
+                || DecodeHelper.findNextNonBlankLine(context.currentLine + 1, context) < context.lines.length) {
+            throw new IllegalArgumentException(
+                "Bare token line outside root primitive position at line " + (context.currentLine + 1));
+        }
+        return ObjectDecoder.parseBareScalarValue(line, context);
     }
 
     private static Object parseRootArrayLine(final String line, final int depth, final DecodeContext context) {
@@ -245,35 +244,9 @@ public final class ValueDecoder {
 
     private static Object parseRootKeyValueLine(final String line, final int colonIdx, final int depth,
             final DecodeContext context) {
-        if (context.options.strict()) {
-            final String key = DecodeHelper.trimSpaces(line.substring(0, colonIdx));
-            // In strict mode, reject keys with unquoted brackets that didn't match
-            // KEYED_ARRAY_PATTERN. This catches:
-            //   - extra brackets between bracket segment and colon (foo[1][bar])
-            //   - text between bracket segment and colon (foo[2]extra)
-            //   - noninteger bracket segment (foo[bar])
-            //   - negative bracket length (items[-1])
-            //   - whitespace between bracket segment and colon/fields segment
-            //     (items[2] :, items[2] {a,b}:)
-            if (DecodeHelper.hasUnquotedBrackets(key)) {
-                throw new IllegalArgumentException(
-                    "Invalid array header syntax at line " + (context.currentLine + 1));
-            }
-        }
         final String key = DecodeHelper.trimSpaces(line.substring(0, colonIdx));
         final String value = DecodeHelper.trimSpaces(line.substring(colonIdx + 1));
         return KeyDecoder.parseKeyValuePair(key, value, depth, depth == 0, context);
-    }
-
-    private static Object parseRootBareLine(final String line, final int depth, final DecodeContext context) {
-        if (context.options.strict() && DecodeHelper.hasUnquotedBrackets(line)) {
-            // Line has brackets but no colon and didn't match KEYED_ARRAY_PATTERN
-            // (e.g. "items[2]{id,name}" missing colon)
-            throw new IllegalArgumentException(
-                "Invalid syntax: unquoted brackets without valid header at line "
-                    + (context.currentLine + 1));
-        }
-        return ObjectDecoder.parseBareScalarValue(line, depth, context);
     }
 
     /**
@@ -304,8 +277,8 @@ public final class ValueDecoder {
      * @param toon    The TOON-formatted string to decode
      * @param options Decoding options (indent, delimiter, strict mode)
      * @return JSON string representation
-     * @throws IllegalArgumentException if strict mode is enabled and input is
-     *                                  invalid
+     * @throws IllegalArgumentException if the input is invalid; non-strict mode
+     *                                  relaxes only the checks the spec makes lenient
      */
     public static String decodeToJson(final String toon, final DecodeOptions options) {
         try {

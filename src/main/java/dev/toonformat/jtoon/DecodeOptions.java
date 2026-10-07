@@ -10,12 +10,14 @@ import java.util.Objects;
  *                        primitive arrays (default: COMMA)
  * @param strict          Strict validation mode (default: true). When true,
  *                        throws IllegalArgumentException on invalid input.
- *                        When false, uses best-effort parsing and top-level
- *                        decode errors return null instead of throwing.
+ *                        When false, applies only the spec's non-strict
+ *                        leniencies and still throws on other invalid input.
  * @param expandPaths     Path expansion mode for dotted keys (default: OFF)
  * @param maxDepth        Maximum allowed nesting depth during decoding (default: 512).
  *                        Prevents StackOverflowError from deeply nested input.
- * @param maxArraySize    Maximum allowed elements in a single array (default: 10,000,000).
+ * @param maxArraySize    Maximum allowed elements in a single array or keyed object
+ *                        (default: 10,000,000), in strict and non-strict mode alike.
+ *                        Strict mode also rejects a declared array length above it.
  *                        Prevents memory exhaustion from oversized arrays.
  * @param maxStringLength Maximum allowed length for string values (default: 10,000,000).
  *                        Prevents memory exhaustion from oversized strings.

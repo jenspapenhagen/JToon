@@ -1,6 +1,7 @@
 package dev.toonformat.jtoon.decoder;
 
 import dev.toonformat.jtoon.Delimiter;
+import dev.toonformat.jtoon.util.Headers;
 import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,8 +10,6 @@ import java.util.regex.Matcher;
 import static dev.toonformat.jtoon.util.Constants.BACKSLASH;
 import static dev.toonformat.jtoon.util.Constants.COLON;
 import static dev.toonformat.jtoon.util.Constants.DOUBLE_QUOTE;
-import static dev.toonformat.jtoon.util.Constants.LIST_ITEM_MARKER;
-import static dev.toonformat.jtoon.util.Constants.LIST_ITEM_PREFIX;
 import static dev.toonformat.jtoon.util.Headers.ARRAY_HEADER_PATTERN;
 import static dev.toonformat.jtoon.util.Headers.TABULAR_HEADER_PATTERN;
 
@@ -46,7 +45,7 @@ public final class ArrayDecoder {
             final char c = matcher.group(FIELDS_GROUP_INDEX).charAt(i);
             if (escaped) {
                 escaped = false;
-            } else if (c == '\\') {
+            } else if (inQuotes && c == '\\') {
                 escaped = true;
             } else if (c == '"') {
                 inQuotes = !inQuotes;
@@ -133,7 +132,7 @@ public final class ArrayDecoder {
             skipBlankLines(context);
 
             if (context.currentLine < context.lines.length) {
-                return parseArrayDataLine(header, depth, arrayDelimiter, context);
+                return parseArrayDataLine(header, depth, context);
             }
             validateArrayLength(header, 0, context.options.maxArraySize(), context.options.strict());
             return Collections.unmodifiableList(new ArrayList<>());
@@ -145,11 +144,7 @@ public final class ArrayDecoder {
             return Collections.emptyList();
         }
 
-        if (context.options.strict()) {
-            throw new IllegalArgumentException("Invalid array header: " + header);
-        }
-        context.currentLine++;
-        return Collections.emptyList();
+        throw new IllegalArgumentException("Invalid array header: " + header);
     }
 
     /**
@@ -224,43 +219,34 @@ public final class ArrayDecoder {
     }
 
     /**
-     * Parses the first data line below an array header, routing list items to
-     * the list parser and any other content to the value splitter.
+     * Parses the first data line below an array header: a deeper list item
+     * opens a list; any other line is left to the enclosing scope, so the
+     * array is empty.
      *
      * @param header         the full header string
      * @param depth          depth of the array
-     * @param arrayDelimiter array delimiter
      * @param context        decode context
      * @return the parsed array values
      */
     private static List<Object> parseArrayDataLine(final String header, final int depth,
-            final Delimiter arrayDelimiter, final DecodeContext context) {
+            final DecodeContext context) {
         final String nextLine = context.lines[context.currentLine];
         final int nextDepth = DecodeHelper.getDepth(nextLine, context);
         final String nextContent = nextLine.substring(nextDepth * context.options.indent());
 
-        if (nextDepth <= depth) {
-            // The next line is not a child of this array, the array is empty
-            validateArrayLength(header, 0, context.options.maxArraySize(), context.options.strict());
-            return Collections.emptyList();
-        }
-
-        if (LIST_ITEM_MARKER.equals(nextContent) || nextContent.startsWith(LIST_ITEM_PREFIX)) {
+        if (nextDepth > depth && DecodeHelper.isListItemLine(nextContent)) {
             context.currentLine--;
             return Collections.unmodifiableList(parseListArray(depth, header, context));
         }
 
-        context.currentLine++;
-        final List<Object> result = parseArrayValues(nextContent, arrayDelimiter,
-            context.options.maxArraySize(), context.options.maxStringLength());
-        validateArrayLength(header, result.size(), context.options.maxArraySize(), context.options.strict());
-        return Collections.unmodifiableList(result);
+        validateArrayLength(header, 0, context.options.maxArraySize(), context.options.strict());
+        return Collections.emptyList();
     }
 
     /**
-     * Validates array length if declared in the header.
-     * The count check applies in strict mode only; the declared length never
-     * truncates a scope (§14.1). Resource bounds are always enforced.
+     * Validates the array length against {@code maxArraySize} in either mode,
+     * and against the length declared in the header in strict mode only; the
+     * declared length never truncates a scope (§14.1).
      *
      * @param header       header
      * @param actualLength actual length
@@ -269,8 +255,12 @@ public final class ArrayDecoder {
      */
     static void validateArrayLength(final String header, final int actualLength, final int maxArraySize,
             final boolean strict) {
+        validateArraySize(actualLength, maxArraySize);
+        if (!strict) {
+            return;
+        }
         final Integer declaredLength = extractLengthFromHeader(header, maxArraySize);
-        if (strict && declaredLength != null && declaredLength != actualLength) {
+        if (declaredLength != null && declaredLength != actualLength) {
             throw new IllegalArgumentException(
                 String.format("Array length mismatch: declared %d, found %d", declaredLength, actualLength));
         }
@@ -289,10 +279,10 @@ public final class ArrayDecoder {
         final Matcher matcher = ARRAY_HEADER_PATTERN.matcher(header);
         if (matcher.find()) {
             final String lengthStr = matcher.group(2);
-            final long longLength = Long.parseLong(lengthStr);
+            final long longLength = Headers.parseLength(lengthStr);
             if (longLength > Integer.MAX_VALUE) {
                 throw new IllegalArgumentException(
-                    "Array size too large: " + longLength);
+                    "Array size too large: " + lengthStr);
             }
             if (longLength > maxArraySize) {
                 throw new IllegalArgumentException(
@@ -303,13 +293,23 @@ public final class ArrayDecoder {
         return null;
     }
 
+    /**
+     * Rejects an element count above {@code maxArraySize}.
+     *
+     * @param size         the element count
+     * @param maxArraySize maximum allowed array size
+     */
+    static void validateArraySize(final int size, final int maxArraySize) {
+        if (size > maxArraySize) {
+            throw new IllegalArgumentException(
+                "Array size " + size + " exceeds maximum allowed " + maxArraySize);
+        }
+    }
+
     static List<Object> parseArrayValues(final String values, final Delimiter arrayDelimiter,
                                           final int maxArraySize, final int maxStringLength) {
         final List<String> rawValues = parseDelimitedValues(values, arrayDelimiter);
-        if (rawValues.size() > maxArraySize) {
-            throw new IllegalArgumentException(
-                "Array size " + rawValues.size() + " exceeds maximum allowed " + maxArraySize);
-        }
+        validateArraySize(rawValues.size(), maxArraySize);
         final List<Object> result = new ArrayList<>(rawValues.size());
         for (final String value : rawValues) {
             result.add(PrimitiveDecoder.parse(value, maxStringLength));
@@ -340,7 +340,7 @@ public final class ArrayDecoder {
                 stringBuilder.append(currentChar);
                 escaped = false;
                 i++;
-            } else if (currentChar == BACKSLASH) {
+            } else if (inQuotes && currentChar == BACKSLASH) {
                 stringBuilder.append(currentChar);
                 escaped = true;
                 i++;
@@ -392,6 +392,8 @@ public final class ArrayDecoder {
     private static List<Object> parseListArray(final int depth, final String header, final DecodeContext context) {
         final List<Object> result = new ArrayList<>();
         context.currentLine++;
+        final int firstItemLine = context.currentLine;
+        final int itemDepth = DecodeHelper.findContentDepth(depth, context);
 
         boolean shouldContinue = true;
         while (shouldContinue && context.currentLine < context.lines.length) {
@@ -407,18 +409,46 @@ public final class ArrayDecoder {
                 }
             } else {
                 final int lineDepth = DecodeHelper.getDepth(line, context);
-                if (shouldTerminateListArray(lineDepth, depth, line, context)) {
+                // A line between the header and an adopted deeper item depth belongs to no scope
+                if (lineDepth > depth && lineDepth < itemDepth) {
+                    DecodeHelper.processOverIndentedLine(context, lineDepth);
+                } else if (shouldTerminateListArray(lineDepth, itemDepth - 1, line, context)) {
                     shouldContinue = false;
                 } else {
-                    ListItemDecoder.processListArrayItem(line, lineDepth, depth, result, context);
+                    ListItemDecoder.processListArrayItem(line, lineDepth, itemDepth - 1, result, context);
                 }
             }
         }
 
+        validateNoBlankLineInSpan(firstItemLine, context);
         if (header != null) {
             validateArrayLength(header, result.size(), context.options.maxArraySize(), context.options.strict());
         }
         return result;
+    }
+
+    /**
+     * In strict mode, rejects a blank line between the first item line and
+     * the last content line of a list. The items' nested scopes skip blank
+     * lines on their own, so the whole span is checked once the list is
+     * complete.
+     *
+     * @param firstItemLine the index of the first item line
+     * @param context       decode an object to deal with lines, delimiter and options
+     */
+    private static void validateNoBlankLineInSpan(final int firstItemLine, final DecodeContext context) {
+        if (!context.options.strict()) {
+            return;
+        }
+        int lastLine = context.currentLine - 1;
+        while (lastLine > firstItemLine && DecodeHelper.isBlankLine(context.lines[lastLine])) {
+            lastLine--;
+        }
+        for (int i = firstItemLine; i < lastLine; i++) {
+            if (DecodeHelper.isBlankLine(context.lines[i])) {
+                throw new IllegalArgumentException("Blank line inside list array at line " + (i + 1));
+            }
+        }
     }
 
     /**
@@ -463,10 +493,9 @@ public final class ArrayDecoder {
         if (lineDepth < depth + 1) {
             return true; // Line depth is less than expected - terminate
         }
-        // Also terminate if line is at expected depth but doesn't start with "-"
         if (lineDepth == depth + 1) {
             final String content = line.substring((depth + 1) * context.options.indent());
-            return !content.startsWith("-"); // Not an array item - terminate
+            return !DecodeHelper.isListItemLine(content);
         }
         return false;
     }

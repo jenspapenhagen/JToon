@@ -1,6 +1,7 @@
 package dev.toonformat.jtoon.decoder;
 
 import dev.toonformat.jtoon.Delimiter;
+import dev.toonformat.jtoon.util.Headers;
 import org.jspecify.annotations.Nullable;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +9,8 @@ import static dev.toonformat.jtoon.util.Constants.BACKSLASH;
 import static dev.toonformat.jtoon.util.Constants.DOUBLE_QUOTE;
 import static dev.toonformat.jtoon.util.Constants.SPACE;
 import static dev.toonformat.jtoon.util.Constants.COLON;
+import static dev.toonformat.jtoon.util.Constants.LIST_ITEM_MARKER;
+import static dev.toonformat.jtoon.util.Constants.LIST_ITEM_PREFIX;
 
 /**
  * Handles indentation, depth, conflicts, and validation for other decode classes.
@@ -45,7 +48,7 @@ public final class DecodeHelper {
      * {@link dev.toonformat.jtoon.util.StringEscaper#validateString}.
      *
      * @param token the token to validate
-     * @throws FatalDecodeException if another character follows the closing quote
+     * @throws IllegalArgumentException if another character follows the closing quote
      */
     static void validateQuotedTokenBoundary(final String token) {
         if (!token.startsWith("\"")) {
@@ -60,7 +63,7 @@ public final class DecodeHelper {
                 escaped = true;
             } else if (c == '"') {
                 if (!trimSpaces(token.substring(i + 1)).isEmpty()) {
-                    throw new FatalDecodeException(
+                    throw new IllegalArgumentException(
                         "Characters after closing quote in token: " + token);
                 }
                 return;
@@ -144,17 +147,29 @@ public final class DecodeHelper {
      * @return the unquoted colon
      */
     static int findUnquotedColon(final String content) {
+        return findUnquoted(content, COLON.charAt(0), 0);
+    }
+
+    /**
+     * Finds the index of the first unquoted occurrence of a character.
+     *
+     * @param content the content string to scan
+     * @param target  the character to find
+     * @param from    the index to start scanning at
+     * @return the index of the character, or -1 if absent
+     */
+    private static int findUnquoted(final String content, final char target, final int from) {
         boolean inQuotes = false;
         boolean escaped = false;
 
-        for (int i = 0; i < content.length(); i++) {
+        for (int i = from; i < content.length(); i++) {
             final char c = content.charAt(i);
 
-            if (c == COLON.charAt(0) && !inQuotes) {
+            if (c == target && !inQuotes) {
                 return i;
             } else if (escaped) {
                 escaped = false;
-            } else if (c == BACKSLASH) {
+            } else if (inQuotes && c == BACKSLASH) {
                 escaped = true;
             } else if (c == DOUBLE_QUOTE) {
                 inQuotes = !inQuotes;
@@ -162,6 +177,30 @@ public final class DecodeHelper {
         }
 
         return -1;
+    }
+
+    /**
+     * Checks if content is a list-item line: the bare marker or the marker
+     * followed by a space. A hyphen glued to its token is not a list item.
+     *
+     * @param content the line content past its indentation
+     * @return true if the content is a list-item line
+     */
+    static boolean isListItemLine(final String content) {
+        return LIST_ITEM_MARKER.equals(content) || content.startsWith(LIST_ITEM_PREFIX);
+    }
+
+    /**
+     * Checks if content opens a keyless array: the bare {@code []}, or a
+     * header that matches the §6 grammar. Any other bracket-led line is a
+     * key-value line, which strict mode rejects for its malformed header
+     * (§14.2), or a scalar line.
+     *
+     * @param content the line content past its indentation
+     * @return true if the content is to be parsed as a keyless array
+     */
+    static boolean opensKeylessArray(final String content) {
+        return "[]".equals(content) || Headers.matchKeylessKeyedHeader(content) != null;
     }
 
     /**
@@ -260,34 +299,27 @@ public final class DecodeHelper {
     }
 
     /**
-     * Checks if a line contains unquoted brackets ({@code [} or {@code ]}).
-     * Used to detect malformed array header syntax in strict mode.
+     * Finds the content depth of a scope whose opening line sits at the given
+     * depth: one level deeper, or in non-strict mode the depth of a deeper
+     * first line, which later lines of the scope then have to match.
      *
-     * @param line the line to check
-     * @return true if unquoted brackets are found
+     * @param openerDepth the depth of the line that opens the scope
+     * @param context     decode an object to deal with lines, delimiter and options
+     * @return the content depth of the scope
      */
-    static boolean hasUnquotedBrackets(final String line) {
-        boolean inQuotes = false;
-        boolean escaped = false;
-        for (int i = 0; i < line.length(); i++) {
-            final char c = line.charAt(i);
-            if (escaped) {
-                escaped = false;
-            } else if (c == BACKSLASH) {
-                escaped = true;
-            } else if (c == DOUBLE_QUOTE) {
-                inQuotes = !inQuotes;
-            } else if (!inQuotes && (c == '[' || c == ']')) {
-                return true;
-            }
+    static int findContentDepth(final int openerDepth, final DecodeContext context) {
+        final Integer firstDepth = findNextNonBlankLineDepth(context);
+        if (!context.options.strict() && firstDepth != null && firstDepth > openerDepth + 1) {
+            return firstDepth;
         }
-        return false;
+        return openerDepth + 1;
     }
 
     /**
-     * In strict mode, rejects a key-value key with unquoted brackets: the line
-     * did not match the header grammar, so its bracket segment is malformed
-     * (§6, §14.2). This catches:
+     * In strict mode, rejects a key-value line that still has a header shape:
+     * an unquoted bracket segment in its key, followed by a colon past the
+     * segment and its field list. The line did not match the header grammar,
+     * so the header is malformed (§6, §14.2). This catches:
      * <ul>
      * <li>the removed length marker ({@code xs[#2]})</li>
      * <li>extra brackets between bracket segment and colon ({@code foo[1][bar]})</li>
@@ -296,37 +328,40 @@ public final class DecodeHelper {
      * <li>negative bracket length ({@code items[-1]})</li>
      * <li>whitespace between bracket segment and colon/fields segment
      * ({@code items[2] :}, {@code items[2] {a,b}:})</li>
+     * <li>inline content after a field list ({@code items[1]{a}: 1})</li>
      * </ul>
+     * A lone bracket ({@code a[b}) or a field list spanning the colon
+     * ({@code [1]{x:y}}) leaves no header shape, so the line stays a
+     * key-value line.
      *
      * @param key     the raw key token before the colon
+     * @param value   the value after the colon
      * @param context decode an object to deal with lines, delimiter and options
-     * @throws IllegalArgumentException in strict mode if the key has unquoted brackets
+     * @throws IllegalArgumentException in strict mode if the line has a header shape
      */
-    static void validateKeyHasNoUnquotedBrackets(final String key, final DecodeContext context) {
-        if (context.options.strict() && hasUnquotedBrackets(key)) {
+    static void rejectMalformedHeader(final String key, final String value, final DecodeContext context) {
+        if (context.options.strict() && hasHeaderShape(key, value)) {
             throw new IllegalArgumentException(
                 "Invalid array header syntax at line " + (context.currentLine + 1));
         }
     }
 
-    /**
-     * Validates that there are no multiple primitives at root level in strict mode.
-     *
-     * @param context decode an object to deal with lines, delimiter and options
-     * @throws IllegalArgumentException in case the next depth is equal to 0
-     */
-    static void validateNoMultiplePrimitivesAtRoot(final DecodeContext context) {
-        int lineIndex = context.currentLine;
-        while (lineIndex < context.lines.length && isBlankLine(context.lines[lineIndex])) {
-            lineIndex++;
+    private static boolean hasHeaderShape(final String key, final String value) {
+        final int bracketStart = findUnquoted(key, '[', 0);
+        if (bracketStart < 0) {
+            return false;
         }
-        if (lineIndex < context.lines.length) {
-            final int nextDepth = getDepth(context.lines[lineIndex], context);
-            if (nextDepth == 0) {
-                throw new IllegalArgumentException(
-                    "Multiple primitives at root depth in strict mode at line " + (lineIndex + 1));
-            }
+        final String content = key + COLON + value;
+        final int bracketEnd = findUnquoted(content, ']', bracketStart);
+        if (bracketEnd < 0) {
+            return false;
         }
+        int segmentEnd = bracketEnd;
+        final int braceStart = findUnquoted(content, '{', bracketEnd);
+        if (braceStart >= 0 && braceStart < findUnquoted(content, COLON.charAt(0), bracketEnd)) {
+            segmentEnd = Math.max(segmentEnd, Headers.skipBalancedFieldSpec(content, braceStart + 1, content.length()));
+        }
+        return findUnquoted(content, COLON.charAt(0), segmentEnd) >= 0;
     }
 
     /**
@@ -349,31 +384,39 @@ public final class DecodeHelper {
                 throw new IllegalArgumentException(
                     "Unexpected content after root form at line " + (context.currentLine + 1));
             }
-            final int depth = getDepth(line, context);
-            final String content = line.substring(depth * context.options.indent());
-            if (findUnquotedColon(content) < 0) {
-                // Spec §5.2: a scalar line outside root primitive position is
-                // an error in strict and non-strict mode alike.
-                throw new FatalDecodeException(
-                    "Bare token line outside root primitive position at line " + (context.currentLine + 1));
-            }
+            rejectScalarLine(context);
             context.currentLine++;
         }
     }
 
     /**
-     * Skips or rejects an over-indented line that jumps past the expected
-     * depth (§14.2).
+     * Rejects the current line if it is a scalar line: without an unquoted
+     * colon it is a bare token outside root primitive position, an error in
+     * strict and non-strict mode alike, so lenient skipping never covers it.
+     *
+     * @param context decode an object to deal with lines, delimiter and options
+     * @throws IllegalArgumentException if the current line is a scalar line
+     */
+    private static void rejectScalarLine(final DecodeContext context) {
+        if (findUnquotedColon(context.lines[context.currentLine]) < 0) {
+            throw new IllegalArgumentException(
+                "Bare token line outside root primitive position at line " + (context.currentLine + 1));
+        }
+    }
+
+    /**
+     * Skips or rejects a line that belongs to no scope (§8, §14.2).
      *
      * @param context   decode an object to deal with lines, delimiter, and options
      * @param lineDepth the depth of the over-indented line
-     * @throws IllegalArgumentException in strict mode
+     * @throws IllegalArgumentException in strict mode, or for a scalar line in any mode
      */
     static void processOverIndentedLine(final DecodeContext context, final int lineDepth) {
         if (context.options.strict()) {
             throw new IllegalArgumentException(
                 "Over-indented line at " + (context.currentLine + 1) + " (depth " + lineDepth + ")");
         }
+        rejectScalarLine(context);
         context.currentLine++;
     }
 

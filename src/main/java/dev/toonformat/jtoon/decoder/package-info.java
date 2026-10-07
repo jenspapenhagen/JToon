@@ -53,7 +53,7 @@
  * <ul>
  *   <li><strong>Tabular:</strong> {@code items[2]{id,name}:} → parses rows into Maps</li>
  *   <li><strong>List:</strong> {@code items[2]:} with {@code - } prefixed lines</li>
- *   <li><strong>Primitive:</strong> {@code tags[3]: a,b,c} → inline or multiline</li>
+ *   <li><strong>Primitive:</strong> {@code tags[3]: a,b,c} → inline on the header line</li>
  * </ul>
  *
  * <h2>Parsing Strategy</h2>
@@ -127,14 +127,10 @@
  *
  * <h3>Primitive Arrays</h3>
  * <p>
- * Inline or multiline values without field spec or list markers:
+ * Inline values on the header line, without field spec or list markers:
  * </p>
  * <pre>{@code
  * tags[3]: reading,gaming,coding
- *
- * // or multiline:
- * tags[3]:
- *   reading,gaming,coding
  * }</pre>
  *
  * <h2>Error Handling</h2>
@@ -148,9 +144,9 @@
  *
  * <h3>Lenient Mode</h3>
  * <ul>
- *   <li>Best-effort parsing</li>
- *   <li>Returns null on invalid input</li>
- *   <li>Skips malformed lines</li>
+ *   <li>Applies the leniencies the spec names for non-strict mode, such as count mismatches,
+ *       indentation depth jumps and skipped over-indented lines other than scalar lines</li>
+ *   <li>Throws IllegalArgumentException wherever the spec names no leniency (§14)</li>
  * </ul>
  *
  * <h2>Special Parsing Cases</h2>

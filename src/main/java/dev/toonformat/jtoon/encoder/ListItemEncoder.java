@@ -12,8 +12,6 @@ import static dev.toonformat.jtoon.util.Constants.LIST_ITEM_MARKER;
 import static dev.toonformat.jtoon.util.Constants.COLON;
 import static dev.toonformat.jtoon.util.Constants.SPACE;
 import static dev.toonformat.jtoon.util.Constants.LIST_ITEM_PREFIX;
-import static dev.toonformat.jtoon.util.Constants.OPEN_BRACKET;
-import static dev.toonformat.jtoon.util.Constants.CLOSE_BRACKET;
 
 /**
  * Handles encoding of objects as list items in non-uniform arrays.
@@ -60,6 +58,37 @@ public final class ListItemEncoder {
     }
 
     /**
+     * Encodes any value as a list item. Arrays that are not all primitives
+     * become a nested header with their items as list items one level deeper.
+     *
+     * @param value   The value to encode
+     * @param writer  LineWriter for output
+     * @param depth   Indentation depth of the "- " line
+     * @param options Encoding options
+     */
+    static void encodeValueAsListItem(final JsonNode value,
+                                      final LineWriter writer,
+                                      final int depth,
+                                      final EncodeOptions options) {
+        final String delimiter = options.delimiter().toString();
+        if (value.isValueNode()) {
+            writer.push(depth, LIST_ITEM_PREFIX + PrimitiveEncoder.encodePrimitive(value, delimiter));
+        } else if (value.isArray()) {
+            final ArrayNode array = (ArrayNode) value;
+            if (ArrayEncoder.isArrayOfPrimitives(array)) {
+                writer.push(depth, LIST_ITEM_PREFIX + ArrayEncoder.formatInlineArray(array, delimiter, null));
+                return;
+            }
+            writer.push(depth, LIST_ITEM_PREFIX + PrimitiveEncoder.formatHeader(array.size(), null, null, delimiter));
+            for (JsonNode item : array) {
+                encodeValueAsListItem(item, writer, depth + 1, options);
+            }
+        } else if (value.isObject()) {
+            encodeObjectAsListItem((ObjectNode) value, writer, depth, options);
+        }
+    }
+
+    /**
      * Encodes the first key-value pair of a list item.
      * Handles special formatting for arrays and objects.
      */
@@ -73,7 +102,7 @@ public final class ListItemEncoder {
         if (value.isValueNode()) {
             encodeFirstValueAsPrimitive(encodedKey, value, writer, depth, options);
         } else if (value.isArray()) {
-            encodeFirstValueAsArray(key, encodedKey, (ArrayNode) value, writer, depth, options);
+            encodeFirstValueAsArray(key, (ArrayNode) value, writer, depth, options);
         } else if (value.isObject()) {
             encodeFirstValueAsObject(key, encodedKey, (ObjectNode) value, writer, depth, options);
         }
@@ -89,7 +118,6 @@ public final class ListItemEncoder {
     }
 
     private static void encodeFirstValueAsArray(final String key,
-                                                final String encodedKey,
                                                 final ArrayNode arrayValue,
                                                 final LineWriter writer,
                                                 final int depth,
@@ -97,9 +125,9 @@ public final class ListItemEncoder {
         if (ArrayEncoder.isArrayOfPrimitives(arrayValue)) {
             encodeFirstArrayAsPrimitives(key, arrayValue, writer, depth, options);
         } else if (ArrayEncoder.isArrayOfObjects(arrayValue)) {
-            encodeFirstArrayAsObjects(key, encodedKey, arrayValue, writer, depth, options);
+            encodeFirstArrayAsObjects(key, arrayValue, writer, depth, options);
         } else {
-            encodeFirstArrayAsComplex(encodedKey, arrayValue, writer, depth, options);
+            encodeFirstArrayAsComplex(key, arrayValue, writer, depth, options);
         }
     }
 
@@ -113,7 +141,6 @@ public final class ListItemEncoder {
     }
 
     private static void encodeFirstArrayAsObjects(final String key,
-                                                    final String encodedKey,
                                                     final ArrayNode arrayValue,
                                                     final LineWriter writer,
                                                     final int depth,
@@ -126,8 +153,8 @@ public final class ListItemEncoder {
             // Write just the rows, header was already written above
             TabularArrayEncoder.writeTabularRows(arrayValue, header, writer, depth + 2, options);
         } else {
-            writer.push(depth,
-                    LIST_ITEM_PREFIX + encodedKey + OPEN_BRACKET + arrayValue.size() + CLOSE_BRACKET + COLON);
+            writer.push(depth, LIST_ITEM_PREFIX
+                + PrimitiveEncoder.formatHeader(arrayValue.size(), key, null, options.delimiter().toString()));
             for (JsonNode item : arrayValue) {
                 if (item.isObject()) {
                     encodeObjectAsListItem((ObjectNode) item, writer, depth + 2, options);
@@ -136,24 +163,16 @@ public final class ListItemEncoder {
         }
     }
 
-    private static void encodeFirstArrayAsComplex(final String encodedKey,
+    private static void encodeFirstArrayAsComplex(final String key,
                                                     final ArrayNode arrayValue,
                                                     final LineWriter writer,
                                                     final int depth,
                                                     final EncodeOptions options) {
-        writer.push(depth, LIST_ITEM_PREFIX + encodedKey + OPEN_BRACKET + arrayValue.size() + CLOSE_BRACKET + COLON);
+        writer.push(depth, LIST_ITEM_PREFIX
+            + PrimitiveEncoder.formatHeader(arrayValue.size(), key, null, options.delimiter().toString()));
 
         for (JsonNode item : arrayValue) {
-            if (item.isValueNode()) {
-                writer.push(depth + 2, LIST_ITEM_PREFIX
-                        + PrimitiveEncoder.encodePrimitive(item, options.delimiter().toString()));
-            } else if (item.isArray() && ArrayEncoder.isArrayOfPrimitives(item)) {
-                final String inline = ArrayEncoder.formatInlineArray((ArrayNode) item, options.delimiter().toString(),
-                                                                      null);
-                writer.push(depth + 2, LIST_ITEM_PREFIX + inline);
-            } else if (item.isObject()) {
-                encodeObjectAsListItem((ObjectNode) item, writer, depth + 2, options);
-            }
+            encodeValueAsListItem(item, writer, depth + 2, options);
         }
     }
 

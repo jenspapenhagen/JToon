@@ -237,18 +237,6 @@ class DecodeHelperTest {
     }
 
     @Test
-    @DisplayName("validateNoMultiplePrimitivesAtRoot: throws when another root primitive follows")
-    void validateNoMultiplePrimitivesAtRoot_throws() {
-        // Given
-        setUpContext("1\n2\n");
-        context.currentLine = 0;
-
-// When/Then
-        assertThrows(IllegalArgumentException.class,
-            () -> DecodeHelper.validateNoMultiplePrimitivesAtRoot(context));
-    }
-
-    @Test
     @DisplayName("checkFinalValueConflict: throws when existing is object/array and new is scalar (strict)")
     void checkFinalValueConflict_strictConflicts() {
         // Given
@@ -539,88 +527,39 @@ class DecodeHelperTest {
     }
 
     @Nested
-    @DisplayName("validateNoMultiplePrimitivesAtRoot()")
-    class ValidateRootTests {
-
-        int before;
-
-        @BeforeEach
-        void setUp() {
-            before = context.currentLine;
-        }
-
-        @AfterEach
-        void tearDown() {
-            context.currentLine = before;
-        }
+    @DisplayName("rejectMalformedHeader()")
+    class RejectMalformedHeader {
 
         @Test
-        @DisplayName("Given next line at depth 0 in strict mode -> throw")
-        void rootPrimitiveConflict() {
-            // Given
-            setUpContext(new String[]{"abc"}, true, 2);
-            context.currentLine = 0;
-
-            // When / Then
+        @DisplayName("should throw in strict mode when the line keeps a header shape")
+        void rejectsHeaderShape() {
+            context.options = DecodeOptions.withStrict(true);
             assertThrows(IllegalArgumentException.class,
-                () -> DecodeHelper.validateNoMultiplePrimitivesAtRoot(context));
+                () -> DecodeHelper.rejectMalformedHeader("foo[bar]", "1", context));
+            assertThrows(IllegalArgumentException.class,
+                () -> DecodeHelper.rejectMalformedHeader("items[2]extra", "1", context));
+            assertThrows(IllegalArgumentException.class,
+                () -> DecodeHelper.rejectMalformedHeader("items[1]{a}", "1", context));
+            assertThrows(IllegalArgumentException.class,
+                () -> DecodeHelper.rejectMalformedHeader("k[2", "]{a}: x", context));
         }
 
         @Test
-        @DisplayName("Given deeper indentation -> OK")
-        void deeperIndentOk() {
-            // Given
-            setUpContext(new String[]{"  abc"}, true, 2);
-            context.currentLine = 0;
-
-            // When / Then
-            assertDoesNotThrow(() -> DecodeHelper.validateNoMultiplePrimitivesAtRoot(context));
+        @DisplayName("should accept a line without a header shape")
+        void acceptsNoHeaderShape() {
+            context.options = DecodeOptions.withStrict(true);
+            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeader("foo", "[1]", context));
+            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeader("a[b", "c", context));
+            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeader("[1]{x", "y}", context));
+            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeader("\"foo[bar]\"", "1", context));
+            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeader("\"escaped\\\"quote[br]\"", "1", context));
         }
 
         @Test
-        @DisplayName("Given only blanks -> OK")
-        void blanksOnlyOk() {
-            // Given
-            setUpContext(new String[]{"   "}, true, 2);
-            context.currentLine = 0;
-
-            // When / Then
-            assertDoesNotThrow(() -> DecodeHelper.validateNoMultiplePrimitivesAtRoot(context));
-        }
-    }
-
-    @Nested
-    @DisplayName("hasUnquotedBrackets()")
-    class HasUnquotedBrackets {
-
-        @Test
-        @DisplayName("should return true when brackets are present")
-        void detectsBrackets() {
-            assertTrue(DecodeHelper.hasUnquotedBrackets("foo[bar]"));
-            assertTrue(DecodeHelper.hasUnquotedBrackets("[test]"));
-            assertTrue(DecodeHelper.hasUnquotedBrackets("items[2]extra"));
-        }
-
-        @Test
-        @DisplayName("should return false when no brackets")
-        void noBrackets() {
-            assertFalse(DecodeHelper.hasUnquotedBrackets("simple key: value"));
-            assertFalse(DecodeHelper.hasUnquotedBrackets("foo"));
-            assertFalse(DecodeHelper.hasUnquotedBrackets(""));
-        }
-
-        @Test
-        @DisplayName("should return false when brackets are inside quotes")
-        void bracketsInsideQuotes() {
-            assertFalse(DecodeHelper.hasUnquotedBrackets("\"[test]\""));
-            assertFalse(DecodeHelper.hasUnquotedBrackets("\"foo[bar]\""));
-        }
-
-        @Test
-        @DisplayName("should handle escaped quotes properly")
-        void escapedQuotes() {
-            // escaped quote inside quoted section should not end the quotes
-            assertFalse(DecodeHelper.hasUnquotedBrackets("\"escaped\\\"quote[br]\""));
+        @DisplayName("should accept a header shape in non-strict mode")
+        void acceptsHeaderShapeWhenLenient() {
+            context.options = DecodeOptions.withStrict(false);
+            assertDoesNotThrow(() -> DecodeHelper.rejectMalformedHeader("foo[bar]", "1", context));
         }
     }
 

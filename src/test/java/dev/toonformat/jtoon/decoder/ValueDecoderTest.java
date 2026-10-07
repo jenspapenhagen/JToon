@@ -223,14 +223,6 @@ class ValueDecoderTest {
     }
 
     @Test
-    @DisplayName("rejects unquoted brackets without a valid header in strict mode")
-    void decode_strict_rejectsBracketsWithoutValidHeader() {
-        // When / Then
-        assertThrows(IllegalArgumentException.class,
-            () -> ValueDecoder.decode("items[2]{id,name}", DecodeOptions.DEFAULT));
-    }
-
-    @Test
     @DisplayName("Should parse TOON format primitive array to JSON")
     void parsePrimitiveArray() {
         // When
@@ -299,16 +291,15 @@ class ValueDecoderTest {
     }
 
     @Test
-    void givenNoLines_whenParse_thenReturnEmptyMap() {
+    void givenIndentedFirstLineInNonStrictMode_whenParse_thenSkipLine() {
         // Given
         final DecodeOptions decodeOptions = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF,
                 DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
                 DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
-        final Object parseValue = ValueDecoder.decode("  indented", decodeOptions);// depth=1
+        final Object parseValue = ValueDecoder.decode("  indented: 1", decodeOptions);
 
         // Then
-        assertNotNull(parseValue);
-        assertInstanceOf(Map.class, parseValue);
+        assertEquals(Map.of(), parseValue);
     }
 
     @Test
@@ -363,36 +354,6 @@ class ValueDecoderTest {
         assertNotNull(ex.getCause());  // original decode() exception is preserved
         assertInstanceOf(IllegalArgumentException.class, ex.getCause());
         assertTrue(ex.getCause().getMessage().contains("Unexpected indentation"));
-    }
-
-    @Test
-    void givenInvalidInputAndStrictFalse_whenDecode_thenReturnsNull() {
-        // Given — malformed quoted string causes StringEscaper to throw
-        final DecodeOptions options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF,
-                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
-                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
-        final String invalidInput = "value: \"unclosed";
-
-        // When
-        final Object result = ValueDecoder.decode(invalidInput, options);
-
-        // Then
-        assertNull(result);
-    }
-
-    @Test
-    void givenDecodeReturnsNull_whenDecodeToJson_thenReturnsNullLiteral() {
-        // Given — malformed quoted string causes StringEscaper to throw
-        final DecodeOptions options = new DecodeOptions(2, Delimiter.COMMA, false, PathExpansion.OFF,
-                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
-                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
-        final String invalidInput = "value: \"unclosed";
-
-        // When
-        final String result = ValueDecoder.decodeToJson(invalidInput, options);
-
-        // Then
-        assertEquals("null", result);
     }
 
     @Test

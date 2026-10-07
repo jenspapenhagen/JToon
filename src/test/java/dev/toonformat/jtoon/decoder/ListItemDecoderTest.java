@@ -64,44 +64,6 @@ class ListItemDecoderTest {
     }
 
     @Test
-    @DisplayName("Process list array item, with a to small line depth")
-    void testProcessListArrayItemWithTooSmallLineDepth() {
-        // Given
-        final String line = "sadasdasdasd";
-        final int lineDepth = 1;
-        final int depth = 3;
-        final List<Object> result = List.of();
-        final DecodeContext context = new DecodeContext();
-        context.options = DecodeOptions.DEFAULT;
-
-        // When
-        ListItemDecoder.processListArrayItem(line, lineDepth, depth, result, context);
-
-        // Then
-        assertEquals(1, context.currentLine);
-    }
-
-    @Test
-    @DisplayName("Testing parseListItemFields with negativ depth")
-    void testParseListItemFields() throws Exception {
-        // Given
-        final String line = "  - asd";
-        final Object testObject = new Object();
-        final Map<String, Object> item = Map.of(line, testObject);
-        final int depth = -2;
-        final DecodeContext context = new DecodeContext();
-        context.options = DecodeOptions.withStrict(false);
-        context.lines = new String[] { line };
-
-        // When
-        invokePrivateStatic("parseListItemFields",
-                new Class[] { Map.class, int.class, DecodeContext.class }, item, depth, context);
-
-        // Then
-        assertEquals(1, context.currentLine);
-    }
-
-    @Test
     @DisplayName("Given scalar item When parsed Then scalar returned and line advanced")
     void parseListItem_givenScalarItem_whenParsed_thenScalar() {
         // Given
@@ -155,12 +117,12 @@ class ListItemDecoderTest {
     void parseListItem_givenKeylessFieldsHeaderStrict_whenParsed_thenThrows() {
         // Given
         final DecodeContext context = new DecodeContext();
-        context.lines = new String[]{"- [2]{x}: 1"};
+        context.lines = new String[]{"- [2]{x}:"};
         context.currentLine = 0;
 
         // When / Then
         final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> ListItemDecoder.parseListItem("- [2]{x}: 1", 0, context));
+            () -> ListItemDecoder.parseListItem("- [2]{x}:", 0, context));
         assertTrue(ex.getMessage().contains("Keyless array header with field list"));
     }
 
@@ -212,24 +174,6 @@ class ListItemDecoderTest {
             () -> invokePrivateStatic("parseListItemFields",
                 new Class[]{Map.class, int.class, DecodeContext.class}, item, 0, context));
         assertInstanceOf(IllegalArgumentException.class, ex.getCause());
-    }
-
-    @Test
-    @DisplayName("Given over-indented field line in lenient mode When parsed Then line skipped")
-    void parseListItemFields_givenOverIndentedLenient_whenParsed_thenSkipped() throws Exception {
-        // Given
-        final Map<String, Object> item = new LinkedHashMap<>();
-        final DecodeContext context = new DecodeContext();
-        context.options = DecodeOptions.withStrict(false);
-        context.lines = new String[]{"  - item", "      orphan", "  - next"};
-        context.currentLine = 1;
-
-        // When
-        invokePrivateStatic("parseListItemFields",
-            new Class[]{Map.class, int.class, DecodeContext.class}, item, 0, context);
-
-        // Then
-        assertEquals(2, context.currentLine);
     }
 
     @Test
