@@ -231,12 +231,12 @@ public final class DecodeHelper {
             final Object value, final DecodeContext context) {
         if (existing != null && context.options.strict()) {
             // Check for conflicts in strict mode
-            if (existing instanceof Map && !(value instanceof Map)) {
+            if (existing instanceof Map<?, ?> && !(value instanceof Map<?, ?>)) {
                 throw new IllegalArgumentException(
                     String.format("Path expansion conflict: %s is object, cannot set to %s",
                         finalSegment, value.getClass().getSimpleName()));
             }
-            if (existing instanceof List && !(value instanceof List)) {
+            if (existing instanceof List<?> && !(value instanceof List<?>)) {
                 throw new IllegalArgumentException(
                     String.format("Path expansion conflict: %s is array, cannot set to %s",
                         finalSegment, value.getClass().getSimpleName()));

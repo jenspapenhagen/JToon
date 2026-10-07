@@ -127,10 +127,10 @@ public final class JsonNormalizer {
         }
         visited.put(value, Boolean.TRUE);
         try {
-            if (value instanceof Optional<?>) {
-                return normalize(((Optional<?>) value).orElse(null));
-            } else if (value instanceof Stream<?>) {
-                return normalize(((Stream<?>) value).toList());
+            if (value instanceof Optional<?> optional) {
+                return normalize(optional.orElse(null));
+            } else if (value instanceof Stream<?> stream) {
+                return normalize(stream.toList());
             } else if (value.getClass().isArray()) {
                 return normalizeArray(value);
             } else {
@@ -290,10 +290,10 @@ public final class JsonNormalizer {
      */
     @Nullable
     private static JsonNode tryNormalizeCollection(final Object value) {
-        if (value instanceof Collection<?>) {
-            return normalizeCollection((Collection<?>) value);
-        } else if (value instanceof Map<?, ?>) {
-            return normalizeMap((Map<?, ?>) value);
+        if (value instanceof Collection<?> collection) {
+            return normalizeCollection(collection);
+        } else if (value instanceof Map<?, ?> map) {
+            return normalizeMap(map);
         } else {
             return null;
         }

@@ -173,8 +173,8 @@
  * records</li>
  * <li><strong>Utility Classes</strong>: Static utility classes with private
  * constructors</li>
- * <li><strong>Modern Java</strong>: Leverages Java 17 features (records, switch
- * expressions)</li>
+ * <li><strong>Modern Java</strong>: Leverages Java 21 features (records, switch
+ * expressions, pattern matching for instanceof)</li>
  * </ul>
  * 
  * <h2>Performance Considerations</h2>
