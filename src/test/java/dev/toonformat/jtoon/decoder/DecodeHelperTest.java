@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 class DecodeHelperTest {
 
     private static final int TEST_CONFLICT_VALUE = 5;
+    private static final char NBSP = (char) 0xA0;
 
     private final DecodeContext context = new DecodeContext();
 
@@ -555,7 +556,7 @@ class DecodeHelperTest {
             assertThrows(IllegalArgumentException.class,
                 () -> DecodeHelper.rejectMalformedHeaderLine("t\t[1]: x", context));
             assertThrows(IllegalArgumentException.class,
-                () -> DecodeHelper.rejectMalformedHeaderLine("n" + (char) 0xA0 + "[1]: y", context));
+                () -> DecodeHelper.rejectMalformedHeaderLine("n" + NBSP + "[1]: y", context));
             assertThrows(IllegalArgumentException.class,
                 () -> DecodeHelper.rejectMalformedHeaderLine("a[b: c", context));
             assertThrows(IllegalArgumentException.class,

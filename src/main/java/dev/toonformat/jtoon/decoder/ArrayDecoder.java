@@ -408,15 +408,7 @@ public final class ArrayDecoder {
                     shouldContinue = false;
                 }
             } else {
-                final int lineDepth = DecodeHelper.getDepth(line, context);
-                // A line between the header and an adopted deeper item depth belongs to no scope
-                if (lineDepth > depth && lineDepth < itemDepth) {
-                    DecodeHelper.processOverIndentedLine(context, lineDepth);
-                } else if (shouldTerminateListArray(lineDepth, itemDepth - 1, line, context)) {
-                    shouldContinue = false;
-                } else {
-                    ListItemDecoder.processListArrayItem(line, lineDepth, itemDepth - 1, result, context);
-                }
+                shouldContinue = processListArrayContentLine(line, depth, itemDepth, result, context);
             }
         }
 
@@ -425,6 +417,32 @@ public final class ArrayDecoder {
             validateArrayLength(header, result.size(), context.options.maxArraySize(), context.options.strict());
         }
         return result;
+    }
+
+    /**
+     * Processes one content line inside a list array: over-indented lines
+     * between the header and the adopted item depth are skipped, lines
+     * outside the list terminate it, and all other lines parse as items.
+     *
+     * @param line      the content line to process
+     * @param depth     the depth of the array header
+     * @param itemDepth the adopted depth of the list items
+     * @param result    the list collecting the parsed items
+     * @param context   decode an object to deal with lines, delimiter and options
+     * @return true if parsing should continue, false if the list terminated
+     */
+    private static boolean processListArrayContentLine(final String line, final int depth, final int itemDepth,
+            final List<Object> result, final DecodeContext context) {
+        final int lineDepth = DecodeHelper.getDepth(line, context);
+        if (lineDepth > depth && lineDepth < itemDepth) {
+            DecodeHelper.processOverIndentedLine(context, lineDepth);
+            return true;
+        }
+        if (shouldTerminateListArray(lineDepth, itemDepth - 1, line, context)) {
+            return false;
+        }
+        ListItemDecoder.processListArrayItem(line, lineDepth, itemDepth - 1, result, context);
+        return true;
     }
 
     /**
