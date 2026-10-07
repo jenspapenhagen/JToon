@@ -131,9 +131,7 @@ public final class TabularArrayDecoder {
         int i = start;
         while (i < fieldList.length()) {
             final char c = fieldList.charAt(i);
-            if (grouped && c != ' ' && c != '}' && c != delimiterChar) {
-                throw new IllegalArgumentException("Unexpected content after nested field group");
-            }
+            rejectContentAfterGroup(c, grouped, delimiterChar);
             if (escaped) {
                 name.append(c);
                 escaped = false;
@@ -163,6 +161,20 @@ public final class TabularArrayDecoder {
         }
         flushField(result, name, grouped);
         return -1;
+    }
+
+    /**
+     * Rejects content directly after a completed nested field group unless
+     * it is a space, the closing brace, or the delimiter (§6).
+     *
+     * @param c             the character following the group
+     * @param grouped       whether a nested field group was just completed
+     * @param delimiterChar the type of delimiter used in the array
+     */
+    private static void rejectContentAfterGroup(final char c, final boolean grouped, final char delimiterChar) {
+        if (grouped && c != ' ' && c != '}' && c != delimiterChar) {
+            throw new IllegalArgumentException("Unexpected content after nested field group");
+        }
     }
 
     /**

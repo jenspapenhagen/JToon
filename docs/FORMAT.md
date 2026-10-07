@@ -109,7 +109,7 @@ Uniform objects with primitive-only fields use CSV-like format:
 ```
 
 ```toon
-[3,]{id,name,age}:
+[3]{id,name,age}:
   1,Alice,30
   2,Bob,25
   3,Charlie,35
@@ -120,7 +120,7 @@ Uniform objects with primitive-only fields use CSV-like format:
 - All objects must have identical keys
 - Every column must be *uniform-primitive* or *nested-uniform*: nested objects are allowed when every row shares the same key set and every sub-column is itself uniform, at unbounded depth (§9.3)
 - Field order in header determines column order
-- Delimiter appears in header: `[N,]` or `[N|]` or `[N\t]`
+- Delimiter in the bracket: absent means comma (`[3]`), or a literal tab / `|` selects it (`[3|]`)
 
 ### Keyed Tabular Arrays
 
@@ -239,10 +239,10 @@ encode([1, 2, 3])  # Default delimiter
 [3]: 1,2,3
 ```
 
-For tabular arrays, delimiter shown in header:
+For tabular arrays:
 
 ```toon
-users[2,]{id,name}:
+users[2]{id,name}:
   1,Alice
   2,Bob
 ```
@@ -254,15 +254,15 @@ encode([1, 2, 3], {"delimiter": "\t"})
 ```
 
 ```toon
-[3 ]: 1 2 3
+[3	]: 1	2	3
 ```
 
 Tabular with tab:
 
 ```toon
-users[2 ]{id,name}:
-  1 Alice
-  2 Bob
+users[2	]{id	name}:
+  1	Alice
+  2	Bob
 ```
 
 ### Pipe
@@ -278,7 +278,7 @@ encode([1, 2, 3], {"delimiter": "|"})
 Tabular with pipe:
 
 ```toon
-users[2|]{id,name}:
+users[2|]{id|name}:
   1|Alice
   2|Bob
 ```
@@ -299,10 +299,7 @@ Strings are quoted **only when necessary** to avoid ambiguity.
 ```
 
 ```toon
-hello
-hello world
-user_name
-hello-world
+[4]: hello,hello world,user_name,hello-world
 ```
 
 ### Quoted Strings (Required)
@@ -326,9 +323,7 @@ hello-world
 ```
 
 ```toon
-"null"
-"true"
-"false"
+[3]: "null","true","false"
 ```
 
 **Numeric-looking strings:**
@@ -341,10 +336,7 @@ hello-world
 ```
 
 ```toon
-"42"
-"-3.14"
-"1e5"
-"0123"
+[4]: "42","-3.14","1e5","0123"
 ```
 
 **Leading/trailing whitespace:**
@@ -356,9 +348,7 @@ hello-world
 ```
 
 ```toon
-" hello"
-"hello "
-" hello "
+[3]: " hello","hello "," hello "
 ```
 
 **Structural characters:**
@@ -370,9 +360,7 @@ hello-world
 ```
 
 ```toon
-"key: value"
-"[array]"
-"{object}"
+[3]: "key: value","[array]","{object}"
 ```
 
 **Leading `-` or `#`:**
@@ -387,10 +375,7 @@ A string that equals `-` or starts with `-`, or equals `#` or starts with `#`, m
 ```
 
 ```toon
-"-"
-"- item"
-"#"
-"#tag"
+[4]: "-","- item","#","#tag"
 ```
 
 **Root primitive starting with U+FEFF:**
@@ -426,8 +411,7 @@ The character is invisible in the blocks above — it is written `\ufeff` here s
 ```
 
 ```toon
-"line1\nline2"
-"tab\there"
+[2]: "line1\nline2","tab\there"
 ```
 
 ### Quoted Token Boundaries
@@ -481,9 +465,7 @@ path: "C:\\Users\\Alice"
 ```
 
 ```toon
-42
--17
-0
+[3]: 42,-17,0
 ```
 
 **Floats:**
@@ -495,9 +477,7 @@ path: "C:\\Users\\Alice"
 ```
 
 ```toon
-3.14
--0.5
-0
+[3]: 3.14,-0.5,0
 ```
 
 **Special Numbers:**
@@ -527,8 +507,7 @@ False  # false in TOON (lowercase)
 ```
 
 ```toon
-true
-false
+[2]: true,false
 ```
 
 ### Null
@@ -597,7 +576,7 @@ All arrays include `[N]` to indicate element count for validation.
 
 ```toon
 items[3]: a,b,c
-users[2,]{id,name}:
+users[2]{id,name}:
   1,Alice
   2,Bob
 ```
@@ -746,7 +725,7 @@ port: 8080
 metadata:
   version: 2
   author: Alice
-items[2,]{id,name,qty}:
+items[2]{id,name,qty}:
   1,Item1,10
   2,Item2,5
 tags[3]: alpha,beta,gamma
@@ -758,7 +737,7 @@ tags[3]: alpha,beta,gamma
 {
     "data": [
         {"type": "user", "id": 1},
-        {"type": "user", "id": 2, "extra": "field"},  # Non-uniform
+        {"type": "user", "id": 2, "extra": "field"},
         42,
         "hello"
     ]
@@ -789,7 +768,7 @@ data[4]:
 **TOON (85 chars, 52% reduction):**
 
 ```toon
-users[3,]{id,name,age,active}:
+users[3]{id,name,age,active}:
   1,Alice,30,true
   2,Bob,25,true
   3,Charlie,35,false

@@ -244,6 +244,7 @@ public final class ValueDecoder {
 
     private static Object parseRootKeyValueLine(final String line, final int colonIdx, final int depth,
             final DecodeContext context) {
+        DecodeHelper.rejectMalformedHeaderLine(line, context);
         final String key = DecodeHelper.trimSpaces(line.substring(0, colonIdx));
         final String value = DecodeHelper.trimSpaces(line.substring(colonIdx + 1));
         return KeyDecoder.parseKeyValuePair(key, value, depth, depth == 0, context);

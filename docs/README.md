@@ -134,9 +134,9 @@ System.out.println(JToon.encode(data, options));
 **Output:**
 
 ```
-items[2 ]{sku name qty price}:
-  A1 Widget 2 9.99
-  B2 Gadget 1 14.5
+items[2	]{sku	name	qty	price}:
+  A1	Widget	2	9.99
+  B2	Gadget	1	14.5
 ```
 
 **Benefits:**

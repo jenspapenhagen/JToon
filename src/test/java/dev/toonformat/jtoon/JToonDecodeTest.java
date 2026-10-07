@@ -727,10 +727,10 @@ public class JToonDecodeTest {
         }
 
         @Test
-        @DisplayName("strict mode: reads a field list spanning the colon as a key-value line")
-        void strictReadsFieldListSpanningColonAsKeyValue() {
-            assertEquals(Map.of("[1]{x", "y}"), JToon.decode("[1]{x:y}"));
-            assertEquals(Map.of("a[1]{x", "y}"), JToon.decode("a[1]{x:y}"));
+        @DisplayName("strict mode: throws on a field list spanning the colon")
+        void strictThrowsOnFieldListSpanningColon() {
+            assertThrows(IllegalArgumentException.class, () -> JToon.decode("[1]{x:y}"));
+            assertThrows(IllegalArgumentException.class, () -> JToon.decode("a[1]{x:y}"));
         }
 
         @Test
