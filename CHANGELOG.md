@@ -8,7 +8,8 @@ This project adheres to Semantic Versioning and follows a Keep a Changelog-like 
 
 ### Changed
 
--   Conformance raised from spec 4.1.2 to **4.2**. The 23 conformance fixture files are byte-identical to the spec repository at tag `v4.2.1`.
+-   Conformance raised from spec 4.1.2 to **4.3**. The 23 conformance fixture files are byte-identical to the spec repository at `v4.3.0` (`dfbc459`, including the four pinned fixture cases).
+-   **Array-header classification follows §5.2 of spec 4.3**: a line whose first unquoted `[` precedes its first unquoted colon must match the §6 grammar, or strict mode rejects it (`a[1:` with an unclosed bracket segment, `a[2:]{x}` without its colon) while non-strict decoders read it as a key-value line. Any whitespace – space, tab or NBSP – between a key and its bracket segment now prevents array-header interpretation (§5.2, §6, §14.2).
 -   **Non-strict decoding no longer returns `null` on invalid input.** It applies the leniencies the spec names – such as count mismatches, indentation depth jumps and skipped over-indented lines – and throws `IllegalArgumentException` wherever the spec names none (§14).
 
 ### Fixed
@@ -18,7 +19,7 @@ This project adheres to Semantic Versioning and follows a Keep a Changelog-like 
 -   **A `[`-led line without a well-formed header is a key-value line**: a lone bracket stays part of the key, and in non-strict mode a malformed bracket segment such as `[03]` or `[invalid]` does too. An unclosed quote in an unquoted key opens a span to the end of the line, so no header follows it (§5.2, §6).
 -   **Non-strict mode adopts the depth of a jumped first line** in objects, lists, tabular rows and keyed entries; an indented first line of the document is over-indented, `null` and `[]` included (§8, §14.2).
 -   **Strict mode rejects a blank line anywhere inside a list's span** and an over-indented line under a list item, while non-strict mode keeps a list item's fields after a blank line (§12, §14.2).
--   **A field list ends its header line**: strict mode rejects inline content after it (`items[1]{a}: 1`) and a malformed keyless header (`[1]{a}}:`) instead of dropping what follows, and non-strict mode reads such a line as a key-value pair. A field list spanning the colon (`[1]{x:y}`) leaves a key-value line in strict mode too, and a keyless header with a field list as a list item (`- [1]{a}:`) is an error in either mode (§6, §14.2).
+-   **A field list ends its header line**: strict mode rejects inline content after it (`items[1]{a}: 1`) and a malformed keyless header (`[1]{a}}:`) instead of dropping what follows, and non-strict mode reads such a line as a key-value pair. A field list spanning the colon (`[1]{x:y}`) and a keyless header with a field list as a list item (`- [1]{a}:`) are strict-mode errors that non-strict decoders read as key-value pairs (§6, §14.2).
 -   **`maxArraySize` bounds the actual element count** of inline, list, tabular and keyed forms in either mode; only the comparison with the declared `[N]` stays strict-only.
 -   **Header parsing:** empty field entries and malformed nested field groups are rejected, a length beyond the `long` range still forms a header, and a line below a bare `key[N]:` header carries no values (§6, §9).
 -   **Key and value tokens:** `: 1` decodes as the empty key, `\uXXXX` escapes with a surrogate or a non-ASCII digit are rejected, a carriage return before CRLF is content, a backslash outside quotes is a literal character (`a\: b` has the key `a\`), a list ends at a hyphen without a following space, and tabular rows sit exactly one level below their header in strict mode (§7, §9, §12).
