@@ -316,52 +316,46 @@ public final class DecodeHelper {
     }
 
     /**
-     * In strict mode, rejects a key-value line that still has a header shape:
-     * an unquoted bracket segment in its key, followed by a colon past the
-     * segment and its field list. The line did not match the header grammar,
-     * so the header is malformed (§6, §14.2). This catches:
+     * In strict mode, rejects a line that §5.2 classifies as an array-header
+     * line – its first unquoted bracket precedes its first unquoted colon – but
+     * that fails the §6 header grammar. The original line content is classified
+     * whole, so gaps that a key/value split would collapse are preserved:
      * <ul>
-     * <li>the removed length marker ({@code xs[#2]})</li>
-     * <li>extra brackets between bracket segment and colon ({@code foo[1][bar]})</li>
-     * <li>text between bracket segment and colon ({@code foo[2]extra})</li>
-     * <li>noninteger bracket segment ({@code foo[bar]})</li>
-     * <li>negative bracket length ({@code items[-1]})</li>
-     * <li>whitespace between bracket segment and colon/fields segment
-     * ({@code items[2] :}, {@code items[2] {a,b}:})</li>
+     * <li>unclosed bracket segment ({@code a[1:})</li>
+     * <li>no colon after bracket/field list ({@code a[2:]{x}}, {@code [1]{x:y}})</li>
+     * <li>whitespace between key and bracket segment ({@code foo [2]: bar},
+     * {@code t\t[1]: x}, {@code n [1]: y})</li>
+     * <li>noninteger bracket segment ({@code foo[bar]}, {@code a[b})</li>
+     * <li>extra content between bracket and colon ({@code foo[2]extra},
+     * {@code foo[1][bar]}, {@code items[2] :})</li>
      * <li>inline content after a field list ({@code items[1]{a}: 1})</li>
      * </ul>
-     * A lone bracket ({@code a[b}) or a field list spanning the colon
-     * ({@code [1]{x:y}}) leaves no header shape, so the line stays a
-     * key-value line.
+     * A line whose colon precedes its bracket is never an array-header line
+     * ({@code foo: bar[1]}), and quoted brackets do not count ({@code "a[1]": x}).
+     * Non-strict decoders MAY fall through to key-value parsing (§5.2, §14.2).
      *
-     * @param key     the raw key token before the colon
-     * @param value   the value after the colon
+     * @param content the original line content
      * @param context decode an object to deal with lines, delimiter and options
-     * @throws IllegalArgumentException in strict mode if the line has a header shape
+     * @throws IllegalArgumentException in strict mode when the line is a malformed header
      */
-    static void rejectMalformedHeader(final String key, final String value, final DecodeContext context) {
-        if (context.options.strict() && hasHeaderShape(key, value)) {
-            throw new IllegalArgumentException(
-                "Invalid array header syntax at line " + (context.currentLine + 1));
+    static void rejectMalformedHeaderLine(final String content, final DecodeContext context) {
+        if (!context.options.strict()) {
+            return;
         }
-    }
-
-    private static boolean hasHeaderShape(final String key, final String value) {
-        final int bracketStart = findUnquoted(key, '[', 0);
-        if (bracketStart < 0) {
-            return false;
+        final int colonIdx = findUnquotedColon(content);
+        if (colonIdx < 0) {
+            return;
         }
-        final String content = key + COLON + value;
-        final int bracketEnd = findUnquoted(content, ']', bracketStart);
-        if (bracketEnd < 0) {
-            return false;
+        final int bracketIdx = findUnquoted(content, '[', 0);
+        if (bracketIdx < 0 || bracketIdx > colonIdx) {
+            return;
         }
-        int segmentEnd = bracketEnd;
-        final int braceStart = findUnquoted(content, '{', bracketEnd);
-        if (braceStart >= 0 && braceStart < findUnquoted(content, COLON.charAt(0), bracketEnd)) {
-            segmentEnd = Math.max(segmentEnd, Headers.skipBalancedFieldSpec(content, braceStart + 1, content.length()));
+        if (Headers.matchKeyedArrayHeader(content) != null
+                || Headers.matchKeylessKeyedHeader(content) != null) {
+            return;
         }
-        return findUnquoted(content, COLON.charAt(0), segmentEnd) >= 0;
+        throw new IllegalArgumentException(
+            "Invalid array header syntax at line " + (context.currentLine + 1));
     }
 
     /**

@@ -164,16 +164,18 @@ public final class Headers {
      *
      * <p>Spec §7.4: an unquoted key token is the text before a header's bracket
      * segment, and decoders must accept any such token as a literal key. A
-     * space inside the key is therefore part of the key; only U+0020 directly
-     * before the bracket segment is the header syntax error of §6, and that is
-     * rejected here so the line falls through to key-value parsing (§14.2).
-     * Every other whitespace character stays part of the key (§12).
+     * space inside the key is therefore part of the key; only whitespace
+     * directly before the bracket segment is the header syntax error of §6, and
+     * that is rejected here so the line falls through to key-value parsing
+     * (§14.2). Any whitespace character counts – space, HTAB or NBSP alike –
+     * while characters inside the key stay part of it (§12).
      *
      * @param content  the line content to scan
      * @param keyStart the index where the key starts
      * @param n        the content length
      * @return the index just past the key, or -1 when the key is empty, holds
-     *         an unclosed quote, or a space separates it from the bracket segment
+     *         an unclosed quote, or whitespace separates it from the bracket
+     *         segment
      */
     private static int scanUnquotedKey(final String content, final int keyStart, final int n) {
         int i = keyStart;
@@ -198,10 +200,22 @@ public final class Headers {
         if (i == keyStart) {
             return -1;
         }
-        if (i < n && content.charAt(i) == '[' && content.charAt(i - 1) == ' ') {
+        if (i < n && content.charAt(i) == '[' && isKeyBracketGap(content.charAt(i - 1))) {
             return -1;
         }
         return i;
+    }
+
+    /**
+     * Whether the character separates a key from its bracket segment as the
+     * whitespace of §6/§14.2: any Unicode whitespace (space, HTAB) or space
+     * separator (NBSP) counts.
+     *
+     * @param c the character directly before the bracket segment
+     * @return true when the character is whitespace in the header-gap sense
+     */
+    private static boolean isKeyBracketGap(final char c) {
+        return Character.isWhitespace(c) || Character.isSpaceChar(c);
     }
 
     /**

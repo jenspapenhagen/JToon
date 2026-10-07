@@ -66,9 +66,19 @@ public final class ListItemDecoder {
             return new LinkedHashMap<>();
         }
 
-        // Check for standalone array (e.g., "[2]: 1,2")
+        // Check for standalone array (e.g., "[2]: 1,2"). A keyless header with a
+        // field list is a defect in strict mode; non-strict decoders fall
+        // through to key-value parsing instead (§6, §14.2).
         if (DecodeHelper.opensKeylessArray(itemContent)) {
-            return parseStandaloneArrayItem(itemContent, depth, context);
+            if (KEYLESS_FIELDS_HEADER.matcher(itemContent).find()) {
+                if (context.options.strict()) {
+                    throw new IllegalArgumentException(
+                        "Keyless array header with field list only valid at document root at line "
+                            + (context.currentLine + 1));
+                }
+            } else {
+                return parseStandaloneArrayItem(itemContent, depth, context);
+            }
         }
 
         // Check for keyed array pattern (e.g., "tags[3]: a,b,c" or "data[2]{id}: ...")
@@ -114,13 +124,6 @@ public final class ListItemDecoder {
      */
     private static Object parseStandaloneArrayItem(final String itemContent, final int depth,
             final DecodeContext context) {
-        // Keyless headers are valid as list items only without a field
-        // list; [2]{x}: and [2:]{v}: are defects in any mode (§5, §6)
-        if (KEYLESS_FIELDS_HEADER.matcher(itemContent).find()) {
-            throw new IllegalArgumentException(
-                "Keyless array header with field list only valid at document root at line "
-                    + (context.currentLine + 1));
-        }
         final Delimiter nestedArrayDelimiter = ArrayDecoder.extractDelimiterFromHeader(itemContent, context);
         return ArrayDecoder.parseArrayWithDelimiter(itemContent, depth + 1, nestedArrayDelimiter, context);
     }
@@ -220,7 +223,7 @@ public final class ListItemDecoder {
         final String rawKey = DecodeHelper.trimSpaces(itemContent.substring(0, colonIdx));
         DecodeHelper.validateQuotedTokenBoundary(rawKey);
         final String value = DecodeHelper.trimSpaces(itemContent.substring(colonIdx + 1));
-        DecodeHelper.rejectMalformedHeader(rawKey, value, context);
+        DecodeHelper.rejectMalformedHeaderLine(itemContent, context);
         final String key = StringEscaper.unescape(rawKey);
 
         context.currentLine++;

@@ -153,6 +153,7 @@ public final class KeyDecoder {
         final int colonIdx = DecodeHelper.findUnquotedColon(content);
 
         if (colonIdx >= 0) {
+            DecodeHelper.rejectMalformedHeaderLine(content, context);
             final String key = DecodeHelper.trimSpaces(content.substring(0, colonIdx));
             final String value = DecodeHelper.trimSpaces(content.substring(colonIdx + 1));
             parseKeyValuePairIntoMap(result, key, value, depth, context);
@@ -175,7 +176,6 @@ public final class KeyDecoder {
     static void parseKeyValuePairIntoMap(final Map<String, Object> map, final String key, final String value,
                                          final int depth, final DecodeContext context) {
         DecodeHelper.validateQuotedTokenBoundary(key);
-        DecodeHelper.rejectMalformedHeader(key, value, context);
         final String unescapedKey = StringEscaper.unescape(key);
 
         final Object parsedValue = parseKeyValue(value, depth, context);
@@ -410,7 +410,7 @@ public final class KeyDecoder {
         final String rawFieldKey = DecodeHelper.trimSpaces(fieldContent.substring(0, colonIdx));
         DecodeHelper.validateQuotedTokenBoundary(rawFieldKey);
         final String fieldValue = DecodeHelper.trimSpaces(fieldContent.substring(colonIdx + 1));
-        DecodeHelper.rejectMalformedHeader(rawFieldKey, fieldValue, context);
+        DecodeHelper.rejectMalformedHeaderLine(fieldContent, context);
         final String fieldKey = StringEscaper.unescape(rawFieldKey);
 
         final Object parsedValue = ObjectDecoder.parseFieldValue(fieldValue, depth + 2, context);
