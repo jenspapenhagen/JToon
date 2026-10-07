@@ -555,7 +555,7 @@ class DecodeHelperTest {
             assertThrows(IllegalArgumentException.class,
                 () -> DecodeHelper.rejectMalformedHeaderLine("t\t[1]: x", context));
             assertThrows(IllegalArgumentException.class,
-                () -> DecodeHelper.rejectMalformedHeaderLine("n\u00a0[1]: y", context));
+                () -> DecodeHelper.rejectMalformedHeaderLine("n" + (char) 0xA0 + "[1]: y", context));
             assertThrows(IllegalArgumentException.class,
                 () -> DecodeHelper.rejectMalformedHeaderLine("a[b: c", context));
             assertThrows(IllegalArgumentException.class,
