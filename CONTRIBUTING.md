@@ -46,7 +46,7 @@ open build/jacocoHtml/index.html
 
 ### Java Version Support
 
-This project targets Java 17 and above.
+This project targets Java 21 and above.
 
 ### Code Style
 

@@ -47,11 +47,11 @@ tasks.withType(org.gradle.api.publish.maven.tasks.PublishToMavenRepository).conf
 }
 
 java {
-    // Only enforce toolchain in CI to ensure consistent Java 17 builds
+    // Only enforce toolchain in CI to ensure consistent Java 21 builds
     // Locally, use whatever JDK is installed
     if (System.getenv('CI') == 'true') {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(17)
+            languageVersion = JavaLanguageVersion.of(21)
         }
     }
     withSourcesJar()
@@ -176,10 +176,10 @@ dependencies {
 
     // NullAway + Error Prone for compile-time null safety
     errorprone 'com.uber.nullaway:nullaway:0.14.2'
-    // Pin error_prone_core to 2.42.0 (Java 17 compatible; 2.50.0+ requires Java 21)
-    errorprone('com.google.errorprone:error_prone_core:2.42.0') {
+    // Pin error_prone_core to 2.50.0 (requires Java 21)
+    errorprone('com.google.errorprone:error_prone_core:2.50.0') {
         version {
-            strictly '2.42.0'
+            strictly '2.50.0'
         }
     }
     api 'org.jspecify:jspecify:1.0.1'

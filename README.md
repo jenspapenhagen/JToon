@@ -9,7 +9,7 @@
 
 Compact, human-readable serialization format for LLM contexts with **30-60% token reduction** vs JSON. Combines YAML-like indentation with CSV-like tabular arrays. Working towards full compatibility with the [official TOON specification](https://github.com/toon-format/spec).
 
-**Key Features:** Minimal syntax • TOON Encoding and Decoding • Tabular arrays for uniform data • Array length validation • Java 17 • full [Jackson Annotation](https://github.com/FasterXML/jackson-annotations) Support • Null-safe by default (NullAway + JSpecify) • Comprehensive test coverage.
+**Key Features:** Minimal syntax • TOON Encoding and Decoding • Tabular arrays for uniform data • Array length validation • Java 21 • full [Jackson Annotation](https://github.com/FasterXML/jackson-annotations) Support • Null-safe by default (NullAway + JSpecify) • Comprehensive test coverage.
 
 ## Installation
 
@@ -319,7 +319,7 @@ DecodeOptions lenient = DecodeOptions.withStrict(false);
 Object result2 = JToon.decode(mismatchedToon, lenient);
 ```
 
-**CI/CD:** GitHub Actions • Java 17 • Coverage enforcement • PR coverage comments
+**CI/CD:** GitHub Actions • Java 21 • Coverage enforcement • PR coverage comments
 
 ## Development
 
