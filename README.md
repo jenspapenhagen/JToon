@@ -4,7 +4,7 @@
 [![Release](https://github.com/toon-format/toon-java/actions/workflows/release.yml/badge.svg)](https://github.com/toon-format/toon-java/actions/workflows/release.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/dev.toonformat/jtoon.svg)](https://central.sonatype.com/artifact/dev.toonformat/jtoon)
 ![Coverage](.github/badges/jacoco.svg)
-[![SPEC v4.3](https://img.shields.io/badge/spec-v4.3-fef3c0?labelColor=1b1b1f)](https://github.com/toon-format/spec)
+[![SPEC v4.4](https://img.shields.io/badge/spec-v4.4-fef3c0?labelColor=1b1b1f)](https://github.com/toon-format/spec)
 [![License: MIT](https://img.shields.io/badge/license-MIT-fef3c0?labelColor=1b1b1f)](./LICENSE)
 
 Compact, human-readable serialization format for LLM contexts with **30-60% token reduction** vs JSON. Combines YAML-like indentation with CSV-like tabular arrays. Working towards full compatibility with the [official TOON specification](https://github.com/toon-format/spec).
@@ -340,9 +340,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for full development guidelines.
 
 ## Project Status
 
-`toon-spec: 4.3`
+`toon-spec: 4.4`
 
-This project is 100% compliant with TOON specification 4.3. Release conformance enforced on CI/CD.
+This project is 100% compliant with TOON specification 4.4. Release conformance enforced on CI/CD.
 
 ## Documentation
 
