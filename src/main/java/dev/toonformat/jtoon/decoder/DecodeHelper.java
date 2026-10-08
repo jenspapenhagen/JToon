@@ -388,6 +388,7 @@ public final class DecodeHelper {
      * @param lineDepth the depth of the over-indented line
      * @throws IllegalArgumentException always
      */
+    @SuppressWarnings("DoNotCallSuggester")
     static void processOverIndentedLine(final DecodeContext context, final int lineDepth) {
         throw new IllegalArgumentException(
             "Over-indented line at " + (context.currentLine + 1) + " (depth " + lineDepth + ")");
