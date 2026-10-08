@@ -17,14 +17,9 @@ import static dev.toonformat.jtoon.util.Headers.TABULAR_HEADER_PATTERN;
 /**
  * Handles decoding of tabular arrays to JSON format.
  *
- * <p>In strict mode ({@code DecodeOptions.strict() == true}), each tabular row must contain exactly
- * the same number of values as the header declares field keys, or an
- * {@link IllegalArgumentException} is thrown.</p>
- *
- * <p>In lenient mode ({@code strict == false}), rows with fewer values than keys will have the
- * missing keys silently omitted, and rows with more values than keys will have the extra values
- * silently dropped. This means decoding can produce partial data without error when
- * strict validation is disabled.</p>
+ * <p>A tabular row must contain exactly the same number of values as the header
+ * declares leaf fields, in strict and non-strict mode alike (§14.4 recovery 1
+ * keeps width checking); an {@link IllegalArgumentException} is thrown otherwise.</p>
  */
 public final class TabularArrayDecoder {
 
@@ -99,10 +94,7 @@ public final class TabularArrayDecoder {
      */
     static List<FieldNode> parseTabularKeys(final String keysStr, final Delimiter arrayDelimiter,
             final DecodeContext context) {
-        // Validate delimiter mismatch between bracket and brace fields
-        if (context.options.strict()) {
-            validateKeysDelimiter(keysStr, arrayDelimiter);
-        }
+        validateKeysDelimiter(keysStr, arrayDelimiter);
 
         final List<FieldNode> result = new ArrayList<>();
         parseFieldList(keysStr, 0, arrayDelimiter, context, result);
@@ -292,18 +284,13 @@ public final class TabularArrayDecoder {
      * @param actualChar   the actual delimiter character
      */
     private static void checkDelimiterMismatch(final char expectedChar, final char actualChar) {
-        if (expectedChar == Delimiter.TAB.getValue() && actualChar == Delimiter.COMMA.getValue()) {
-            throw new IllegalArgumentException("Delimiter mismatch: bracket declares tab (expected='"
-                    + expectedChar + "', actual='" + actualChar + "')");
-        }
-        if (expectedChar == Delimiter.PIPE.getValue() && actualChar == Delimiter.COMMA.getValue()) {
-            throw new IllegalArgumentException("Delimiter mismatch: bracket declares pipe (expected='"
-                    + expectedChar + "', actual='" + actualChar + "')");
-        }
-        if (expectedChar == Delimiter.COMMA.getValue()
-                && (actualChar == Delimiter.TAB.getValue() || actualChar == Delimiter.PIPE.getValue())) {
+        final boolean isDelimiterChar = actualChar == Delimiter.COMMA.getValue()
+                || actualChar == Delimiter.TAB.getValue()
+                || actualChar == Delimiter.PIPE.getValue();
+        if (isDelimiterChar && actualChar != expectedChar) {
             throw new IllegalArgumentException(
-                "Delimiter mismatch: bracket declares comma, brace fields use different delimiter");
+                "Delimiter mismatch: bracket declares '" + expectedChar
+                        + "', field list uses '" + actualChar + "'");
         }
     }
 
@@ -339,7 +326,7 @@ public final class TabularArrayDecoder {
             DecodeHelper.processOverIndentedLine(context, lineDepth);
             return true;
         }
-        if (shouldTerminateTabularArray(line, lineDepth, expectedRowDepth, context)) {
+        if (shouldTerminateTabularArray(line, lineDepth, expectedRowDepth, arrayDelimiter, context)) {
             return false;
         }
 
@@ -391,11 +378,12 @@ public final class TabularArrayDecoder {
      * @param line             the line to check
      * @param lineDepth        the depth of the line
      * @param expectedRowDepth the expected depth of the next row
+     * @param arrayDelimiter   the active delimiter declared by the header
      * @param context          decode an object to deal with lines, delimiter and options
      * @return true if an array should terminate, false otherwise.
      */
     private static boolean shouldTerminateTabularArray(final String line, final int lineDepth,
-            final int expectedRowDepth, final DecodeContext context) {
+            final int expectedRowDepth, final Delimiter arrayDelimiter, final DecodeContext context) {
         final int headerDepth = expectedRowDepth - 1;
 
         if (lineDepth < expectedRowDepth) {
@@ -415,7 +403,7 @@ public final class TabularArrayDecoder {
 
         // Spec §9.3 disambiguation at row depth
         final String rowContent = line.substring(expectedRowDepth * context.options.indent());
-        final char delimChar = context.delimiter.getValue();
+        final char delimChar = arrayDelimiter.getValue();
         final int delimIdx = findFirstUnquoted(rowContent, delimChar);
         final int colonIdx = DecodeHelper.findUnquotedColon(rowContent);
 
@@ -485,9 +473,9 @@ public final class TabularArrayDecoder {
      * A leaf field consumes the next cell; a nested field group materializes
      * an object from its subfields (§9.3).
      *
-     * <p>In strict mode, the number of values must exactly match the leaf-field
-     * count. In lenient mode, excess values are silently dropped and missing
-     * values result in omitted keys.</p>
+     * <p>The number of values must exactly match the leaf-field count in strict
+     * and non-strict mode alike (§14.4 recovery 1 keeps width checking); an
+     * {@link IllegalArgumentException} is thrown otherwise.</p>
      *
      * @param rowContent     the row content to parse
      * @param fields         the field tree for the tabular array
@@ -502,7 +490,7 @@ public final class TabularArrayDecoder {
             context.options.maxArraySize(), context.options.maxStringLength());
 
         // Spec §9.3: each row must carry exactly one cell per leaf field
-        if (context.options.strict() && values.size() != countLeaves(fields)) {
+        if (values.size() != countLeaves(fields)) {
             throw new IllegalArgumentException(
                 String.format("Tabular row value count (%d) does not match header leaf-field count (%d)",
                               values.size(), countLeaves(fields)));

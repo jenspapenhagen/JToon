@@ -86,11 +86,12 @@ public final class ValueDecoder {
     }
 
     /**
-     * Skips the indented lines before the first depth-0 line: an indented
-     * first line belongs to no scope, so strict mode rejects it and
-     * non-strict mode skips it unless it is a scalar line.
+     * Rejects the indented lines before the first depth-0 line: an indented
+     * first line belongs to no scope (§14.2), so both strict and non-strict
+     * mode reject it — the §14.4 recoveries do not cover it.
      *
      * @param context decode an object to deal with lines, delimiter and options
+     * @throws IllegalArgumentException when the first content line is indented
      */
     private static void skipIndentedLeadingLines(final DecodeContext context) {
         while (context.currentLine < context.lines.length) {
@@ -98,11 +99,8 @@ public final class ValueDecoder {
             if (depth == 0) {
                 return;
             }
-            if (context.options.strict()) {
-                throw new IllegalArgumentException("Unexpected indentation at line " + (context.currentLine + 1));
-            }
-            DecodeHelper.processOverIndentedLine(context, depth);
-            context.currentLine = DecodeHelper.findNextNonBlankLine(context.currentLine, context);
+            throw new IllegalArgumentException(
+                "Unexpected indentation at line " + (context.currentLine + 1));
         }
     }
 

@@ -19,41 +19,9 @@ import static dev.toonformat.jtoon.util.Headers.TABULAR_HEADER_PATTERN;
 public final class ArrayDecoder {
 
     private static final int DELIMITER_GROUP_INDEX = 3;
-    private static final int FIELDS_GROUP_INDEX = 4;
 
     private ArrayDecoder() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
-    }
-
-    /**
-     * Spec §6: the delimiter declared inside the bracket segment of a tabular
-     * header must match the delimiter used by the brace field list. A header
-     * that declares a delimiter the field list does not use is defective.
-     *
-     * @param arrayHeader the array header starting with the bracket segment
-     * @return true when the header carries a mismatched delimiter declaration
-     */
-    static boolean hasTabularDelimiterMismatch(final String arrayHeader) {
-        final Matcher matcher = TABULAR_HEADER_PATTERN.matcher(arrayHeader);
-        if (!matcher.find() || matcher.group(DELIMITER_GROUP_INDEX) == null) {
-            return false;
-        }
-        final char declared = matcher.group(DELIMITER_GROUP_INDEX).charAt(0);
-        boolean inQuotes = false;
-        boolean escaped = false;
-        for (int i = 0; i < matcher.group(FIELDS_GROUP_INDEX).length(); i++) {
-            final char c = matcher.group(FIELDS_GROUP_INDEX).charAt(i);
-            if (escaped) {
-                escaped = false;
-            } else if (inQuotes && c == '\\') {
-                escaped = true;
-            } else if (c == '"') {
-                inQuotes = !inQuotes;
-            } else if (!inQuotes && c != declared && (c == ',' || c == '\t' || c == '|')) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

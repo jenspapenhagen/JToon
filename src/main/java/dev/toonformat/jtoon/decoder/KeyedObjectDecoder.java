@@ -161,8 +161,7 @@ public final class KeyedObjectDecoder {
 
     /**
      * Parses one entry row of a keyed tabular object, splitting the row at
-     * its first unquoted colon (§9.5). A row without a colon is rejected in
-     * strict mode; otherwise the caller skips it.
+     * its first unquoted colon (§9.5). A row without a colon is rejected.
      *
      * @param line          the entry row line
      * @param entryDepth    the depth of the entry rows
@@ -179,11 +178,8 @@ public final class KeyedObjectDecoder {
         // remainder is parsed as a tabular row with the active delimiter.
         final int colonIdx = DecodeHelper.findUnquotedColon(entryContent);
         if (colonIdx < 0) {
-            if (context.options.strict()) {
-                throw new IllegalArgumentException(
-                    "Missing colon in keyed entry at line " + (context.currentLine + 1));
-            }
-            return;
+            throw new IllegalArgumentException(
+                "Missing colon in keyed entry at line " + (context.currentLine + 1));
         }
 
         final String rawEntryKey = DecodeHelper.trimSpaces(entryContent.substring(0, colonIdx));

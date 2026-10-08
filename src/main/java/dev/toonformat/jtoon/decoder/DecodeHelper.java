@@ -316,7 +316,7 @@ public final class DecodeHelper {
     }
 
     /**
-     * In strict mode, rejects a line that §5.2 classifies as an array-header
+     * Rejects a line that §5.2 classifies as an array-header
      * line – its first unquoted bracket precedes its first unquoted colon – but
      * that fails the §6 header grammar. The original line content is classified
      * whole, so gaps that a key/value split would collapse are preserved:
@@ -332,16 +332,14 @@ public final class DecodeHelper {
      * </ul>
      * A line whose colon precedes its bracket is never an array-header line
      * ({@code foo: bar[1]}), and quoted brackets do not count ({@code "a[1]": x}).
-     * Non-strict decoders MAY fall through to key-value parsing (§5.2, §14.2).
+     * The rejection applies in both strict and non-strict mode (§14.2): the
+     * §14.4 recoveries do not cover malformed headers.
      *
      * @param content the original line content
      * @param context decode an object to deal with lines, delimiter and options
-     * @throws IllegalArgumentException in strict mode when the line is a malformed header
+     * @throws IllegalArgumentException when the line is a malformed header
      */
     static void rejectMalformedHeaderLine(final String content, final DecodeContext context) {
-        if (!context.options.strict()) {
-            return;
-        }
         final int colonIdx = findUnquotedColon(content);
         if (colonIdx < 0) {
             return;
@@ -361,11 +359,12 @@ public final class DecodeHelper {
     /**
      * Ensures no unconsumed lines remain after the root form was parsed.
      * The root form spans the whole document (§5); trailing content must not be
-     * silently discarded. In strict mode any leftover line is an error. In
-     * non-strict mode a scalar line outside root primitive position is still an
-     * error in both modes alike (§5.2), while leftover key-value lines are ignored.
+     * silently discarded. Any leftover non-blank line is an error in both modes
+     * alike (§5.2, §14.2): a scalar line outside root primitive position and a
+     * key-value line after a completed root form alike.
      *
      * @param context decode an object to deal with lines, delimiter and options
+     * @throws IllegalArgumentException if a non-blank line follows the root form
      */
     static void validateNoTrailingContent(final DecodeContext context) {
         while (context.currentLine < context.lines.length) {
@@ -374,44 +373,25 @@ public final class DecodeHelper {
                 context.currentLine++;
                 continue;
             }
-            if (context.options.strict()) {
-                throw new IllegalArgumentException(
-                    "Unexpected content after root form at line " + (context.currentLine + 1));
-            }
-            rejectScalarLine(context);
-            context.currentLine++;
-        }
-    }
-
-    /**
-     * Rejects the current line if it is a scalar line: without an unquoted
-     * colon it is a bare token outside root primitive position, an error in
-     * strict and non-strict mode alike, so lenient skipping never covers it.
-     *
-     * @param context decode an object to deal with lines, delimiter and options
-     * @throws IllegalArgumentException if the current line is a scalar line
-     */
-    private static void rejectScalarLine(final DecodeContext context) {
-        if (findUnquotedColon(context.lines[context.currentLine]) < 0) {
             throw new IllegalArgumentException(
-                "Bare token line outside root primitive position at line " + (context.currentLine + 1));
+                "Unexpected content after root form at line " + (context.currentLine + 1));
         }
     }
 
     /**
-     * Skips or rejects a line that belongs to no scope (§8, §14.2).
+     * Skips or rejects a line that belongs to no scope (§8, §14.2). Over-
+     * indented lines are an error in both modes: the non-strict recoveries of
+     * §14.4 do not cover them, adoption happens only in
+     * {@link #findContentDepth(int, DecodeContext)}.
      *
      * @param context   decode an object to deal with lines, delimiter, and options
      * @param lineDepth the depth of the over-indented line
-     * @throws IllegalArgumentException in strict mode, or for a scalar line in any mode
+     * @throws IllegalArgumentException always
      */
+    @SuppressWarnings("DoNotCallSuggester")
     static void processOverIndentedLine(final DecodeContext context, final int lineDepth) {
-        if (context.options.strict()) {
-            throw new IllegalArgumentException(
-                "Over-indented line at " + (context.currentLine + 1) + " (depth " + lineDepth + ")");
-        }
-        rejectScalarLine(context);
-        context.currentLine++;
+        throw new IllegalArgumentException(
+            "Over-indented line at " + (context.currentLine + 1) + " (depth " + lineDepth + ")");
     }
 
 }

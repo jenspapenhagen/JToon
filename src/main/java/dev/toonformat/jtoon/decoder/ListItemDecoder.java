@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import static dev.toonformat.jtoon.util.Constants.OPEN_BRACKET;
 
 /**
  * Handles decoding of TOON list item to JSON format.
@@ -66,19 +67,15 @@ public final class ListItemDecoder {
             return new LinkedHashMap<>();
         }
 
-        // Check for standalone array (e.g., "[2]: 1,2"). A keyless header with a
-        // field list is a defect in strict mode; non-strict decoders fall
-        // through to key-value parsing instead (§6, §14.2).
+        // Check for standalone array (e.g., "[2]: 1,2"). A keyless header with
+        // a field list is a defect: it is not an array item (§6, §14.2).
         if (DecodeHelper.opensKeylessArray(itemContent)) {
             if (KEYLESS_FIELDS_HEADER.matcher(itemContent).find()) {
-                if (context.options.strict()) {
-                    throw new IllegalArgumentException(
-                        "Keyless array header with field list only valid at document root at line "
-                            + (context.currentLine + 1));
-                }
-            } else {
-                return parseStandaloneArrayItem(itemContent, depth, context);
+                throw new IllegalArgumentException(
+                    "Keyless array header with field list only valid at document root at line "
+                        + (context.currentLine + 1));
             }
+            return parseStandaloneArrayItem(itemContent, depth, context);
         }
 
         // Check for keyed array pattern (e.g., "tags[3]: a,b,c" or "data[2]{id}: ...")
@@ -86,11 +83,15 @@ public final class ListItemDecoder {
         if (keyedHeader != null && keyedHeader.keyed()) {
             return parseKeyedTabularListItem(itemContent, keyedHeader, depth, context);
         }
-        if (keyedHeader != null && !isKeyedMismatchFallThrough(itemContent, keyedHeader, context)) {
+        if (keyedHeader != null) {
             return parseKeyedArrayListItem(itemContent, keyedHeader, depth, context);
         }
 
         final int colonIdx = DecodeHelper.findUnquotedColon(itemContent);
+        if (colonIdx >= 0 && itemContent.startsWith(OPEN_BRACKET)) {
+            throw new IllegalArgumentException(
+                "Keyless array header only valid at document root at line " + (context.currentLine + 1));
+        }
 
         // Simple scalar: - value
         if (colonIdx < 0) {
@@ -126,22 +127,6 @@ public final class ListItemDecoder {
             final DecodeContext context) {
         final Delimiter nestedArrayDelimiter = ArrayDecoder.extractDelimiterFromHeader(itemContent, context);
         return ArrayDecoder.parseArrayWithDelimiter(itemContent, depth + 1, nestedArrayDelimiter, context);
-    }
-
-    /**
-     * Returns whether a keyed header with a mismatched tabular delimiter
-     * falls through to ordinary key-value parsing in non-strict mode (§6).
-     *
-     * @param itemContent the item content
-     * @param keyedHeader the matched keyed header
-     * @param context     decode an object to deal with lines, delimiter and options
-     * @return true when the line falls through to key-value parsing
-     */
-    private static boolean isKeyedMismatchFallThrough(final String itemContent,
-            final Headers.KeyedHeaderMatch keyedHeader, final DecodeContext context) {
-        return !keyedHeader.keyed()
-            && !context.options.strict()
-            && ArrayDecoder.hasTabularDelimiterMismatch(itemContent.substring(keyedHeader.keyEnd()));
     }
 
     /**
@@ -293,6 +278,13 @@ public final class ListItemDecoder {
     private static void processListItemFieldLine(final Map<String, Object> item, final String line,
             final int depth, final DecodeContext context) {
         final String fieldContent = line.substring((depth + 2) * context.options.indent());
+
+        // Spec §5/§6: a keyless header is valid only as document root or list
+        // item; as a sibling field it is a defect in both modes (§14.2).
+        if (fieldContent.startsWith(OPEN_BRACKET)) {
+            throw new IllegalArgumentException(
+                "Keyless array header only valid at document root at line " + (context.currentLine + 1));
+        }
 
         // Try to parse as a keyed array first, then as a key-value pair
         boolean wasParsed = KeyDecoder.parseKeyedArrayField(fieldContent, item, depth, context);
