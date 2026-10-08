@@ -94,31 +94,19 @@ class TabularArrayDecoderTest {
     }
 
     @Test
-    @DisplayName("processTabularRow: deeper-than-expected line is skipped in lenient mode (else-if branch)")
-    void processTabularRow_skipsDeeperIndentedLine() {
-        // Given
+    @DisplayName("processTabularRow: deeper-than-expected line throws in non-strict mode (§14.2)")
+    void processTabularRow_rejectsDeeperIndentedLine() {
+        // Given — over-indented line inside a tabular array is an error in both modes (§14.2)
         final String toon = "[2]{id,name}:\n  1,Ada\n    nested: true\n  2,Bob";
 
         setUpContext(toon);
         context.options = DecodeOptions.withStrict(false);
 
-        // When
-        final List<Object> result = TabularArrayDecoder.parseTabularArray(toon, 0,
-            Delimiter.COMMA, context);
-
-        // Then
-        assertEquals(2, result.size(), "Should parse exactly two rows, skipping the deeper-indented line");
-
-        @SuppressWarnings("unchecked")
-        final Map<String, Object> row1 = (Map<String, Object>) result.get(0);
-        @SuppressWarnings("unchecked")
-        final Map<String, Object> row2 = (Map<String, Object>) result.get(1);
-
-        assertEquals("1", String.valueOf(row1.get("id")));
-        assertEquals("Ada", String.valueOf(row1.get("name")));
-
-        assertEquals("2", String.valueOf(row2.get("id")));
-        assertEquals("Bob", String.valueOf(row2.get("name")));
+        // When / Then
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> TabularArrayDecoder.parseTabularArray(toon, 0, Delimiter.COMMA, context));
+        assertTrue(ex.getMessage().contains("Over-indented"),
+            "Expected over-indentation error, got: " + ex.getMessage());
     }
 
     @Test
@@ -235,8 +223,8 @@ class TabularArrayDecoderTest {
 
         // When
         final boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
-            new Class[]{String.class, int.class, int.class, DecodeContext.class},
-            line, lineDepth, expectedRowDepth, context);
+            new Class[]{String.class, int.class, int.class, Delimiter.class, DecodeContext.class},
+            line, lineDepth, expectedRowDepth, context.options.delimiter(), context);
 
         // Then
         assertTrue(result, "Should terminate when lineDepth < expectedRowDepth");
@@ -256,8 +244,8 @@ class TabularArrayDecoderTest {
 
         // When
         final boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
-            new Class[]{String.class, int.class, int.class, DecodeContext.class},
-            line, lineDepth, expectedRowDepth, context);
+            new Class[]{String.class, int.class, int.class, Delimiter.class, DecodeContext.class},
+            line, lineDepth, expectedRowDepth, context.options.delimiter(), context);
 
         // Then — delimiter comes before colon, so this is a tabular row
         assertFalse(result, "Should continue tabular array when delimiter found before colon (§9.3)");
@@ -277,8 +265,8 @@ class TabularArrayDecoderTest {
 
         // When
         final boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
-            new Class[]{String.class, int.class, int.class, DecodeContext.class},
-            line, lineDepth, expectedRowDepth, context);
+            new Class[]{String.class, int.class, int.class, Delimiter.class, DecodeContext.class},
+            line, lineDepth, expectedRowDepth, context.options.delimiter(), context);
 
         // Then — colon comes before any unquoted delimiter, so this is a key-value pair
         assertTrue(result, "Should terminate tabular array when colon found before delimiter (§9.3)");
@@ -298,8 +286,8 @@ class TabularArrayDecoderTest {
 
         // When
         final boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
-            new Class[]{String.class, int.class, int.class, DecodeContext.class},
-            line, lineDepth, expectedRowDepth, context);
+            new Class[]{String.class, int.class, int.class, Delimiter.class, DecodeContext.class},
+            line, lineDepth, expectedRowDepth, context.options.delimiter(), context);
 
         // Then — colon present, no delimiter → key-value line
         assertTrue(result, "Should terminate tabular array when colon present without delimiter (§9.3)");
@@ -319,8 +307,8 @@ class TabularArrayDecoderTest {
 
         // When
         final boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
-            new Class[]{String.class, int.class, int.class, DecodeContext.class},
-            line, lineDepth, expectedRowDepth, context);
+            new Class[]{String.class, int.class, int.class, Delimiter.class, DecodeContext.class},
+            line, lineDepth, expectedRowDepth, context.options.delimiter(), context);
 
         // Then — no colon → this is a tabular row
         assertFalse(result, "Should continue tabular array when no colon present (§9.3)");
@@ -340,8 +328,8 @@ class TabularArrayDecoderTest {
 
         // When
         final boolean result = (boolean) invokePrivateStatic("shouldTerminateTabularArray",
-            new Class[]{String.class, int.class, int.class, DecodeContext.class},
-            line, lineDepth, expectedRowDepth, context);
+            new Class[]{String.class, int.class, int.class, Delimiter.class, DecodeContext.class},
+            line, lineDepth, expectedRowDepth, context.options.delimiter(), context);
 
         // Then — pipe (delimiter) before colon → tabular row
         assertFalse(result, "Should continue tabular array with pipe delimiter when delim found before colon (§9.3)");

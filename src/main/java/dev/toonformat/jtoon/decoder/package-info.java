@@ -144,8 +144,9 @@
  *
  * <h3>Lenient Mode</h3>
  * <ul>
- *   <li>Applies the leniencies the spec names for non-strict mode, such as count mismatches,
- *       indentation depth jumps and skipped over-indented lines other than scalar lines</li>
+ *   <li>Applies the leniencies the spec names for non-strict mode (§14.4): count
+ *       mismatches including declared lengths, duplicate keys, indentation floors,
+ *       blank lines in header spans, and depth jumps</li>
  *   <li>Throws IllegalArgumentException wherever the spec names no leniency (§14)</li>
  * </ul>
  *

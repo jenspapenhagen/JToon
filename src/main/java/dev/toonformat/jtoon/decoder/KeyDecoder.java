@@ -39,21 +39,14 @@ public final class KeyDecoder {
             return;
         }
 
-        final String key = StringEscaper.unescape(keyedHeader.key());
+        final String originalKey = DecodeHelper.trimSpaces(keyedHeader.key());
+        final String key = StringEscaper.unescape(originalKey);
         final String arrayHeader = content.substring(keyedHeader.keyEnd());
-
-        // Spec §6: a keyed tabular header whose bracket and brace segments
-        // declare different delimiters is defective; in non-strict mode the
-        // whole line falls through and decodes as an ordinary key-value pair.
-        if (!context.options.strict() && ArrayDecoder.hasTabularDelimiterMismatch(arrayHeader)) {
-            processKeyValueLine(result, content, parentDepth + 1, context);
-            return;
-        }
 
         final List<Object> arrayValue = ArrayDecoder.parseArray(arrayHeader, parentDepth + 1, context);
 
         // Handle path expansion for array keys
-        if (shouldExpandKey(keyedHeader.key(), context)) {
+        if (shouldExpandKey(originalKey, context)) {
             expandPathIntoMap(result, key, arrayValue, context);
         } else {
             // Check for conflicts with existing expanded paths
@@ -308,17 +301,6 @@ public final class KeyDecoder {
         final String key = StringEscaper.unescape(originalKey);
         final String arrayHeader = content.substring(keyedHeader.keyEnd());
 
-        // Spec §6: a keyed tabular header whose bracket and brace segments
-        // declare different delimiters is defective; in non-strict mode the
-        // whole line falls through and decodes as an ordinary key-value pair.
-        if (!context.options.strict() && ArrayDecoder.hasTabularDelimiterMismatch(arrayHeader)) {
-            final int colonIdx = DecodeHelper.findUnquotedColon(content);
-            if (colonIdx > 0) {
-                return parseKeyValuePair(DecodeHelper.trimSpaces(content.substring(0, colonIdx)),
-                    DecodeHelper.trimSpaces(content.substring(colonIdx + 1)), depth, depth == 0, context);
-            }
-        }
-
         final List<Object> arrayValue = ArrayDecoder.parseArray(arrayHeader, depth, context);
         final Map<String, Object> obj = new LinkedHashMap<>();
 
@@ -360,14 +342,6 @@ public final class KeyDecoder {
                 fieldContent, keyedHeader, depth + 3, context);
             putKeyedValueIntoMap(item, keyedHeader, keyedValue, context);
             return true;
-        }
-
-        // Spec §6: a keyed tabular header whose bracket and brace segments
-        // declare different delimiters is defective; in non-strict mode the
-        // field falls through to ordinary key-value parsing.
-        if (!context.options.strict()
-                && ArrayDecoder.hasTabularDelimiterMismatch(fieldContent.substring(keyedHeader.keyEnd()))) {
-            return false;
         }
 
         final String originalKey = DecodeHelper.trimSpaces(keyedHeader.key());

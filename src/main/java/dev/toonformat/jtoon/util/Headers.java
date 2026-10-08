@@ -167,8 +167,9 @@ public final class Headers {
      * space inside the key is therefore part of the key; only whitespace
      * directly before the bracket segment is the header syntax error of §6, and
      * that is rejected here so the line falls through to key-value parsing
-     * (§14.2). Any whitespace character counts – space, HTAB or NBSP alike –
-     * while characters inside the key stay part of it (§12).
+     * (§14.2). Only SP and HTAB separate key and bracket (§12); NBSP is a
+     * normal key character, not a gap, so {@code n [1]: y} keys on
+     * {@code n }.
      *
      * @param content  the line content to scan
      * @param keyStart the index where the key starts
@@ -208,14 +209,14 @@ public final class Headers {
 
     /**
      * Whether the character separates a key from its bracket segment as the
-     * whitespace of §6/§14.2: any Unicode whitespace (space, HTAB) or space
-     * separator (NBSP) counts.
+     * whitespace of §6/§14.2: only SP (U+0020) and HTAB count (§12). NBSP is
+     * an ordinary key character, not a gap.
      *
      * @param c the character directly before the bracket segment
-     * @return true when the character is whitespace in the header-gap sense
+     * @return true when the character is SP or HTAB
      */
     private static boolean isKeyBracketGap(final char c) {
-        return Character.isWhitespace(c) || Character.isSpaceChar(c);
+        return c == ' ' || c == '\t';
     }
 
     /**

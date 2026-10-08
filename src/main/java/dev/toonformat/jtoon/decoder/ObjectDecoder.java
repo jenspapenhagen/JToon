@@ -73,8 +73,9 @@ public final class ObjectDecoder {
         final String content = line.substring((parentDepth + 1) * context.options.indent());
 
         // Spec §5/§6: keyless array headers are valid only as the document's
-        // root header or as list items; an object field position is a defect.
-        if (content.startsWith(OPEN_BRACKET) && context.options.strict()) {
+        // root header or as list items; an object field position is a defect
+        // in both modes (§14.2).
+        if (content.startsWith(OPEN_BRACKET)) {
             throw new IllegalArgumentException(
                 "Keyless array header only valid at document root at line " + (context.currentLine + 1));
         }
@@ -137,8 +138,8 @@ public final class ObjectDecoder {
             final int depth, final DecodeContext context) {
         // Spec §5/§6: a keyless header is only valid as the document's
         // root header, i.e. the first line; at any later depth-0 position
-        // it is a defect.
-        if (content.startsWith(OPEN_BRACKET) && context.options.strict()) {
+        // it is a defect in both modes (§14.2).
+        if (content.startsWith(OPEN_BRACKET)) {
             throw new IllegalArgumentException(
                 "Keyless array header only valid as root header at line " + (context.currentLine + 1));
         }
@@ -180,28 +181,14 @@ public final class ObjectDecoder {
             return;
         }
 
-        final String originalKey = keyedHeader.key();
-        final String originalKeyTrimmed = DecodeHelper.trimSpaces(originalKey);
+        final String originalKey = DecodeHelper.trimSpaces(keyedHeader.key());
         final String key = StringEscaper.unescape(originalKey);
-        final String arrayHeader = content.substring(originalKey.length());
-
-        // Spec §6: a keyed tabular header whose bracket and brace segments
-        // declare different delimiters is defective; in non-strict mode the
-        // whole line falls through and decodes as an ordinary key-value pair.
-        if (!context.options.strict() && ArrayDecoder.hasTabularDelimiterMismatch(arrayHeader)) {
-            final int colonIdx = DecodeHelper.findUnquotedColon(content);
-            if (colonIdx > 0) {
-                KeyDecoder.parseKeyValuePairIntoMap(objectMap,
-                    DecodeHelper.trimSpaces(content.substring(0, colonIdx)),
-                    DecodeHelper.trimSpaces(content.substring(colonIdx + 1)), depth, context);
-                return;
-            }
-        }
+        final String arrayHeader = content.substring(keyedHeader.key().length());
 
         final List<Object> arrayValue = ArrayDecoder.parseArray(arrayHeader, depth, context);
 
         // Handle path expansion for array keys
-        if (KeyDecoder.shouldExpandKey(originalKeyTrimmed, context)) {
+        if (KeyDecoder.shouldExpandKey(originalKey, context)) {
             KeyDecoder.expandPathIntoMap(objectMap, key, arrayValue, context);
         } else {
             // Check for conflicts with existing expanded paths
@@ -264,19 +251,17 @@ public final class ObjectDecoder {
      */
     static Object parseValueWithNestedScope(final String value, final int depth, final DecodeContext context,
             final BiFunction<String, DecodeContext, Object> scalarParser) {
-        // Check if the next line is nested (deeper indentation)
-        if (context.currentLine + 1 < context.lines.length) {
-            final int nextDepth = DecodeHelper.getDepth(context.lines[context.currentLine + 1], context);
-            if (nextDepth > depth) {
-                if (!value.isEmpty()) {
-                    return parseInlineValueWithOrphanLines(value, depth, context, scalarParser);
-                }
-                context.currentLine++;
-                // parseNestedObject manages the currentLine, so we don't increment here
-                return parseNestedObject(depth, context);
+        // Blank lines never create or close structure (§12), so the decision
+        // looks at the first non-blank line after the field line.
+        final int nextIdx = DecodeHelper.findNextNonBlankLine(context.currentLine + 1, context);
+        if (nextIdx < context.lines.length
+                && DecodeHelper.getDepth(context.lines[nextIdx], context) > depth) {
+            if (!value.isEmpty()) {
+                return parseInlineValueWithOrphanLines(value, depth, context, scalarParser);
             }
             context.currentLine++;
-            return scalarParser.apply(value, context);
+            // parseNestedObject manages the currentLine, so we don't increment here
+            return parseNestedObject(depth, context);
         }
         context.currentLine++;
         return scalarParser.apply(value, context);
@@ -284,8 +269,8 @@ public final class ObjectDecoder {
 
     /**
      * Parses an inline value whose line carries deeper, orphaned lines:
-     * rejected in strict mode (§14.2), skipped in non-strict mode unless
-     * they are scalar lines.
+     * rejected in both modes (§14.2) — the §14.4 recoveries do not cover
+     * lines that belong to no scope.
      *
      * @param value        the inline value string to parse
      * @param depth        the depth at which the value is located

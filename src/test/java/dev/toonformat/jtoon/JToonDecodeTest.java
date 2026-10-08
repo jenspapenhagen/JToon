@@ -624,17 +624,14 @@ public class JToonDecodeTest {
         }
 
         @Test
-        @DisplayName("should read an invalid array header as a key in lenient mode")
+        @DisplayName("non-strict mode: throws on an invalid array header (§14.2)")
         void testLenientMode() {
             // Given
             final String toon = "[invalid]: 1";
             final DecodeOptions options = DecodeOptions.withStrict(false);
 
-            // When
-            final Object result = JToon.decode(toon, options);
-
-            // Then
-            assertEquals(Map.of("[invalid]", 1L), result);
+            // When / Then
+            assertThrows(IllegalArgumentException.class, () -> JToon.decode(toon, options));
         }
 
         @Test
@@ -742,11 +739,11 @@ public class JToonDecodeTest {
         }
 
         @Test
-        @DisplayName("lenient mode: reads a fields-bearing header with inline content as a key")
+        @DisplayName("non-strict mode: throws on a fields-bearing header with inline content (§14.2)")
         void lenientReadsFieldsHeaderWithInlineContentAsKey() {
             final DecodeOptions lenient = DecodeOptions.withStrict(false);
-            assertEquals(Map.of("items[0]{a,b}", "1,2"), JToon.decode("items[0]{a,b}: 1,2", lenient));
-            assertEquals(Map.of("a", List.of(Map.of("[1]{a}", 1L))), JToon.decode("a[1]:\n  - [1]{a}: 1", lenient));
+            assertThrows(IllegalArgumentException.class, () -> JToon.decode("items[0]{a,b}: 1,2", lenient));
+            assertThrows(IllegalArgumentException.class, () -> JToon.decode("a[1]:\n  - [1]{a}: 1", lenient));
         }
 
         @Test
@@ -760,14 +757,10 @@ public class JToonDecodeTest {
         }
 
         @Test
-        @DisplayName("lenient mode: allows brackets in keys")
+        @DisplayName("non-strict mode: throws on brackets in keys (§14.2)")
         void lenientAllowsBracketsInKeys() {
             final DecodeOptions lenient = DecodeOptions.withStrict(false);
-            final Object result = JToon.decode("foo[1][bar]: 10", lenient);
-            @SuppressWarnings("unchecked")
-            final Map<String, Object> map = (Map<String, Object>) result;
-            final long decodedTen = 10L;
-            assertEquals(decodedTen, map.get("foo[1][bar]"));
+            assertThrows(IllegalArgumentException.class, () -> JToon.decode("foo[1][bar]: 10", lenient));
         }
 
         @Test
@@ -781,10 +774,10 @@ public class JToonDecodeTest {
         }
 
         @Test
-        @DisplayName("lenient mode: reads a leading-zero bracket length as part of the key")
+        @DisplayName("non-strict mode: throws on a leading-zero bracket length (§6)")
         void lenientReadsLeadingZeroLengthAsKey() {
             final DecodeOptions lenient = DecodeOptions.withStrict(false);
-            assertEquals(Map.of("items[03]", "a,b,c"), JToon.decode("items[03]: a,b,c", lenient));
+            assertThrows(IllegalArgumentException.class, () -> JToon.decode("items[03]: a,b,c", lenient));
         }
     }
 

@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 class ObjectDecoderTest {
 
     private static final int CONSUMED_CHILD_LINES = 3;
-    private static final long ROOT_A_VALUE = 10L;
     private static final long SCALAR_PARSE_VALUE = 15L;
     private static final long TEST_NUMBER_VALUE = 123L;
 
@@ -125,7 +124,7 @@ class ObjectDecoderTest {
         }
 
         @Test
-        @DisplayName("GIVEN root kv WHEN parsing THEN map is filled")
+        @DisplayName("GIVEN root kv + over-indented line WHEN parsing THEN throws (§14.2)")
         void parseRootObjectFields_basic() {
             // Given
             setUpContext("""
@@ -136,12 +135,9 @@ class ObjectDecoderTest {
             context.options = DecodeOptions.withStrict(false);
             final Map<String, Object> root = new LinkedHashMap<>();
 
-            // When
-            ObjectDecoder.parseRootObjectFields(root, 0, context);
-
-            // Then
-            assertEquals(ROOT_A_VALUE, root.get("a"));
-            assertEquals(CONSUMED_CHILD_LINES, context.currentLine);
+            // When / Then
+            assertThrows(IllegalArgumentException.class,
+                () -> ObjectDecoder.parseRootObjectFields(root, 0, context));
         }
 
         @Test
@@ -304,7 +300,7 @@ class ObjectDecoderTest {
         }
 
         @Test
-        @DisplayName("GIVEN inline value + deeper line + lenient => value kept, orphan lines skipped")
+        @DisplayName("GIVEN inline value + deeper line + non-strict => throws (§14.2)")
         void parseFieldValue_inlineValueWithDeeperLineSkippedInLenientMode() {
             // Given
             setUpContext("""
@@ -314,12 +310,8 @@ class ObjectDecoderTest {
             context.options = DecodeOptions.withStrict(false);
             context.currentLine = 0;
 
-            // When
-            final Object parseFieldValue = ObjectDecoder.parseFieldValue("15", 0, context);
-
-            // Then
-            assertEquals(SCALAR_PARSE_VALUE, parseFieldValue);
-            assertEquals(2, context.currentLine);
+            // When / Then
+            assertThrows(IllegalArgumentException.class, () -> ObjectDecoder.parseFieldValue("15", 0, context));
         }
 
         @Test

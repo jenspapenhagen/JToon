@@ -129,7 +129,7 @@ class KeyedObjectDecoderTest {
     }
 
     @Test
-    @DisplayName("Given entry without colon in lenient mode When parsed Then row skipped")
+    @DisplayName("Given entry without colon in non-strict mode When parsed Then throws (§14.2)")
     void parseKeyedTabularObject_givenMissingColonLenient_whenParsed_thenSkipped() {
         // Given
         final DecodeContext context = new DecodeContext();
@@ -140,13 +140,9 @@ class KeyedObjectDecoderTest {
         context.currentLine = 0;
         final Headers.KeyedHeaderMatch header = Headers.matchKeyedArrayHeader(context.lines[0]);
 
-        // When
-        final Map<String, Object> result =
-            KeyedObjectDecoder.parseKeyedTabularObject(context.lines[0], header, 1, context);
-
-        // Then
-        assertEquals(1, result.size());
-        assertEquals(AFTER_ENTRIES_LINE_INDEX, context.currentLine);
+        // When / Then
+        assertThrows(IllegalArgumentException.class, () ->
+            KeyedObjectDecoder.parseKeyedTabularObject(context.lines[0], header, 1, context));
     }
 
     @Test
