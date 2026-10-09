@@ -367,30 +367,25 @@ public final class DecodeHelper {
      * @throws IllegalArgumentException if a non-blank line follows the root form
      */
     static void validateNoTrailingContent(final DecodeContext context) {
-        while (context.currentLine < context.lines.length) {
-            final String line = context.lines[context.currentLine];
-            if (isBlankLine(line)) {
-                context.currentLine++;
-                continue;
-            }
+        context.currentLine = findNextNonBlankLine(context.currentLine, context);
+        if (context.currentLine < context.lines.length) {
             throw new IllegalArgumentException(
                 "Unexpected content after root form at line " + (context.currentLine + 1));
         }
     }
 
     /**
-     * Skips or rejects a line that belongs to no scope (§8, §14.2). Over-
+     * Builds the error for a line that belongs to no scope (§8, §14.2). Over-
      * indented lines are an error in both modes: the non-strict recoveries of
      * §14.4 do not cover them, adoption happens only in
      * {@link #findContentDepth(int, DecodeContext)}.
      *
      * @param context   decode an object to deal with lines, delimiter, and options
      * @param lineDepth the depth of the over-indented line
-     * @throws IllegalArgumentException always
+     * @return the error to throw
      */
-    @SuppressWarnings("DoNotCallSuggester")
-    static void processOverIndentedLine(final DecodeContext context, final int lineDepth) {
-        throw new IllegalArgumentException(
+    static IllegalArgumentException overIndentedLineError(final DecodeContext context, final int lineDepth) {
+        return new IllegalArgumentException(
             "Over-indented line at " + (context.currentLine + 1) + " (depth " + lineDepth + ")");
     }
 

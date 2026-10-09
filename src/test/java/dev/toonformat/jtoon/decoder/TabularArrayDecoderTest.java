@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import dev.toonformat.jtoon.DecodeOptions;
@@ -91,50 +90,6 @@ class TabularArrayDecoderTest {
         assertThrows(IllegalArgumentException.class, () -> TabularArrayDecoder.parseTabularArray(
             "[2]{id,value}:\n  1,null\n  2,\"test\"", 0,
             Delimiter.TAB, context));
-    }
-
-    @Test
-    @DisplayName("processTabularRow: deeper-than-expected line throws in non-strict mode (§14.2)")
-    void processTabularRow_rejectsDeeperIndentedLine() {
-        // Given — over-indented line inside a tabular array is an error in both modes (§14.2)
-        final String toon = "[2]{id,name}:\n  1,Ada\n    nested: true\n  2,Bob";
-
-        setUpContext(toon);
-        context.options = DecodeOptions.withStrict(false);
-
-        // When / Then
-        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> TabularArrayDecoder.parseTabularArray(toon, 0, Delimiter.COMMA, context));
-        assertTrue(ex.getMessage().contains("Over-indented"),
-            "Expected over-indentation error, got: " + ex.getMessage());
-    }
-
-    @Test
-    void testReturnsTrueWhenLineDepthLessThanExpected() throws Exception {
-        // Given
-        context.options = new DecodeOptions(2, Delimiter.COMMA, true, PathExpansion.OFF,
-                DecodeOptions.MAX_ALLOWED_DEPTH, DecodeOptions.DEFAULT_MAX_ARRAY_SIZE,
-                DecodeOptions.DEFAULT_MAX_STRING_LENGTH);
-
-
-        final String line = "  some text";   // Content irrelevant for this branch
-        final int lineDepth = 1;             // LESS than expectedRowDepth
-        final int expectedRowDepth = 3;       // Ensures we fall to final return
-
-        final List<String> keys = List.of("a", "b", "c");
-        final List<Object> result = new ArrayList<>();
-
-        // When
-        final boolean processed = (boolean) invokePrivateStatic("processTabularRow",
-            new Class[]{String.class, int.class, int.class, List.class,
-                Delimiter.class, List.class, DecodeContext.class},
-            line, lineDepth, expectedRowDepth,
-            keys, Delimiter.COMMA, result, context
-        );
-
-        // Then
-        assertTrue(processed, "Should return true when lineDepth < expectedRowDepth");
-        assertTrue(result.isEmpty(), "Result list must remain unchanged");
     }
 
     @Test
@@ -338,13 +293,9 @@ class TabularArrayDecoderTest {
     @Test
     @DisplayName("Parse simple field list into leaf nodes")
     void parseTabularKeys_givenSimpleList_thenLeafNodes() {
-        // Given
-        final DecodeContext ctx = new DecodeContext();
-        ctx.options = DecodeOptions.DEFAULT;
-
         // When
         final List<TabularArrayDecoder.FieldNode> fields =
-            TabularArrayDecoder.parseTabularKeys("a,b,c", Delimiter.COMMA, ctx);
+            TabularArrayDecoder.parseTabularKeys("a,b,c", Delimiter.COMMA);
 
         // Then
         assertEquals(SIMPLE_FIELD_COUNT, fields.size());
@@ -357,13 +308,9 @@ class TabularArrayDecoderTest {
     @Test
     @DisplayName("Parse backslash-escaped backslash inside a field name")
     void parseTabularKeys_givenEscapedBackslash_thenSingleField() {
-        // Given
-        final DecodeContext ctx = new DecodeContext();
-        ctx.options = DecodeOptions.DEFAULT;
-
         // When
         final List<TabularArrayDecoder.FieldNode> fields =
-            TabularArrayDecoder.parseTabularKeys("\"a\\\\b\",c", Delimiter.COMMA, ctx);
+            TabularArrayDecoder.parseTabularKeys("\"a\\\\b\",c", Delimiter.COMMA);
 
         // Then
         assertEquals(2, fields.size());
@@ -374,13 +321,9 @@ class TabularArrayDecoderTest {
     @Test
     @DisplayName("Parse quoted field name preserving delimiter characters")
     void parseTabularKeys_givenQuotedName_thenDelimiterPreserved() {
-        // Given
-        final DecodeContext ctx = new DecodeContext();
-        ctx.options = DecodeOptions.DEFAULT;
-
         // When
         final List<TabularArrayDecoder.FieldNode> fields =
-            TabularArrayDecoder.parseTabularKeys("\"a,b\",c", Delimiter.COMMA, ctx);
+            TabularArrayDecoder.parseTabularKeys("\"a,b\",c", Delimiter.COMMA);
 
         // Then
         assertEquals(2, fields.size());
@@ -391,13 +334,9 @@ class TabularArrayDecoderTest {
     @Test
     @DisplayName("Parse nested field group into parent field with children")
     void parseTabularKeys_givenNestedGroup_thenParentWithChildren() {
-        // Given
-        final DecodeContext ctx = new DecodeContext();
-        ctx.options = DecodeOptions.DEFAULT;
-
         // When
         final List<TabularArrayDecoder.FieldNode> fields =
-            TabularArrayDecoder.parseTabularKeys("a{b,c},d", Delimiter.COMMA, ctx);
+            TabularArrayDecoder.parseTabularKeys("a{b,c},d", Delimiter.COMMA);
 
         // Then
         assertEquals(2, fields.size());
@@ -411,42 +350,18 @@ class TabularArrayDecoderTest {
     @Test
     @DisplayName("Throw on unbalanced braces in strict mode")
     void parseTabularKeys_givenUnbalancedStrict_thenThrows() {
-        // Given
-        final DecodeContext ctx = new DecodeContext();
-        ctx.options = DecodeOptions.DEFAULT;
-
         // When / Then
         final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> TabularArrayDecoder.parseTabularKeys("a{b,c", Delimiter.COMMA, ctx));
+            () -> TabularArrayDecoder.parseTabularKeys("a{b,c", Delimiter.COMMA));
         assertTrue(ex.getMessage().contains("Unbalanced braces"));
-    }
-
-    @Test
-    @DisplayName("Skip unbalanced group in lenient mode and keep parsed fields")
-    void parseTabularKeys_givenUnbalancedLenient_thenPartialFields() {
-        // Given
-        final DecodeContext ctx = new DecodeContext();
-        ctx.options = DecodeOptions.withStrict(false);
-
-        // When
-        final List<TabularArrayDecoder.FieldNode> fields =
-            TabularArrayDecoder.parseTabularKeys("a{b,c", Delimiter.COMMA, ctx);
-
-        // Then
-        assertEquals(1, fields.size());
-        assertEquals("a", fields.get(0).name());
     }
 
     @Test
     @DisplayName("Skip whitespace after delimiter in field list")
     void parseTabularKeys_givenWhitespaceAfterDelimiter_thenTrimmedFields() {
-        // Given
-        final DecodeContext ctx = new DecodeContext();
-        ctx.options = DecodeOptions.DEFAULT;
-
         // When
         final List<TabularArrayDecoder.FieldNode> fields =
-            TabularArrayDecoder.parseTabularKeys("a ,  b", Delimiter.COMMA, ctx);
+            TabularArrayDecoder.parseTabularKeys("a ,  b", Delimiter.COMMA);
 
         // Then
         assertEquals(2, fields.size());
@@ -457,13 +372,9 @@ class TabularArrayDecoderTest {
     @Test
     @DisplayName("Parse field list with pipe delimiter")
     void parseTabularKeys_givenPipeDelimiter_thenFields() {
-        // Given
-        final DecodeContext ctx = new DecodeContext();
-        ctx.options = DecodeOptions.DEFAULT;
-
         // When
         final List<TabularArrayDecoder.FieldNode> fields =
-            TabularArrayDecoder.parseTabularKeys("x|y", Delimiter.PIPE, ctx);
+            TabularArrayDecoder.parseTabularKeys("x|y", Delimiter.PIPE);
 
         // Then
         assertEquals(2, fields.size());

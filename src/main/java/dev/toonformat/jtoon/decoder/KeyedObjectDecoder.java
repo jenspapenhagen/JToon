@@ -41,7 +41,7 @@ public final class KeyedObjectDecoder {
         final Delimiter arrayDelimiter = delimiterFromChar(header.delimiter(), context);
 
         final List<TabularArrayDecoder.FieldNode> fields =
-            TabularArrayDecoder.parseTabularKeys(fieldsSpec, arrayDelimiter, context);
+            TabularArrayDecoder.parseTabularKeys(fieldsSpec, arrayDelimiter);
 
         // Spec §9.3: a duplicate field name within one field list is a header
         // defect, diagnosed from the header line alone.
@@ -127,8 +127,8 @@ public final class KeyedObjectDecoder {
 
     /**
      * Classifies the current line of a keyed tabular object: terminates the
-     * object at blank-line/EOF boundaries or shallower lines, skips blank and
-     * over-indented lines (§14.2), and passes entry rows through.
+     * object at blank-line/EOF boundaries or shallower lines, skips blank
+     * lines, rejects over-indented lines (§14.2), and passes entry rows through.
      *
      * @param result      the rows parsed so far
      * @param headerDepth the depth of the keyed header
@@ -153,8 +153,7 @@ public final class KeyedObjectDecoder {
             return LineHandling.STOP;
         }
         if (lineDepth != entryDepth) {
-            DecodeHelper.processOverIndentedLine(context, lineDepth);
-            return LineHandling.SKIP;
+            throw DecodeHelper.overIndentedLineError(context, lineDepth);
         }
         return LineHandling.PROCESS;
     }
