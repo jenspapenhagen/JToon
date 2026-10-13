@@ -1,7 +1,8 @@
 .gradle
 build/
 .omo/
-.out-of-scope/
+.out-of-scope/*
+!.out-of-scope/xml-input.md
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
