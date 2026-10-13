@@ -47,15 +47,19 @@ tasks.withType(org.gradle.api.publish.maven.tasks.PublishToMavenRepository).conf
 }
 
 java {
-    // Only enforce toolchain in CI to ensure consistent Java 21 builds
+    // Only enforce toolchain in CI to ensure consistent Java 17 builds
     // Locally, use whatever JDK is installed
     if (System.getenv('CI') == 'true') {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(21)
+            languageVersion = JavaLanguageVersion.of(17)
         }
     }
     withSourcesJar()
     withJavadocJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 17
 }
 
 repositories {
@@ -172,6 +176,7 @@ tasks.checkstyleTest {
 dependencies {
     implementation 'tools.jackson.core:jackson-databind:3.2.3'
     implementation 'tools.jackson.module:jackson-module-blackbird:3.2.3'
+    implementation 'tech.uom.lib:ryu:1.0.0'
     compileOnly 'com.github.spotbugs:spotbugs-annotations:4.10.4'
 
     // NullAway + Error Prone for compile-time null safety
