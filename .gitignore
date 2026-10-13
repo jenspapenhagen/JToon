@@ -1,5 +1,7 @@
 .gradle
 build/
+.omo/
+.out-of-scope/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
