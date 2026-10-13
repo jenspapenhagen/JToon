@@ -11,6 +11,32 @@ Compact, human-readable serialization format for LLM contexts with **30-60% toke
 
 **Key Features:** Minimal syntax • TOON Encoding and Decoding • Tabular arrays for uniform data • Array length validation • Java 21 • full [Jackson Annotation](https://github.com/FasterXML/jackson-annotations) Support • Null-safe by default (NullAway + JSpecify) • Comprehensive test coverage.
 
+## Java Version Support
+
+| Branch | Java | Version | Status |
+|--------|------|---------|--------|
+| `main` | 21 | 3.0.0+ | Active development |
+| `java17` | 17 | 2.0.x | Maintenance (until Q4 2027) |
+
+### Java 21 (3.0.0+)
+
+The `main` branch targets **Java 21** and uses the native `Double.toString` (shortest digits since JDK 19). Full spec compliance.
+
+> **Note:** Version 3.0.0 requires **Java 21**. Java 17 users should use the `java17` branch (2.0.x).
+
+### Java 17 (2.0.x)
+
+The `java17` branch maintains the 2.0.x line for Java 17 users. It uses [Jackson's Schubfach-based `DoubleToDecimal`](https://fasterxml.github.io/jackson-core/javadoc/2.14/com/fasterxml/jackson/core/io/schubfach/DoubleToDecimal.html) for shortest round-trip digits (spec §4.2), since `Double.toString` only delivers shortest digits from JDK 19+ (JDK-4511638).
+
+> **Note:** Java 17 (September 2021) does not natively support spec §4.2 for shortest round-trip digits. Jackson's Schubfach implementation provides spec-compliant output on Java 17.
+
+## Next Steps
+
+- [x] Raise `main` to Java 21 (3.0.0)
+- [x] Establish `java17` as long-term maintenance branch
+- [x] Release 2.0.8 (Java 17 baseline restored)
+- [ ] Release 3.0.0 (Java 21)
+
 ## Installation
 
 ### Maven Central
@@ -21,7 +47,7 @@ JToon is available on Maven Central. Add it to your project using your preferred
 
 ```gradle
 dependencies {
-    implementation 'dev.toonformat:jtoon:2.0.8'
+    implementation 'dev.toonformat:jtoon:3.0.0'
 }
 ```
 
@@ -29,7 +55,7 @@ dependencies {
 
 ```kotlin
 dependencies {
-    implementation("dev.toonformat:jtoon:2.0.8")
+    implementation("dev.toonformat:jtoon:3.0.0")
 }
 ```
 
@@ -39,7 +65,7 @@ dependencies {
 <dependency>
     <groupId>dev.toonformat</groupId>
     <artifactId>jtoon</artifactId>
-    <version>2.0.8</version>
+    <version>3.0.0</version>
 </dependency>
 ```
 
