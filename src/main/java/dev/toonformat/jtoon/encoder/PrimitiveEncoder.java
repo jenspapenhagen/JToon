@@ -3,7 +3,7 @@ package dev.toonformat.jtoon.encoder;
 import dev.toonformat.jtoon.util.StringEscaper;
 import dev.toonformat.jtoon.util.StringValidator;
 import org.jspecify.annotations.Nullable;
-import tools.jackson.core.io.schubfach.DoubleToDecimal;
+import tools.jackson.core.io.NumberOutput;
 import tools.jackson.databind.JsonNode;
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -82,10 +82,10 @@ public final class PrimitiveEncoder {
             return stripTrailingZeros(value.decimalValue().toPlainString());
         }
 
-        // Use Jackson's Schubfach-based DoubleToDecimal for shortest round-trip
+        // Use Jackson's Schubfach-based number output for shortest round-trip
         // digits on Java 17 (spec §4.2). Double.toString only delivers shortest
         // digits from JDK 19+ (JDK-4511638).
-        final BigDecimal decimal = new BigDecimal(DoubleToDecimal.toString(value.doubleValue()));
+        final BigDecimal decimal = new BigDecimal(NumberOutput.toString(value.doubleValue()));
         final String plainString = decimal.toPlainString();
 
         // Strip trailing zeros but preserve the number's mathematical value

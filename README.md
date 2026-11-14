@@ -20,7 +20,7 @@ Compact, human-readable serialization format for LLM contexts with **30-60% toke
 
 ### Java 17 (2.0.x)
 
-The `java17` branch maintains the 2.0.x line for Java 17 users. It uses [Jackson's Schubfach-based `DoubleToDecimal`](https://fasterxml.github.io/jackson-core/javadoc/2.14/com/fasterxml/jackson/core/io/schubfach/DoubleToDecimal.html) for shortest round-trip digits (spec §4.2), since `Double.toString` only delivers shortest digits from JDK 19+ (JDK-4511638).
+The `java17` branch maintains the 2.0.x line for Java 17 users. It uses Jackson's Schubfach-based [`NumberOutput`](https://javadoc.io/doc/tools.jackson.core/jackson-core/latest/tools/jackson/core/io/NumberOutput.html) for shortest round-trip digits (spec §4.2), since `Double.toString` only delivers shortest digits from JDK 19+ (JDK-4511638).
 
 > **Note:** Java 17 (September 2021) does not natively support spec §4.2 for shortest round-trip digits. Jackson's Schubfach implementation provides spec-compliant output on Java 17.
 
@@ -343,7 +343,31 @@ DecodeOptions lenient = DecodeOptions.withStrict(false);
 Object result2 = JToon.decode(mismatchedToon, lenient);
 ```
 
-**CI/CD:** GitHub Actions • Java 21 • Coverage enforcement • PR coverage comments
+### Jackson ObjectMapper / Optimizer Modules
+
+JToon uses a shared, thread-safe `ObjectMapper` internally. By default **no optimizer
+module** (Blackbird/Afterburner) is registered, which keeps JToon usable on Java 17+
+with any Jackson 3.x release — including Jackson 3.3.0, whose `BlackbirdModule`
+requires Java 25.
+
+Applications that want the performance boost of an optimizer module can plug in their
+own `ObjectMapper` **before the first** encode/decode call:
+
+```java
+import dev.toonformat.jtoon.JToon;
+import tools.jackson.module.afterburner.AfterburnerModule;
+
+// Java 17+ (Afterburner works on Java 17 and later)
+JToon.configure(JToon.createMapper(new AfterburnerModule()));
+```
+
+`JToon.configure(ObjectMapper)` and `JToon.createMapper(JacksonModule...)` are the
+entry points; `ObjectMapperSingleton` exposes the same helpers. Optimizer modules are
+not bundled — add `jackson-module-afterburner` (or `jackson-module-blackbird` on
+Java 25+) yourself. Calling `configure` after the first encode/decode throws
+`IllegalStateException`.
+
+**CI/CD:** GitHub Actions • Java 17 • Coverage enforcement • PR coverage comments
 
 ## Development
 

@@ -67,7 +67,7 @@ jobs:
           cat gradle.properties
 
       - name: Set up JDK
-        uses: actions/setup-java@v6.0.1
+        uses: actions/setup-java@v6.1.0
         with:
           java-version: ${{ steps.get_branch.outputs.java }}
           distribution: 'temurin'
@@ -172,7 +172,7 @@ jobs:
           git push origin ${{ steps.get_branch.outputs.branch }}
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: build-artifacts
           path: |

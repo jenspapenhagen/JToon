@@ -34,6 +34,11 @@
 	<Match>
         <Bug pattern="EI_EXPOSE_REP2" />
     </Match>
+
+    <!-- ObjectMapperSingleton exposes its shared mapper by design -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_STATIC_REP2" />
+    </Match>
 	    
     <!-- Exclude warnings for string concatenation in logging -->
     <Match>

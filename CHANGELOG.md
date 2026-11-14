@@ -6,6 +6,19 @@ This project adheres to Semantic Versioning and follows a Keep a Changelog-like 
 
 ## [Unreleased]
 
+## [2.0.9] - 2026-11-14
+
+### Added
+
+-   **Configurable `ObjectMapper`:** `JToon.configure(ObjectMapper)` lets applications supply their own mapper, and `JToon.createMapper(JacksonModule...)` builds one from JToon's defaults plus the given modules. `ObjectMapperSingleton` exposes `setInstance`, `isInitialized`, `createDefaultMapper` and `createMapper` as the underlying helpers. `configure` must be called before the first encode/decode call and throws `IllegalStateException` otherwise.
+
+### Changed
+
+-   **Jackson updated to 3.3.0.** JToon no longer bundles or registers `jackson-module-blackbird`: since Jackson 3.3.0 `BlackbirdModule` requires Java 25, which would break the Java 17 baseline. Applications can opt into an optimizer module (e.g. `AfterburnerModule` on Java 17+) through the new hooks.
+-   **Double formatting** now uses Jackson's `NumberOutput` for shortest round-trip digits on Java 17 (the previous `DoubleToDecimal` class was removed in Jackson 3.3.0).
+-   **Dependencies updated:** `spotbugs-annotations` 4.10.5, `nullaway` 0.14.3, SpotBugs plugin 6.5.13, CycloneDX plugin 3.5.1, Error Prone plugin 5.2.0, and the Gradle wrapper to 9.9.1. `error_prone_core` stays at 2.42.0 because newer releases require JDK 21.
+-   **README:** documented the ObjectMapper/optimizer hooks and corrected the Java 17 shortest-round-trip note.
+
 ## [2.0.6] - 2026-10-07
 
 ### Changed
@@ -303,7 +316,8 @@ This project adheres to Semantic Versioning and follows a Keep a Changelog-like 
 -   Delimiter options (comma, tab, pipe) and optional length marker.
 -   Comprehensive README with specification overview and examples.
 
-[Unreleased]: https://github.com/toon-format/toon-java/compare/v2.0.1...HEAD
+[Unreleased]: https://github.com/toon-format/toon-java/compare/v2.0.9...HEAD
+[2.0.9]: https://github.com/toon-format/toon-java/releases/tag/v2.0.9
 [2.0.1]: https://github.com/toon-format/toon-java/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/toon-format/toon-java/compare/v1.0.9...v2.0.0
 [1.0.9]: https://github.com/toon-format/toon-java/releases/tag/v1.0.9
